@@ -1,0 +1,1047 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithCustomToken, 
+  signInAnonymously, 
+  onAuthStateChanged,
+  signOut 
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc,
+  deleteDoc
+} from 'firebase/firestore';
+import { 
+  Home, 
+  Calendar as CalendarIcon, 
+  Users, 
+  Plus, 
+  X, 
+  ChevronRight,
+  Search,
+  Sparkles,
+  Loader2,
+  Settings,
+  MessageSquare,
+  Bell,
+  LogOut,
+  Globe,
+  ClipboardList,
+  Megaphone,
+  Cloud,
+  Trash2,
+  Lock,
+  Activity,
+  ShieldAlert,
+  ShieldCheck,
+  Fingerprint,
+  ScanFace,
+  Droplet,
+  Ruler,
+  Weight,
+  CalendarPlus,
+  Bone
+} from 'lucide-react';
+
+// --- CONFIGURACIÓN DE FIREBASE (TU BASE DE DATOS) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
+  authDomain: "quiroapp-e9b0a.firebaseapp.com",
+  projectId: "quiroapp-e9b0a",
+  storageBucket: "quiroapp-e9b0a.firebasestorage.app",
+  messagingSenderId: "478863836341",
+  appId: "1:478863836341:web:fa72196635120ba1beaafc",
+  measurementId: "G-YVG4XXKENW"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = firebaseConfig.projectId;
+
+// ⚠️ IMPORTANTE: Cuando publiques tu app, debes poner aquí tu llave de Gemini entre las comillas.
+const apiKey = ""; 
+
+// --- UTILIDADES GLOBALES Y DE IA ---
+const fetchGeminiWithRetry = async (prompt, retries = 5) => {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  const options = { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json' }, 
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+  };
+  const delays = [1000, 2000, 4000, 8000, 16000];
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } catch (error) { 
+      if (i === retries - 1) throw error; 
+      await new Promise(res => setTimeout(res, delays[i])); 
+    }
+  }
+  return "";
+};
+
+const openWhatsApp = (phone, message = "") => {
+  if (!phone) return;
+  const cleanPhone = String(phone).replace(/\D/g, '');
+  window.open(`https://wa.me/${cleanPhone}${message ? `?text=${encodeURIComponent(message)}` : ''}`, '_blank');
+};
+
+const normalizeText = (text) => {
+  if (!text) return "";
+  return String(text).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
+const safeFormatDate = (dateStr) => {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+  } catch (e) { return String(dateStr); }
+};
+
+const safeGetDay = (dateStr) => {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '--';
+    return String(d.getDate());
+  } catch (e) { return '--'; }
+};
+
+// --- COMPONENTES VISUALES BASE ---
+const SpineLogo = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <rect x="9" y="2" width="6" height="2" rx="1" />
+    <rect x="8" y="5.5" width="8" height="2.5" rx="1" />
+    <rect x="7" y="9.5" width="10" height="3" rx="1" />
+    <rect x="7.5" y="14" width="9" height="2.5" rx="1" />
+    <rect x="8.5" y="18" width="7" height="2" rx="1" />
+    <path d="M12 4v16" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.3" />
+  </svg>
+);
+
+const SpineWatermark = () => (
+  <div className="fixed inset-0 pointer-events-none flex justify-center items-center opacity-[0.04] z-0 overflow-hidden">
+    <svg viewBox="0 0 200 800" className="h-[120%] w-auto text-cyan-400">
+      <path
+        d="M100,50 Q120,50 120,70 T100,90 T80,110 T100,130 T120,150 T100,170 T80,190 T100,210 T120,230 T100,250 T80,270 T100,290 T120,310 T100,330 T80,350 T100,370 T120,390 T100,410 T80,430 T100,450 T120,470 T100,490 T80,510 T100,530 T120,550 T100,570 T80,590 T100,610 T120,630 T100,650 T80,670 T100,690 T120,710 T100,730 T80,750"
+        stroke="currentColor"
+        strokeWidth="12"
+        fill="none"
+      />
+      {Array.from({ length: 25 }).map((_, i) => (
+        <ellipse key={i} cx="100" cy={70 + i * 28} rx="35" ry="10" fill="currentColor" />
+      ))}
+    </svg>
+  </div>
+);
+
+const Modal = ({ title, children, onClose }) => (
+  <div className="fixed inset-0 bg-black/95 backdrop-blur-md sm:backdrop-blur-3xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-10 transition-all">
+    <div className="bg-slate-950 w-full sm:w-[650px] rounded-t-[40px] sm:rounded-[60px] max-h-[92vh] overflow-y-auto shadow-2xl p-6 sm:p-12 animate-slide-up relative border-t-[6px] sm:border-t-8 border-cyan-500 text-white">
+      <div className="flex justify-between items-center mb-6 sticky top-0 bg-slate-950/90 backdrop-blur-md z-20 pb-4 pt-2">
+        <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase italic">{String(title)}</h3>
+        <button onClick={onClose} className="p-3 bg-indigo-900 rounded-full sm:rounded-2xl text-cyan-400 active:scale-95 transition"><X className="w-6 h-6 font-black" /></button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
+const NavItem = ({ icon, label, isActive, onClick }) => (
+  <button onClick={onClick} className={`flex flex-col items-center justify-center w-16 sm:w-20 space-y-1 transition-all ${isActive ? 'text-cyan-400 scale-110' : 'text-indigo-400/50 hover:text-indigo-200'}`}>
+    <div className={`p-2 rounded-2xl transition-all ${isActive ? 'bg-cyan-500/10 shadow-[0_0_20px_rgba(6,182,212,0.2)] border border-cyan-400/30' : ''}`}>
+      {React.cloneElement(icon, { className: 'w-6 h-6' })}
+    </div>
+    <span className="text-[8px] font-black uppercase tracking-tighter">{String(label)}</span>
+  </button>
+);
+
+// --- MODALES DEL SISTEMA ---
+
+const PasswordPromptModal = ({ correctPassword, onSuccess, onClose }) => {
+  const [input, setInput] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (input === correctPassword) onSuccess();
+    else { setError(true); setTimeout(() => setError(false), 2000); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/98 backdrop-blur-3xl z-[200] flex items-center justify-center p-6 text-white text-center">
+      <div className="bg-slate-950 p-8 sm:p-12 rounded-[50px] sm:rounded-[60px] border border-cyan-400/30 shadow-[0_0_50px_rgba(34,211,238,0.1)] w-full max-w-lg animate-slide-up">
+        <ShieldAlert className={`w-20 h-20 mx-auto mb-6 ${error ? 'text-rose-500 animate-bounce' : 'text-cyan-400'}`} />
+        <h2 className="text-2xl font-black italic uppercase mb-6 tracking-tighter">Bóveda Protegida</h2>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <input 
+            type="password" 
+            autoFocus 
+            required 
+            placeholder="Ingrese PIN..." 
+            className={`w-full p-6 bg-indigo-950 border-2 rounded-[30px] font-black text-white text-3xl text-center outline-none transition-all ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.3)]' : 'border-indigo-800 focus:border-cyan-400'}`} 
+            value={input} 
+            onChange={(e) => setInput(e.target.value)} 
+          />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button type="button" onClick={onClose} className="w-full sm:flex-1 bg-white/5 py-5 rounded-[25px] font-black uppercase text-indigo-400 active:scale-95 transition">Cancelar</button>
+            <button type="submit" className="w-full sm:flex-1 bg-cyan-400 py-5 rounded-[25px] font-black text-black uppercase active:scale-95 transition border-b-4 border-cyan-700">Verificar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const NewPatientModal = ({ onClose, onSave }) => {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({ 
+    name: '', phone: '', age: '', weight: '', height: '', bloodType: 'O+', pressure: '',
+    mainDiagnosis: '', postural: '', subluxations: '', diseases: '', pathological: '', nonPathological: '',
+    histories: []
+  });
+
+  const diagnosysOptions = [
+    "Subluxación Vertebral", "Cervicalgia", "Lumbalgia", "Ciática", 
+    "Escoliosis", "Hernia Discal", "Radiculopatía", "Síndrome Facetario",
+    "Espasmo Muscular", "Osteoartritis", "Otro"
+  ];
+
+  return (
+    <Modal title={step === 1 ? "Identidad" : step === 2 ? "Diagnóstico Quiropráctico" : "Antecedentes Médicos"} onClose={onClose}>
+      <div className="space-y-6 pb-4">
+        {step === 1 && (
+          <div className="space-y-5 animate-fade-in">
+             <input type="text" placeholder="Nombre completo" required className="w-full p-6 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] text-white font-bold outline-none focus:border-cyan-400 transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <input type="tel" placeholder="WhatsApp" required className="w-full p-5 sm:p-6 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] text-white outline-none focus:border-cyan-400 transition-all" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+               <input type="number" placeholder="Edad" className="w-full p-5 sm:p-6 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] text-white outline-none focus:border-cyan-400 transition-all" value={form.age} onChange={e => setForm({...form, age: e.target.value})} />
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div className="relative flex items-center bg-indigo-950 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] focus-within:border-cyan-400 transition-all overflow-hidden">
+                  <div className="pl-5 sm:pl-6 flex items-center justify-center">
+                    <Weight className="text-cyan-500 w-5 h-5 opacity-70" />
+                  </div>
+                  <input type="number" step="0.1" placeholder="Peso (kg)" className="w-full p-5 sm:p-6 pl-3 sm:pl-4 bg-transparent text-white outline-none" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} />
+               </div>
+               <div className="relative flex items-center bg-indigo-950 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] focus-within:border-cyan-400 transition-all overflow-hidden">
+                  <div className="pl-5 sm:pl-6 flex items-center justify-center">
+                    <Ruler className="text-cyan-500 w-5 h-5 opacity-70" />
+                  </div>
+                  <input type="number" step="0.1" placeholder="Estatura (cm)" className="w-full p-5 sm:p-6 pl-3 sm:pl-4 bg-transparent text-white outline-none" value={form.height} onChange={e => setForm({...form, height: e.target.value})} />
+               </div>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div>
+                  <label className="text-[10px] font-black text-indigo-400 uppercase ml-2 tracking-widest">Tipo de Sangre</label>
+                  <select className="w-full p-5 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white mt-1 outline-none focus:border-cyan-400 font-bold" value={form.bloodType} onChange={e => setForm({...form, bloodType: e.target.value})}>
+                    {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(t => <option key={t} value={t} className="bg-slate-900 text-white">{t}</option>)}
+                  </select>
+               </div>
+               <div>
+                  <label className="text-[10px] font-black text-indigo-400 uppercase ml-2 tracking-widest">Presión Arterial</label>
+                  <input type="text" placeholder="Ej: 120/80" className="w-full p-5 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white mt-1 outline-none focus:border-cyan-400 font-bold" value={form.pressure} onChange={e => setForm({...form, pressure: e.target.value})} />
+               </div>
+             </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4 animate-fade-in max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div>
+              <label className="text-[10px] font-black text-cyan-400 uppercase ml-2 tracking-widest flex items-center gap-1 mb-2">Diagnóstico Principal</label>
+              <select className="w-full p-5 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white outline-none focus:border-cyan-400 font-bold italic" value={form.mainDiagnosis} onChange={e => setForm({...form, mainDiagnosis: e.target.value})}>
+                <option value="">Seleccionar condición...</option>
+                {diagnosysOptions.map(t => <option key={t} value={t} className="bg-slate-900 not-italic">{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-cyan-400 uppercase ml-2 tracking-widest flex items-center gap-1 mb-2"><Activity className="w-3 h-3" /> Análisis Postural</label>
+              <textarea placeholder="Ej: Hombro derecho elevado, hiperlordosis lumbar, acortamiento pierna izq..." className="w-full p-5 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white text-sm outline-none focus:border-cyan-400 italic" rows="2" value={form.postural} onChange={e => setForm({...form, postural: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-cyan-400 uppercase ml-2 tracking-widest flex items-center gap-1 mb-2"><Sparkles className="w-3 h-3" /> Subluxaciones Vertebrales</label>
+              <textarea placeholder="Ej: C5 posterior derecha, L5 inferior izquierda, T3-T4 restricción..." className="w-full p-5 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white text-sm outline-none focus:border-cyan-400 italic" rows="2" value={form.subluxations} onChange={e => setForm({...form, subluxations: e.target.value})} />
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-5 animate-fade-in max-h-[50vh] overflow-y-auto pr-2">
+            <div>
+              <label className="text-[10px] font-black text-indigo-400 uppercase ml-2 tracking-widest">Enfermedades Sistémicas / Crónicas</label>
+              <textarea placeholder="Diabetes, hipertensión, etc..." className="w-full p-5 mt-1 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white text-sm outline-none focus:border-cyan-400 italic" rows="2" value={form.diseases} onChange={e => setForm({...form, diseases: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-indigo-400 uppercase ml-2 tracking-widest">Antecedentes Patológicos</label>
+              <textarea placeholder="Cirugías, fracturas, accidentes previos..." className="w-full p-5 mt-1 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white text-sm outline-none focus:border-cyan-400 italic" rows="2" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-indigo-400 uppercase ml-2 tracking-widest">Antecedentes No Patológicos</label>
+              <textarea placeholder="Hábitos, actividad física, tipo de trabajo (sedentario)..." className="w-full p-5 mt-1 bg-indigo-950 border-2 border-indigo-800 rounded-[25px] text-white text-sm outline-none focus:border-cyan-400 italic" rows="2" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-indigo-800/50 mt-4">
+          {step > 1 && <button type="button" onClick={() => setStep(step - 1)} className="w-full sm:w-1/3 bg-white/5 py-5 rounded-[30px] font-bold text-indigo-300 uppercase text-xs active:scale-95 transition">Atrás</button>}
+          {step < 3 ? (
+            <button type="button" onClick={() => { if(form.name && form.phone) setStep(step + 1); }} className="w-full sm:w-2/3 bg-cyan-400 text-black font-black py-5 rounded-[30px] italic uppercase active:scale-95 transition shadow-xl">Siguiente</button>
+          ) : (
+            <button type="button" onClick={() => onSave(form)} className="w-full sm:w-2/3 bg-cyan-400 text-black font-black py-5 rounded-[30px] italic uppercase border-b-8 border-cyan-700 shadow-xl active:scale-95 transition">Finalizar Alta</button>
+          )}
+        </div>
+      </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #312e81; border-radius: 10px; }
+      `}} />
+    </Modal>
+  );
+};
+
+const NewHistoryModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 5, areas: [], notes: '' });
+  const [loadingIA, setLoadingIA] = useState(false);
+  const areas = ['Cervical', 'Dorsal', 'Lumbar', 'Sacro', 'Hombros', 'Caderas', 'Rodillas'];
+  
+  const formalize = async () => {
+    if (!form.notes) return;
+    setLoadingIA(true);
+    const res = await fetchGeminiWithRetry(`Actúa como médico quiropráctico. Mejora y formaliza clínicamente esta nota de ajuste: "${form.notes}". Hazlo profesional y muy conciso.`);
+    if (res) setForm({...form, notes: String(res)}); 
+    setLoadingIA(false);
+  };
+
+  return (
+    <Modal title="NUEVO AJUSTE" onClose={onClose}>
+      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-8 text-white">
+        <input type="date" required className="w-full p-6 bg-indigo-900 border-2 border-indigo-800 rounded-[30px] font-black text-white italic shadow-inner outline-none focus:border-cyan-400" value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} />
+        <div className="bg-indigo-950 p-6 sm:p-8 rounded-[30px] sm:rounded-[40px] border-2 border-indigo-800 text-left">
+          <div className="flex justify-between mb-6 px-2 sm:px-4 font-black uppercase text-indigo-400 italic text-xs sm:text-sm"><span>Nivel de Dolor Post-Ajuste</span><span className="text-rose-500">{String(form.painLevel)}/10</span></div>
+          <input type="range" min="0" max="10" className="w-full h-4 bg-indigo-900 rounded-full appearance-none accent-cyan-400 cursor-pointer shadow-inner" value={form.painLevel} onChange={(e) => setForm({...form, painLevel: parseInt(e.target.value)})} />
+        </div>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          {areas.map(a => (
+            <button key={a} type="button" onClick={() => setForm({...form, areas: form.areas.includes(a) ? form.areas.filter(x => x !== a) : [...form.areas, a]})} className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-[9px] sm:text-[10px] font-black border-2 transition-all active:scale-95 ${form.areas.includes(a) ? 'bg-cyan-400 text-black border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'bg-indigo-950 text-indigo-500 border-indigo-900'}`}>{String(a).toUpperCase()}</button>
+          ))}
+        </div>
+        <div>
+          <button type="button" onClick={formalize} disabled={loadingIA || !form.notes} className="text-[10px] sm:text-[11px] font-black text-cyan-400 uppercase flex items-center gap-2 sm:gap-3 mb-4 italic tracking-widest active:scale-95 transition disabled:opacity-50">
+            {loadingIA ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />} IA: Optimizar Redacción
+          </button>
+          <textarea rows="4" className="w-full p-6 sm:p-8 bg-indigo-900 border-2 border-indigo-800 rounded-[30px] sm:rounded-[40px] text-white font-bold italic outline-none text-base sm:text-lg focus:border-cyan-400" placeholder="Escribe observaciones, técnicas aplicadas (Gonstead, Thompson, Activator)..." value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} />
+        </div>
+        <button type="submit" className="w-full bg-cyan-400 text-black font-black py-6 sm:py-8 rounded-[30px] sm:rounded-[40px] shadow-2xl border-b-[8px] sm:border-b-[12px] border-cyan-700 uppercase italic text-lg sm:text-xl active:scale-95 transition">GUARDAR EXPEDIENTE</button>
+      </form>
+    </Modal>
+  );
+};
+
+const SettingsModal = ({ currentInfo, onClose, onSave, onLogout }) => {
+  const [info, setInfo] = useState({ name: currentInfo.name || '', clinic: currentInfo.clinic || '', modPassword: currentInfo.modPassword || '' });
+  return (
+    <Modal title="Configuración" onClose={onClose}>
+      <form onSubmit={(e) => { e.preventDefault(); onSave(info); }} className="space-y-6 sm:space-y-8">
+        <div>
+           <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-4 mb-2 block">Especialista a Cargo</label>
+           <input type="text" placeholder="Dr. Nombre" className="w-full p-6 bg-indigo-900/50 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] font-bold text-white outline-none focus:border-cyan-400" value={info.name} onChange={(e) => setInfo({...info, name: e.target.value})} />
+        </div>
+        <div>
+           <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-4 mb-2 block">Nombre Institución</label>
+           <input type="text" placeholder="Clínica..." className="w-full p-6 bg-indigo-900/50 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] font-bold text-white outline-none focus:border-cyan-400" value={info.clinic} onChange={(e) => setInfo({...info, clinic: e.target.value})} />
+        </div>
+        <div className="p-6 sm:p-8 bg-indigo-900/30 rounded-[30px] sm:rounded-[40px] border border-cyan-400/20 text-center relative overflow-hidden">
+          <Lock className="absolute -right-4 -bottom-4 w-24 h-24 text-cyan-400 opacity-5" />
+          <label className="block text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4 italic">Clave de Seguridad (Bóveda)</label>
+          <input type="password" placeholder="PIN Secreto" className="w-full p-5 sm:p-6 bg-indigo-950 border-2 border-indigo-800 rounded-[20px] sm:rounded-[25px] font-black text-cyan-400 text-center text-xl sm:text-2xl outline-none focus:border-cyan-400 tracking-[0.5em]" value={info.modPassword} onChange={(e) => setInfo({...info, modPassword: e.target.value})} />
+          <p className="text-[9px] text-indigo-400 font-bold uppercase mt-4 tracking-tighter">Evita eliminación accidental.</p>
+        </div>
+        <div className="space-y-4 pt-4 border-t border-indigo-800/50">
+          <button type="submit" className="w-full bg-cyan-400 text-black font-black py-5 sm:py-6 rounded-[30px] sm:rounded-[35px] border-b-[6px] sm:border-b-8 border-cyan-700 uppercase italic active:scale-95 transition">Actualizar Servidor</button>
+          <button type="button" onClick={onLogout} className="w-full bg-rose-500/10 text-rose-500 font-black py-5 rounded-[30px] sm:rounded-[35px] border-2 border-rose-500/20 uppercase italic active:scale-95 transition flex items-center justify-center gap-3">
+            <LogOut className="w-5 h-5" /> Cerrar Sesión y Salir
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+const NewAppointmentModal = ({ patients, initialPatientId, onClose, onSave }) => {
+  const [form, setForm] = useState({ patientId: initialPatientId || '', date: new Date().toISOString().split('T')[0], time: '', reason: 'Ajuste regular' });
+  return (
+    <Modal title="Agendar Cita" onClose={onClose}>
+      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-6 sm:space-y-8">
+        <div>
+          <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-4 mb-2 block">Paciente</label>
+          <select required className="w-full p-6 bg-indigo-900/50 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] font-bold text-white outline-none focus:border-cyan-400 uppercase" value={form.patientId} onChange={(e) => setForm({...form, patientId: e.target.value})}>
+            <option value="">(Seleccione de la base de datos)</option>
+            {patients.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{String(p.name)}</option>)}
+          </select>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <input type="date" required className="w-full p-6 bg-indigo-900/50 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] font-bold text-white outline-none focus:border-cyan-400" value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} />
+          <input type="time" required className="w-full p-6 bg-indigo-900/50 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] font-bold text-white outline-none focus:border-cyan-400" value={form.time} onChange={(e) => setForm({...form, time: e.target.value})} />
+        </div>
+        <textarea required placeholder="Motivo de la consulta..." className="w-full p-6 bg-indigo-900/50 border-2 border-indigo-800 rounded-[25px] sm:rounded-[30px] text-white outline-none focus:border-cyan-400 italic" value={form.reason} onChange={(e) => setForm({...form, reason: e.target.value})} rows="2" />
+        <button type="submit" className="w-full bg-cyan-400 text-black font-black py-6 rounded-[30px] sm:rounded-[35px] border-b-8 border-cyan-700 uppercase italic active:scale-95 transition shadow-xl text-lg sm:text-xl">Vincular Cita</button>
+      </form>
+    </Modal>
+  );
+};
+
+// --- VISTAS GLOBALES ---
+
+const IntroScreen = ({ onFinish }) => {
+  useEffect(() => { const t = setTimeout(onFinish, 3500); return () => clearTimeout(t); }, [onFinish]);
+  return (
+    <div className="fixed inset-0 bg-[#020617] z-[500] flex flex-col items-center justify-center text-white overflow-hidden p-10 text-center italic">
+      <div 
+        className="absolute inset-0 z-0 bg-center bg-cover bg-no-repeat opacity-40 mix-blend-screen scale-110 animate-fade-in"
+        style={{ 
+          backgroundImage: "url('https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=1200&q=80')",
+          filter: "contrast(1.2) hue-rotate(180deg) saturate(200%)" 
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-[#020617] z-0"></div>
+      
+      <div className="relative z-10 flex flex-col items-center mt-12 animate-pulse">
+        <h1 className="text-6xl sm:text-7xl font-black tracking-tighter text-cyan-400 mb-4 drop-shadow-[0_0_40px_rgba(34,211,238,0.8)] uppercase">QuiroApp</h1>
+        <p className="text-indigo-200 text-[10px] sm:text-[12px] font-black uppercase tracking-[1em] opacity-90 leading-none drop-shadow-md">Sistema Clínico</p>
+      </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-in { animation: fadeIn 1.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.1); } to { opacity: 1; transform: scale(1); } }
+      `}} />
+    </div>
+  );
+};
+
+const LoadingSpinner = () => (
+  <div className="flex flex-col items-center justify-center h-screen bg-[#020617] relative">
+    <SpineWatermark />
+    <div className="relative z-10">
+      <Loader2 className="w-20 h-20 sm:w-24 sm:h-24 text-cyan-500 animate-spin mb-6 opacity-30" />
+      <SpineLogo className="absolute inset-0 m-auto w-10 h-10 sm:w-12 sm:h-12 text-cyan-400 drop-shadow-[0_0_25px_rgba(34,211,238,1)]" />
+    </div>
+    <p className="text-cyan-400 font-black uppercase tracking-[0.5em] sm:tracking-[0.8em] text-[9px] sm:text-[10px] animate-pulse italic z-10">Conectando Bio-Nube...</p>
+  </div>
+);
+
+const AuthScreen = ({ onLogin, inProcess }) => (
+  <div className="flex flex-col items-center justify-center h-screen bg-[#020617] p-6 sm:p-8 text-center relative overflow-hidden text-white">
+    <SpineWatermark />
+    <div className="mb-10 sm:mb-12 z-10">
+      <div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-10 sm:p-12 rounded-[50px] sm:rounded-[60px] inline-block mb-8 sm:mb-10 shadow-2xl border border-white/20">
+        <SpineLogo className="w-20 h-20 sm:w-24 sm:h-24 text-white" />
+      </div>
+      <h2 className="text-5xl sm:text-6xl font-black italic uppercase tracking-tighter mb-4 leading-none">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+      <p className="text-indigo-400 font-black tracking-[0.3em] sm:tracking-[0.5em] uppercase text-[9px] sm:text-[10px] opacity-60 text-center">Clínica Digital Multiplataforma</p>
+    </div>
+    <div className="w-full max-w-sm space-y-4 z-10">
+      {inProcess ? (
+        <div className="p-8 sm:p-10 bg-white/5 rounded-[40px] sm:rounded-[45px] border border-white/10 backdrop-blur-md flex flex-col items-center">
+          <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-cyan-400 animate-spin mb-4 sm:mb-6" />
+          <p className="text-cyan-200 font-black tracking-widest text-[9px] sm:text-[10px] uppercase">Enlazando Sistema...</p>
+        </div>
+      ) : (
+        <button onClick={onLogin} className="w-full bg-cyan-400 text-black py-5 sm:py-6 rounded-[30px] sm:rounded-[35px] font-black flex items-center justify-center gap-3 hover:scale-[1.02] transition border-b-[6px] sm:border-b-8 border-cyan-700 uppercase italic shadow-2xl active:scale-95 text-sm sm:text-base">
+          <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-black" /> Registrar Dispositivo
+        </button>
+      )}
+    </div>
+  </div>
+);
+
+const BiometricLockScreen = ({ onUnlocked }) => {
+  const [scanning, setScanning] = useState(false);
+  const startScan = () => { setScanning(true); setTimeout(onUnlocked, 1500); };
+  return (
+    <div className="fixed inset-0 bg-[#020617] z-[300] flex flex-col items-center justify-center p-6 sm:p-10 text-center animate-fade-in text-white italic">
+      <SpineWatermark />
+      <div className={`w-36 h-36 sm:w-40 sm:h-40 rounded-[50px] sm:rounded-[60px] border-4 flex items-center justify-center mb-10 sm:mb-12 transition-all duration-500 ${scanning ? 'border-cyan-400 shadow-[0_0_40px_rgba(34,211,238,0.5)] bg-cyan-900/20' : 'border-indigo-800 bg-indigo-900/10'}`}>
+        {scanning ? <ScanFace className="w-16 h-16 sm:w-20 sm:h-20 text-cyan-400 animate-pulse" /> : <Fingerprint className="w-16 h-16 sm:w-20 sm:h-20 text-indigo-500" />}
+      </div>
+      <button onClick={startScan} disabled={scanning} className="bg-cyan-500 text-black px-10 sm:px-12 py-4 sm:py-5 rounded-[25px] sm:rounded-[30px] font-black uppercase tracking-widest active:scale-95 border-b-[6px] sm:border-b-8 border-cyan-700 italic disabled:opacity-50 text-xs sm:text-sm shadow-xl">
+        {scanning ? 'Verificando...' : 'Autenticación Requerida'}
+      </button>
+    </div>
+  );
+};
+
+// --- VISTAS DE PESTAÑAS PRINCIPALES ---
+
+const HomeTab = ({ appointments, patients, doctorName, clinicName, onGoToAppointments, onSendReminder }) => {
+  const today = new Date().toISOString().split('T')[0];
+  const todays = appointments.filter(app => String(app.date) === today).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+  
+  return (
+    <div className="py-6 space-y-6 sm:space-y-8 animate-fade-in text-white text-left">
+      <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-black rounded-[40px] sm:rounded-[60px] p-8 sm:p-12 text-white shadow-2xl relative border border-white/10 overflow-hidden">
+        <div className="relative z-10">
+          <p className="text-cyan-300 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] mb-3 sm:mb-4">{String(clinicName)}</p>
+          <h2 className="text-4xl sm:text-6xl font-black mb-3 leading-tight tracking-tighter italic">Dr. {String(doctorName)}</h2>
+          <div className="h-1.5 w-20 sm:w-24 bg-cyan-400 rounded-full mb-5 sm:mb-6 shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
+          <p className="text-indigo-200/80 font-bold uppercase text-[8px] sm:text-[9px] tracking-widest italic flex items-center gap-2"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" /> Sistema Seguro y Sincronizado</p>
+        </div>
+        <div className="absolute -bottom-10 -right-10 sm:-bottom-20 sm:-right-20 opacity-10"><SpineLogo className="w-64 h-64 sm:w-[400px] sm:h-[400px]" /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-indigo-900/30 backdrop-blur-xl p-6 sm:p-8 rounded-[30px] sm:rounded-[40px] border border-white/5 shadow-2xl flex flex-col items-center">
+          <Users className="w-8 h-8 sm:w-10 sm:h-10 text-cyan-400 mb-2 sm:mb-3 p-2 bg-cyan-400/10 rounded-2xl" />
+          <p className="text-[9px] sm:text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em] mb-1 text-center">Pacientes</p>
+          <p className="text-3xl sm:text-4xl font-black text-white">{String(patients.length)}</p>
+        </div>
+        <div className="bg-indigo-900/30 backdrop-blur-xl p-6 sm:p-8 rounded-[30px] sm:rounded-[40px] border border-white/5 shadow-2xl flex flex-col items-center">
+          <CalendarIcon className="w-8 h-8 sm:w-10 sm:h-10 text-violet-400 mb-2 sm:mb-3 p-2 bg-violet-400/10 rounded-2xl" />
+          <p className="text-[9px] sm:text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em] mb-1 text-center">Citas Totales</p>
+          <p className="text-3xl sm:text-4xl font-black text-white">{String(appointments.length)}</p>
+        </div>
+      </div>
+      <div className="bg-indigo-950/40 rounded-[40px] sm:rounded-[50px] p-6 sm:p-10 border border-white/5 shadow-inner">
+        <div className="flex justify-between items-center mb-6 sm:mb-8 px-2">
+          <h3 className="text-xl sm:text-2xl font-black text-white uppercase italic">Hoy</h3>
+          <button onClick={onGoToAppointments} className="text-[9px] sm:text-[10px] font-black text-cyan-400 bg-cyan-400/10 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-cyan-400/30 uppercase tracking-widest active:scale-95 transition">Ver Agenda</button>
+        </div>
+        {todays.length === 0 ? (
+           <div className="py-10 sm:py-12 flex flex-col items-center opacity-60">
+             <ClipboardList className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-800 mb-4" />
+             <p className="text-center text-indigo-400 font-black text-[10px] sm:text-xs uppercase tracking-[0.2em]">Agenda Libre por hoy</p>
+           </div>
+        ) : (
+          todays.map(app => {
+            const p = patients.find(pat => String(pat.id) === String(app.patientId));
+            return (
+              <div key={app.id} className="bg-indigo-900/40 backdrop-blur-md rounded-[30px] sm:rounded-[40px] p-4 sm:p-6 shadow-xl border border-indigo-400/10 flex items-center gap-4 sm:gap-6 mb-4 hover:bg-indigo-800/50 transition">
+                <div className="bg-gradient-to-b from-indigo-500 to-indigo-800 text-white rounded-[20px] sm:rounded-[25px] p-4 sm:p-6 text-center min-w-[75px] sm:min-w-[90px] shadow-xl border-b-4 border-indigo-950">
+                  <span className="block text-xl sm:text-3xl font-black italic tracking-tighter leading-none">{String(app.time)}</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <h4 className="font-black text-white text-base sm:text-xl truncate uppercase italic">{p ? String(p.name) : 'Cargando...'}</h4>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-cyan-400 uppercase tracking-widest opacity-80 mt-1 truncate">{String(app.reason)}</p>
+                </div>
+                <button onClick={() => onSendReminder(app)} className="p-3 sm:p-5 bg-cyan-500/10 text-cyan-400 rounded-full active:scale-90 transition border border-cyan-400/20">
+                  <Bell className="w-5 h-5 sm:w-7 sm:h-7" />
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
+const AppointmentsTab = ({ appointments, patients, onAddAppointment, doctorName, onSendReminder }) => {
+  const sorted = [...appointments].sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+  return (
+    <div className="py-6 space-y-6 pb-24 text-white">
+      <div className="flex justify-between items-center mb-8 px-2 sm:px-4">
+        <h2 className="text-3xl sm:text-5xl font-black tracking-tighter italic uppercase underline decoration-cyan-500 decoration-4 underline-offset-8">Agenda</h2>
+        <button onClick={onAddAppointment} className="bg-cyan-400 text-black p-4 sm:p-5 rounded-[20px] sm:rounded-[25px] active:scale-90 transition border-b-8 border-cyan-700 font-black shadow-[0_10px_30px_rgba(34,211,238,0.3)]"><Plus className="w-6 h-6 sm:w-8 sm:h-8 font-black" /></button>
+      </div>
+      <div className="space-y-4 sm:space-y-6">
+        {sorted.length === 0 && <p className="text-center text-indigo-600 font-black tracking-[0.2em] uppercase py-10 text-xs sm:text-sm">Agenda Vacía</p>}
+        {sorted.map(app => {
+          const p = patients.find(pat => String(pat.id) === String(app.patientId));
+          return (
+            <div key={app.id} className="bg-indigo-900/30 backdrop-blur-xl rounded-[35px] sm:rounded-[45px] p-5 sm:p-8 shadow-2xl border border-white/5 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 hover:bg-indigo-800/40 transition">
+              <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-0 bg-indigo-950 rounded-[25px] sm:rounded-[30px] p-4 sm:p-6 sm:min-w-[85px] border-2 border-indigo-800 shadow-inner w-full sm:w-auto">
+                <span className="text-[10px] text-cyan-400 font-black uppercase sm:mb-1 tracking-widest">{safeFormatDate(app.date)}</span>
+                <span className="text-2xl sm:text-4xl font-black text-white tracking-tighter leading-none">{safeGetDay(app.date)}</span>
+                <span className="text-[10px] text-cyan-400 font-black uppercase sm:hidden tracking-widest ml-auto">{String(app.time)}</span>
+              </div>
+              <div className="flex-1 overflow-hidden text-left w-full">
+                <h4 className="font-black text-white text-lg sm:text-2xl truncate uppercase italic mb-1 sm:mb-2">{p ? String(p.name) : 'Paciente Borrado'}</h4>
+                <p className="text-[10px] sm:text-xs text-indigo-300 font-medium mb-4 italic truncate">"{String(app.reason)}"</p>
+                <div className="flex gap-2 sm:gap-3">
+                  <button onClick={() => onSendReminder(app)} className="flex-1 bg-white text-black py-3 sm:py-4 rounded-[15px] sm:rounded-[20px] text-[8px] sm:text-[9px] font-black uppercase shadow-xl italic tracking-widest active:scale-95 transition text-center flex items-center justify-center gap-1"><Bell className="w-3 h-3" /> Recordar</button>
+                  <button onClick={() => openWhatsApp(p?.phone)} className="p-3 sm:p-4 bg-emerald-500/20 text-emerald-400 rounded-[15px] sm:rounded-[20px] border border-emerald-400/30 active:scale-95 transition"><MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 font-black" /></button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const PatientsTab = ({ patients, onSelectPatient, onAddPatient }) => {
+  const [term, setTerm] = useState('');
+  const normalizedTerm = normalizeText(term);
+  const filtered = patients.filter(p => normalizeText(p.name).includes(normalizedTerm));
+  
+  return (
+    <div className="py-6 flex flex-col h-full pb-24 text-white">
+      <div className="relative mb-6 sm:mb-8 group">
+        <Search className="absolute left-5 sm:left-6 top-5 sm:top-6 h-6 w-6 sm:h-7 sm:w-7 text-indigo-500" />
+        <input type="text" className="w-full pl-14 sm:pl-16 pr-6 sm:pr-8 py-5 sm:py-6 border-2 border-indigo-800 rounded-[30px] sm:rounded-[40px] bg-indigo-950 font-black text-white placeholder-indigo-700 outline-none text-base sm:text-xl shadow-2xl transition-all focus:border-cyan-500" placeholder="BUSCAR..." value={term} onChange={(e) => setTerm(e.target.value)} />
+      </div>
+      <div className="space-y-4">
+        {filtered.length === 0 && <p className="text-center text-indigo-600 font-black tracking-[0.2em] uppercase py-10 text-xs sm:text-sm">No se encontraron resultados</p>}
+        {filtered.map(p => (
+          <div key={p.id} onClick={() => onSelectPatient(p.id)} className="bg-indigo-900/20 backdrop-blur-md rounded-[30px] sm:rounded-[40px] p-4 sm:p-5 shadow-xl border border-indigo-400/10 flex items-center justify-between cursor-pointer hover:bg-white/10 transition-all text-left group">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-[20px] sm:rounded-[25px] bg-gradient-to-br from-indigo-500 via-indigo-700 to-violet-800 flex items-center justify-center text-white font-black text-2xl sm:text-4xl border-2 border-white/20 shadow-2xl italic tracking-tighter">{String(p.name).charAt(0)}</div>
+              <div>
+                <h4 className="font-black text-white text-lg sm:text-2xl tracking-tight uppercase italic mb-0.5 sm:mb-1 group-hover:text-cyan-400 transition-colors">{String(p.name)}</h4>
+                <p className="text-[9px] sm:text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em] opacity-80 italic">{String(p.phone)}</p>
+              </div>
+            </div>
+            <ChevronRight className="w-6 h-6 sm:w-8 h-8 text-indigo-800 group-hover:text-cyan-400 transition-colors" />
+          </div>
+        ))}
+      </div>
+      <button onClick={onAddPatient} className="fixed bottom-24 sm:bottom-28 right-4 sm:right-10 w-16 h-16 sm:w-24 sm:h-24 bg-cyan-400 text-black rounded-[25px] sm:rounded-[40px] shadow-[0_20px_50px_rgba(6,182,212,0.5)] flex items-center justify-center hover:scale-105 active:scale-90 transition-transform z-30 border-b-[6px] sm:border-b-[10px] border-cyan-700"><Plus className="w-8 h-8 sm:w-12 sm:h-12 font-black" /></button>
+    </div>
+  );
+};
+
+const PatientProfile = ({ patient, onBack, onAddHistory, onDelete, onScheduleAppointment }) => {
+  const [sumLoading, setSumLoading] = useState(false);
+  const [sum, setSum] = useState('');
+
+  const generateAI = async () => {
+    if (!patient?.histories?.length) return;
+    setSumLoading(true);
+    const text = patient.histories.map(h => `${h.date}: Dolor ${h.painLevel}. Notas: ${h.notes}`).join(' | ');
+    const res = await fetchGeminiWithRetry(`Genera un resumen analítico y profesional muy breve (máx 3 líneas) de la evolución quiropráctica del paciente en base a estas notas clínicas: ${text}`);
+    setSum(String(res)); 
+    setSumLoading(false);
+  };
+
+  if (!patient) return null;
+
+  let bmiValue = '--';
+  if (patient.weight && patient.height) {
+    const w = parseFloat(String(patient.weight).replace(',', '.'));
+    const h = parseFloat(String(patient.height).replace(',', '.')) / 100;
+    if (w > 0 && h > 0) {
+      bmiValue = String((w / (h * h)).toFixed(1));
+    }
+  }
+
+  return (
+    <div className="bg-[#020617] min-h-full pb-20 animate-fade-in relative text-white">
+      <div className="bg-gradient-to-b from-indigo-800 to-slate-950 text-white p-8 sm:p-12 pt-16 sm:pt-20 pb-20 rounded-b-[60px] sm:rounded-b-[80px] relative shadow-2xl border-b-[10px] border-indigo-900 text-center overflow-hidden">
+        <button onClick={onBack} className="absolute top-8 left-6 sm:left-10 p-4 sm:p-5 bg-white/10 rounded-full border border-white/20 active:scale-90 transition"><ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 rotate-180 text-cyan-400" /></button>
+        <button onClick={onDelete} className="absolute top-8 right-6 sm:right-10 p-4 sm:p-5 bg-rose-500/20 rounded-full border border-rose-500/40 text-rose-500 active:scale-90 transition"><Trash2 className="w-6 h-6 sm:w-8 sm:h-8" /></button>
+        
+        <div className="flex flex-col items-center z-10 relative mt-6">
+          <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[50px] bg-white p-2 flex items-center justify-center shadow-[0_0_80px_rgba(6,182,212,0.4)] mb-6 border-4 border-cyan-400">
+            <div className="w-full h-full bg-slate-950 rounded-[40px] flex items-center justify-center text-cyan-400 font-black text-6xl italic tracking-tighter">{String(patient.name).charAt(0)}</div>
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tighter mb-3 uppercase italic leading-none">{String(patient.name)}</h2>
+          <div className="flex items-center justify-center flex-wrap gap-4 mt-4">
+            <span className="bg-indigo-500/30 px-5 py-2 rounded-full text-[10px] font-black uppercase border border-indigo-400/40 text-indigo-100">{String(patient.age)} AÑOS</span>
+            <span className="bg-rose-500/20 px-5 py-2 rounded-full text-[10px] font-black uppercase border border-rose-500/30 flex items-center gap-2"><Droplet className="w-3 h-3 text-rose-500" /> {String(patient.bloodType || 'N/A')}</span>
+            <button onClick={() => openWhatsApp(patient.phone)} className="bg-emerald-500 text-black p-3 rounded-xl shadow-2xl active:scale-90 transition border-b-4 border-emerald-700 flex items-center justify-center"><MessageSquare className="w-5 h-5 font-black" /></button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 sm:px-8 -mt-12 relative z-10 space-y-8">
+        
+        {/* ACTION BAR */}
+        <div className="flex justify-center -mt-4 sm:-mt-6 z-20 relative">
+           <button onClick={() => onScheduleAppointment(patient.id)} className="bg-cyan-400 text-black px-8 sm:px-12 py-4 sm:py-5 rounded-full shadow-[0_15px_30px_rgba(34,211,238,0.3)] active:scale-95 transition border-b-[6px] border-cyan-700 flex items-center justify-center gap-3 font-black uppercase text-xs sm:text-sm italic">
+              <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6" /> Agendar Próxima Cita
+           </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-indigo-900/30 backdrop-blur-xl p-4 sm:p-6 rounded-[30px] sm:rounded-[40px] border border-indigo-400/10 text-center shadow-2xl">
+             <Weight className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400 mx-auto mb-2 opacity-50" />
+             <p className="text-[8px] sm:text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Peso</p>
+             <p className="text-xl sm:text-2xl font-black text-white">{String(patient.weight || '--')} <span className="text-[10px] text-indigo-400 font-medium">kg</span></p>
+          </div>
+          <div className="bg-indigo-900/30 backdrop-blur-xl p-4 sm:p-6 rounded-[30px] sm:rounded-[40px] border border-indigo-400/10 text-center shadow-2xl">
+             <Ruler className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400 mx-auto mb-2 opacity-50" />
+             <p className="text-[8px] sm:text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Estatura</p>
+             <p className="text-xl sm:text-2xl font-black text-white">{String(patient.height || '--')} <span className="text-[10px] text-indigo-400 font-medium">cm</span></p>
+          </div>
+          <div className="bg-cyan-900/20 backdrop-blur-xl p-4 sm:p-6 rounded-[30px] sm:rounded-[40px] border border-cyan-400/20 text-center shadow-2xl">
+             <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 mx-auto mb-2 opacity-50" />
+             <p className="text-[8px] sm:text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-1">IMC</p>
+             <p className="text-xl sm:text-2xl font-black text-cyan-300">{bmiValue}</p>
+          </div>
+        </div>
+
+        <div className="bg-indigo-900/20 backdrop-blur-xl p-6 sm:p-8 rounded-[40px] sm:rounded-[50px] border border-indigo-400/10 space-y-6 text-left shadow-2xl">
+          <div>
+            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] mb-2 flex items-center gap-2"><Bone className="w-4 h-4" /> Diagnóstico Principal</h4>
+            <p className="text-xl text-white font-black italic">{String(patient.mainDiagnosis || 'Condición no especificada')}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-indigo-800/40">
+            <div>
+              <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 italic text-left">Análisis Postural</h4>
+              <p className="text-xs text-indigo-200/80 leading-relaxed font-medium">↳ {String(patient.postural || 'Sin evaluación registrada.')}</p>
+            </div>
+            <div>
+              <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 italic text-left">Subluxaciones Detectadas</h4>
+              <p className="text-xs text-indigo-200/80 leading-relaxed font-medium">↳ {String(patient.subluxations || 'No se identificaron zonas de interferencia.')}</p>
+            </div>
+          </div>
+          <div className="pt-4 border-t border-indigo-800/40">
+            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] mb-2 flex items-center gap-2"><Activity className="w-4 h-4" /> Presión Arterial</h4>
+            <p className="text-sm text-indigo-100 font-bold italic leading-relaxed">{String(patient.pressure || 'No Registrada')}</p>
+          </div>
+          <div className="pt-4 border-t border-indigo-800/40">
+            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] mb-2 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Enfermedades Crónicas</h4>
+            <p className="text-sm text-indigo-100 font-bold italic leading-relaxed">"{String(patient.diseases || 'Ninguna condición médica reportada.')}"</p>
+          </div>
+        </div>
+
+        <div className="bg-indigo-900/40 backdrop-blur-3xl p-8 sm:p-10 rounded-[40px] sm:rounded-[60px] shadow-2xl border border-cyan-400/10 text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h3 className="font-black text-white flex items-center gap-3 text-xl sm:text-2xl tracking-widest uppercase italic"><Sparkles className="w-8 h-8 text-cyan-400 animate-pulse" /> BIO-LOG IA</h3>
+            {!sum && <button onClick={generateAI} disabled={sumLoading} className="w-full sm:w-auto text-[10px] font-black uppercase text-black bg-cyan-400 px-8 py-3.5 rounded-full active:scale-95 transition shadow-[0_0_20px_rgba(34,211,238,0.3)]">{sumLoading ? 'ANALIZANDO...' : 'GENERAR EVOLUCIÓN'}</button>}
+          </div>
+          {sum ? <p className="text-sm sm:text-lg text-indigo-50 font-bold italic leading-relaxed">"{sum}"</p> : <p className="text-[9px] text-indigo-400 font-black uppercase text-center py-6 border-2 border-dashed border-indigo-500/20 rounded-[30px] tracking-widest">Asistente Médico Disponible</p>}
+        </div>
+
+        <div className="pb-10">
+          <div className="flex justify-between items-center mb-8 px-2 text-left">
+            <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tighter uppercase italic underline decoration-cyan-400 decoration-2 underline-offset-8">HISTORIAL</h3>
+            <button onClick={onAddHistory} className="bg-white text-black p-4 sm:p-5 rounded-[20px] sm:rounded-[25px] shadow-2xl active:scale-90 transition border-b-8 border-slate-400 relative">
+              <Plus className="w-8 h-8 sm:w-10 sm:h-10 font-black" />
+              <Lock className="absolute -top-2 -right-2 w-5 h-5 text-indigo-900 bg-cyan-400 p-1 rounded-full" />
+            </button>
+          </div>
+          <div className="space-y-6">
+            {patient.histories && patient.histories.length > 0 ? (
+              patient.histories.map((h, i) => (
+                <div key={h.id || i} className="bg-indigo-900/20 backdrop-blur-xl p-6 sm:p-8 rounded-[40px] sm:rounded-[50px] shadow-xl border border-indigo-400/10 relative overflow-hidden group text-left hover:bg-indigo-800/30 transition">
+                  <div className="absolute top-0 left-0 w-3 h-full bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]"></div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-[10px] sm:text-[11px] font-black text-indigo-400 uppercase tracking-[0.3em] italic">{safeFormatDate(h.date)}</span>
+                    <span className="bg-rose-500 text-black px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest italic">DOLOR {String(h.painLevel)}/10</span>
+                  </div>
+                  <p className="text-lg sm:text-xl text-indigo-50 font-medium leading-relaxed italic">"{String(h.notes)}"</p>
+                  {h.areas && h.areas.length > 0 && (
+                     <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-indigo-800/30">
+                        {h.areas.map((a, j) => <span key={j} className="text-[8px] bg-indigo-950 text-cyan-400 px-3 py-1.5 rounded-xl font-black border border-indigo-800 uppercase tracking-widest">{String(a)}</span>)}
+                     </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12 opacity-60">
+                 <ClipboardList className="w-12 h-12 text-indigo-600 mx-auto mb-3" />
+                 <p className="text-indigo-400 font-black text-[10px] uppercase tracking-[0.3em]">No hay ajustes registrados</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MarketingTab = ({ doctorInfo }) => {
+  const [topic, setTopic] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [promos, setPromos] = useState([]);
+
+  const generatePromos = async () => {
+    if (!topic) return;
+    setLoading(true);
+    const prompt = `Eres experto en copywriting quiropráctico. Escribe 3 mensajes persuasivos con emojis para vender en redes o WhatsApp. Motivo: "${topic}". Clínica: "${doctorInfo.clinic}". Dr: "${doctorInfo.name}". Devuelve ÚNICAMENTE un JSON con un array llamado "promociones" de 3 strings simples (solo texto, no objetos).`;
+    try {
+      const response = await fetchGeminiWithRetry(prompt);
+      const jsonStr = String(response).replace(/```json|```/g, '').trim();
+      const data = JSON.parse(jsonStr);
+      if (data && Array.isArray(data.promociones)) {
+        setPromos(data.promociones.map(p => typeof p === 'string' ? p : JSON.stringify(p)));
+      } else {
+        setPromos(["Error de formato IA."]);
+      }
+    } catch (error) { setPromos(["Error de conexión con la IA de Google."]); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in pb-10 text-white">
+      <div className="bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-700 rounded-[30px] sm:rounded-[40px] p-6 sm:p-10 text-white shadow-2xl border border-white/20 text-center sm:text-left">
+        <h2 className="text-xl sm:text-3xl font-black mb-2 tracking-tighter flex items-center justify-center sm:justify-start gap-2 sm:gap-3"><Sparkles className="w-6 h-6 sm:w-10 sm:h-10 text-cyan-300 animate-pulse" /> MARKETING IA</h2>
+        <p className="text-indigo-100 text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em]">Creación Automática de Anuncios</p>
+      </div>
+
+      <div className="bg-indigo-900/40 backdrop-blur-md p-5 sm:p-8 rounded-[30px] sm:rounded-[40px] shadow-2xl border border-indigo-400/20 text-left">
+        <label className="block text-[8px] sm:text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2 sm:mb-3 ml-2">Propósito de Campaña</label>
+        <textarea placeholder="Ej: Mes del adulto mayor, Chequeo postural deportivo..." className="w-full p-4 sm:p-6 bg-indigo-950 border-2 border-indigo-800 rounded-[20px] sm:rounded-[30px] outline-none font-bold text-white shadow-inner h-24 sm:h-32 focus:border-cyan-400 transition-all uppercase text-[10px] sm:text-sm" value={topic} onChange={(e) => setTopic(e.target.value)} />
+        <button onClick={generatePromos} disabled={loading || !topic} className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-black py-4 sm:py-6 rounded-[20px] sm:rounded-[30px] shadow-[0_15px_30px_rgba(6,182,212,0.3)] mt-4 sm:mt-5 disabled:opacity-40 flex items-center justify-center gap-2 sm:gap-3 active:scale-95 transition-transform uppercase italic text-xs sm:text-base">
+          {loading ? <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 animate-spin" /> : <Megaphone className="w-4 h-4 sm:w-6 sm:h-6" />} Generar Copywriting
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {promos.map((promo, i) => {
+          const textToRender = typeof promo === 'string' ? promo : JSON.stringify(promo);
+          return (
+            <div key={i} className="bg-white/5 backdrop-blur-md p-5 sm:p-8 rounded-[25px] sm:rounded-[35px] border border-white/10 relative text-left shadow-lg">
+              <p className="text-[11px] sm:text-sm text-indigo-50 font-medium leading-relaxed mb-4 sm:mb-6 italic">"{textToRender}"</p>
+              <button onClick={() => { navigator.clipboard.writeText(textToRender); }} className="px-4 sm:px-5 py-2 sm:py-2.5 bg-cyan-500/10 text-cyan-400 rounded-full text-[8px] sm:text-[9px] font-black uppercase border border-cyan-400/20 active:bg-cyan-500 active:text-black transition-all shadow-sm">Copiar Mensaje</button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE PRINCIPAL ---
+export default function App() {
+  const [showIntro, setShowIntro] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authInProcess, setAuthInProcess] = useState(false);
+  const [isBiometricNeeded, setIsBiometricNeeded] = useState(false);
+  const [doctorInfo, setDoctorInfo] = useState({ name: 'Especialista', clinic: 'QuiroClínica Pro', modPassword: '' });
+  const [activeTab, setActiveTab] = useState('home');
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
+  
+  const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+
+  const [modals, setModals] = useState({ appointment: false, patient: false, history: false, settings: false, password: false });
+  const [pendingAction, setPendingAction] = useState(null);
+  const [prefilledPatientId, setPrefilledPatientId] = useState("");
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('quiro_registered');
+      setIsBiometricNeeded(false);
+      setModals({ appointment: false, patient: false, history: false, settings: false, password: false });
+    } catch (err) { console.error("Error Logout:", err); }
+  };
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          try {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } catch (e) {
+            await signInAnonymously(auth);
+          }
+        }
+        else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) { console.error("Init Auth:", err); }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        if (localStorage.getItem('quiro_registered')) setIsBiometricNeeded(true);
+      } else {
+        setIsBiometricNeeded(false);
+      }
+      setLoading(false);
+      setAuthInProcess(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleInitialLogin = async () => {
+    setAuthInProcess(true);
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        try {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } catch (e) {
+          await signInAnonymously(auth);
+        }
+      }
+      else {
+        await signInAnonymously(auth);
+      }
+      localStorage.setItem('quiro_registered', 'true');
+    } catch (err) { setAuthInProcess(false); }
+  };
+
+  useEffect(() => {
+    if (!user || isBiometricNeeded) return;
+    
+    getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'))
+      .then(snap => { 
+        if (snap.exists()) setDoctorInfo(snap.data()); 
+      })
+      .catch(err => console.warn("No se pudo cargar el perfil, es posible que el dispositivo esté offline.", err));
+    
+    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => {
+      setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => console.warn("Modo offline: Error al leer pacientes", err));
+    
+    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => {
+      setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => console.warn("Modo offline: Error al leer citas", err));
+
+    return () => { unsubPat(); unsubApp(); };
+  }, [user, isBiometricNeeded]);
+
+  const verifyAndExecute = (action) => {
+    if (!doctorInfo.modPassword) action();
+    else { setPendingAction(() => action); setModals(prev => ({ ...prev, password: true })); }
+  };
+
+  const handleSaveSettings = async (newData) => {
+    if (!user) return;
+    try {
+      setDoctorInfo(newData);
+      setModals(prev => ({ ...prev, settings: false }));
+      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), newData);
+    } catch(e) { console.error("Error al guardar ajustes", e); }
+  };
+
+  const handleAddPatient = async (data) => {
+    if (!user) return;
+    try {
+      setModals(prev => ({ ...prev, patient: false }));
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() });
+    } catch(e) { console.error("Error al agregar paciente", e); }
+  };
+
+  const handleAddAppointment = async (data) => {
+    if (!user) return;
+    try {
+      setModals(prev => ({ ...prev, appointment: false }));
+      setPrefilledPatientId("");
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), data);
+    } catch(e) { console.error("Error al agregar cita", e); }
+  };
+
+  const handleAddHistory = async (patientId, historyData) => {
+    if (!user) return;
+    try {
+      setModals(prev => ({ ...prev, history: false }));
+      const patRef = doc(db, 'artifacts', appId, 'users', user.uid, 'patients', patientId);
+      const patData = patients.find(p => String(p.id) === String(patientId));
+      if(patData) {
+        await updateDoc(patRef, { histories: [{ ...historyData, id: Date.now() }, ...(patData.histories || [])] });
+      }
+    } catch(e) { console.error("Error al guardar historial", e); }
+  };
+
+  const handleDeletePatient = async (patientId) => {
+    if (!user) return;
+    try {
+      setSelectedPatientId(null);
+      await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', patientId));
+      const appointmentsToDelete = appointments.filter(a => String(a.patientId) === String(patientId));
+      for (const appt of appointmentsToDelete) {
+         await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', appt.id));
+      }
+    } catch(e) { console.error("Error al eliminar paciente", e); }
+  };
+
+  if (showIntro) return <IntroScreen onFinish={() => setShowIntro(false)} />;
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <AuthScreen onLogin={handleInitialLogin} inProcess={authInProcess} />;
+  if (isBiometricNeeded) return <BiometricLockScreen onUnlocked={() => setIsBiometricNeeded(false)} />;
+
+  const renderContent = () => {
+    if (selectedPatientId) {
+      return (
+        <PatientProfile 
+          patient={patients.find(p => String(p.id) === String(selectedPatientId))} 
+          onBack={() => setSelectedPatientId(null)}
+          onAddHistory={() => verifyAndExecute(() => setModals(prev => ({ ...prev, history: true })))}
+          onDelete={() => verifyAndExecute(() => handleDeletePatient(selectedPatientId))}
+          onScheduleAppointment={(pid) => {
+            setPrefilledPatientId(pid);
+            setModals(prev => ({ ...prev, appointment: true }));
+          }}
+        />
+      );
+    }
+    switch (activeTab) {
+      case 'home': 
+        return <HomeTab appointments={appointments} patients={patients} doctorName={doctorInfo.name} clinicName={doctorInfo.clinic} onGoToAppointments={() => setActiveTab('appointments')} onSendReminder={(app) => openWhatsApp(patients.find(p => String(p.id) === String(app.patientId))?.phone, `Recuerde su cita hoy con Dr. ${doctorInfo.name}`)} />;
+      case 'appointments': 
+        return <AppointmentsTab appointments={appointments} patients={patients} doctorName={doctorInfo.name} onAddAppointment={() => { setPrefilledPatientId(""); setModals(prev => ({ ...prev, appointment: true })); }} onSendReminder={(app) => openWhatsApp(patients.find(p => String(p.id) === String(app.patientId))?.phone, `Recuerde su cita hoy con Dr. ${doctorInfo.name}`)} />;
+      case 'patients': 
+        return <PatientsTab patients={patients} onSelectPatient={setSelectedPatientId} onAddPatient={() => setModals(prev => ({ ...prev, patient: true }))} />;
+      case 'marketing': 
+        return <MarketingTab doctorInfo={doctorInfo} />;
+      default: 
+        return <HomeTab appointments={appointments} patients={patients} doctorName={doctorInfo.name} clinicName={doctorInfo.clinic} onGoToAppointments={() => setActiveTab('appointments')} onSendReminder={(app) => openWhatsApp(patients.find(p => String(p.id) === String(app.patientId))?.phone, `Recuerde su cita hoy con Dr. ${doctorInfo.name}`)} />;
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-[#020617] font-sans text-white animate-fade-in relative overflow-hidden">
+      <SpineWatermark />
+      
+      <header className="bg-indigo-900/80 backdrop-blur-xl text-white p-4 shadow-2xl safe-top flex justify-between items-center z-50 border-b border-indigo-400/20">
+        <div className="flex items-center gap-3">
+          <SpineLogo className="w-8 h-8 sm:w-9 sm:h-9 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+          <h1 className="text-xl sm:text-2xl font-black tracking-tighter uppercase italic hidden min-[400px]:block text-white">Quiro<span className="text-cyan-400 font-bold text-white">App</span></h1>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
+          <Cloud className={`w-3 h-3 sm:w-4 sm:h-4 ${isOnline ? 'text-cyan-400' : 'text-rose-500 animate-pulse'}`} />
+          <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest hidden sm:block">{isOnline ? 'CONECTADO' : 'SIN RED'}</span>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button onClick={() => setModals(prev => ({ ...prev, settings: true }))} className="p-2 sm:p-2.5 bg-indigo-800/50 rounded-xl active:scale-90 transition border border-white/5"><Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white" /></button>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto pb-28 sm:pb-32 z-10 max-w-4xl mx-auto w-full px-2 sm:px-6">
+        {renderContent()}
+      </main>
+
+      {!selectedPatientId && (
+        <nav className="fixed bottom-0 w-full bg-indigo-950/90 backdrop-blur-2xl border-t border-indigo-400/30 flex justify-around py-3 sm:py-5 pb-safe z-40">
+          <div className="flex justify-around w-full max-w-4xl mx-auto">
+            <NavItem icon={<Home />} label="Inicio" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+            <NavItem icon={<CalendarIcon />} label="Agenda" isActive={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
+            <NavItem icon={<Users />} label="Pacientes" isActive={activeTab === 'patients'} onClick={() => setActiveTab('patients')} />
+            <NavItem icon={<Megaphone />} label="Marketing" isActive={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} />
+          </div>
+        </nav>
+      )}
+
+      {/* Modales Compartidos */}
+      {modals.password && <PasswordPromptModal correctPassword={doctorInfo.modPassword} onSuccess={() => { if(pendingAction) pendingAction(); setModals(prev => ({ ...prev, password: false })); setPendingAction(null); }} onClose={() => { setModals(prev => ({ ...prev, password: false })); setPendingAction(null); }} />}
+      {modals.appointment && <NewAppointmentModal patients={patients} initialPatientId={prefilledPatientId} onClose={() => { setModals(prev => ({ ...prev, appointment: false })); setPrefilledPatientId(""); }} onSave={handleAddAppointment} />}
+      {modals.patient && <NewPatientModal onClose={() => setModals(prev => ({ ...prev, patient: false }))} onSave={handleAddPatient} />}
+      {modals.history && selectedPatientId && <NewHistoryModal onClose={() => setModals(prev => ({ ...prev, history: false }))} onSave={(data) => handleAddHistory(selectedPatientId, data)} />}
+      {modals.settings && <SettingsModal currentInfo={doctorInfo} onClose={() => setModals(prev => ({ ...prev, settings: false }))} onSave={handleSaveSettings} onLogout={handleLogout} />}
+    </div>
+  );
+}
