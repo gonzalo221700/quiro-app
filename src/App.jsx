@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
+  signInWithCustomToken, 
   signInAnonymously, 
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
   signOut,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   EmailAuthProvider,
@@ -1360,8 +1363,8 @@ export default function App() {
     };
     checkTrialAndSync();
     
-    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (error) => console.error("Error cargando pacientes:", error));
+    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (error) => console.error("Error cargando citas:", error));
     
     return () => { unsubPat(); unsubApp(); };
   }, [user]);
@@ -1370,7 +1373,7 @@ export default function App() {
     if (user && doctorInfo?.isAdmin) {
       const unsubCodes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'codes'), (snap) => {
         setAdminCodes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      }, (error) => console.error("Error cargando códigos:", error));
       return () => unsubCodes();
     }
   }, [user, doctorInfo?.isAdmin]);
@@ -1442,8 +1445,11 @@ export default function App() {
   };
 
   const handleActivateCode = async (codeStr) => {
+    if (!codeStr) return alert("Por favor, ingresa un código.");
+    const cleanCode = codeStr.trim().toUpperCase();
+    
     try {
-      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr);
+      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', cleanCode);
       const codeSnap = await getDoc(codeRef);
       if (codeSnap.exists() && !codeSnap.data().used) {
          const codeData = codeSnap.data();
@@ -1469,7 +1475,8 @@ export default function App() {
          alert("Este código es inválido o ya ha sido utilizado.");
       }
     } catch (e) {
-      alert("Error al verificar el código. Revisa tu conexión a internet.");
+      console.error("Error activando código:", e);
+      alert(`Error técnico: ${e.message}. Revisa que tu internet sea estable y que hayas iniciado sesión.`);
     }
   };
 
