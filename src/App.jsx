@@ -2,14 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  signInWithCustomToken, 
   signInAnonymously, 
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
   signOut,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   EmailAuthProvider,
@@ -48,9 +45,8 @@ import {
   Lock,
   Activity,
   ShieldAlert,
-  ShieldCheck,
-  Mail,
   CheckCircle2,
+  Mail,
   Ruler,
   Weight,
   UserCircle,
@@ -88,6 +84,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
 const appId = firebaseConfig.projectId;
 const apiKey = ""; // API Key de Gemini
 
@@ -205,52 +202,65 @@ const PremiumTab = ({ onActivateCode }) => {
 };
 
 // --- PANTALLA SECRETA DE ADMINISTRADOR ---
-const AdminTab = ({ codes, onGenerateCode }) => (
-  <div className="animate-fade-in space-y-6 text-left py-6 px-2">
-    <div className="flex items-center gap-3 mb-6">
-      <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div>
-      <div>
-        <h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2>
-        <p className="text-[10px] text-rose-200/50 uppercase tracking-widest">Suscripciones y Códigos PRO</p>
+const AdminTab = ({ codes, onGenerateCode }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGen = async (type, days) => {
+    setIsGenerating(true);
+    await onGenerateCode(type, days);
+    setIsGenerating(false);
+  };
+
+  return (
+    <div className="animate-fade-in space-y-6 text-left py-6 px-2">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div>
+        <div>
+          <h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2>
+          <p className="text-[10px] text-rose-200/50 uppercase tracking-widest">Suscripciones e Historial</p>
+        </div>
+      </div>
+
+      <div className="flex gap-3 mb-8">
+        <button onClick={() => handleGen('Mensual', 30)} disabled={isGenerating} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition border-b-4 border-indigo-700 flex flex-col items-center gap-1 disabled:opacity-50">
+          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Mensual
+        </button>
+        <button onClick={() => handleGen('Anual', 365)} disabled={isGenerating} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(244,63,94,0.3)] active:scale-95 transition border-b-4 border-rose-800 flex flex-col items-center gap-1 disabled:opacity-50">
+          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Anual
+        </button>
+      </div>
+
+      <h3 className="text-sm font-black uppercase text-indigo-400 mb-4 tracking-widest">Historial de Códigos ({codes.length})</h3>
+      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+        {codes.length === 0 ? (
+          <p className="text-center opacity-40 py-10 text-xs uppercase tracking-widest">Sin códigos generados</p>
+        ) : (
+          codes.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map(c => (
+            <div key={c.id} className={`bg-slate-900 p-5 rounded-3xl border flex items-center justify-between shadow-lg ${c.used ? 'border-rose-500/30 opacity-50' : 'border-emerald-500/50'}`}>
+              <div>
+                <p className="font-mono text-xl font-black tracking-widest text-white">{String(c.id)}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className={`text-[9px] font-black uppercase tracking-widest ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {c.used ? 'Utilizado' : `Disponible - ${c.type || 'PRO'}`}
+                  </p>
+                  <span className="text-[8px] text-slate-500 uppercase px-2 py-0.5 bg-white/5 rounded-md">{safeFormatDate(c.createdAt)}</span>
+                </div>
+              </div>
+              {!c.used && (
+                <button 
+                  onClick={() => { navigator.clipboard.writeText(c.id); alert("Código copiado al portapapeles"); }}
+                  className="p-3 bg-white/5 rounded-xl text-white hover:bg-white/10 transition"
+                >
+                  <Copy className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
-
-    <div className="flex gap-3 mb-8">
-      <button onClick={() => onGenerateCode('Mensual', 30)} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition border-b-4 border-indigo-700 flex flex-col items-center gap-1">
-        <Plus className="w-4 h-4" /> Mensual
-      </button>
-      <button onClick={() => onGenerateCode('Anual', 365)} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(244,63,94,0.3)] active:scale-95 transition border-b-4 border-rose-800 flex flex-col items-center gap-1">
-        <Plus className="w-4 h-4" /> Anual
-      </button>
-    </div>
-
-    <h3 className="text-sm font-black uppercase text-indigo-400 mb-4 tracking-widest">Códigos Recientes</h3>
-    <div className="space-y-3">
-      {codes.length === 0 ? (
-        <p className="text-center opacity-40 py-10 text-xs uppercase tracking-widest">Sin códigos generados</p>
-      ) : (
-        codes.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map(c => (
-          <div key={c.id} className={`bg-slate-900 p-5 rounded-3xl border flex items-center justify-between shadow-lg ${c.used ? 'border-rose-500/30 opacity-50' : 'border-emerald-500/50'}`}>
-            <div>
-              <p className="font-mono text-xl font-black tracking-widest text-white">{String(c.id)}</p>
-              <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>
-                {c.used ? 'Utilizado' : `Disponible - ${c.type || 'PRO'}`}
-              </p>
-            </div>
-            {!c.used && (
-              <button 
-                onClick={() => { navigator.clipboard.writeText(c.id); alert("Código copiado!"); }}
-                className="p-3 bg-white/5 rounded-xl text-white hover:bg-white/10 transition"
-              >
-                <Copy className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        ))
-      )}
-    </div>
-  </div>
-);
+  );
+};
 
 // --- COMPONENTES DE PANTALLA PRINCIPAL ---
 
@@ -1340,7 +1350,7 @@ export default function App() {
     const checkTrialAndSync = async () => {
       try {
         const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDoc(docRef);
+        const snap = await getDoc(docRef); 
         let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
         if (!snap.exists()) await setDoc(docRef, profileData);
         else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
@@ -1359,7 +1369,7 @@ export default function App() {
           else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
         };
         calculate(); 
-      } catch (e) { console.warn("Modo offline."); } finally { setLoading(false); }
+      } catch (e) { console.warn("Modo offline o error leyendo perfil:", e); } finally { setLoading(false); }
     };
     checkTrialAndSync();
     
@@ -1450,7 +1460,7 @@ export default function App() {
     
     try {
       const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', cleanCode);
-      const codeSnap = await getDoc(codeRef);
+      const codeSnap = await getDoc(codeRef); 
       if (codeSnap.exists() && !codeSnap.data().used) {
          const codeData = codeSnap.data();
          const activationTime = Date.now();
@@ -1476,7 +1486,13 @@ export default function App() {
       }
     } catch (e) {
       console.error("Error activando código:", e);
-      alert(`Error técnico: ${e.message}. Revisa que tu internet sea estable y que hayas iniciado sesión.`);
+      if (e.message.includes("offline")) {
+        alert("⚠️ Error de Red: Tu navegador o red bloqueó la conexión a la base de datos.");
+      } else if (e.message.includes("permission-denied") || e.message.includes("Missing or insufficient permissions")) {
+        alert("⚠️ Error de Permisos: Las reglas de Firebase aún están bloqueando el acceso. Verifica tu consola.");
+      } else {
+        alert(`Error técnico: ${e.message}`);
+      }
     }
   };
 
@@ -1485,22 +1501,25 @@ export default function App() {
       const prefix = type === 'Mensual' ? 'MES-' : 'ANU-';
       const newCode = prefix + Math.random().toString(36).substring(2, 8).toUpperCase();
       
-      // Intentamos subirlo a Firebase
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), {
+      const codeData = {
           used: false,
           type: type,
           durationDays: durationDays,
           createdAt: new Date().toISOString(),
           createdBy: user?.uid || 'admin'
-      });
-      
-      // Si la línea de arriba tiene éxito, lanzamos este mensaje
-      alert(`✅ Código ${newCode} generado y guardado exitosamente en tu historial.`);
+      };
+
+      // Actualización optimista: lo mostramos de inmediato en pantalla
+      setAdminCodes(prev => [{ id: newCode, ...codeData }, ...prev]);
+      alert(`✅ Código ${newCode} generado.\n\nYa está visible en tu historial.`);
+
+      // Lo enviamos a la nube en segundo plano
+      setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), codeData)
+        .catch(e => console.warn("Sincronización de código en segundo plano pausada:", e));
       
     } catch (error) {
-      // Si falla silenciosamente, el bloque atrapará el error y te dirá exactamente por qué
       console.error("Error al guardar código:", error);
-      alert(`❌ Error de Sistema al guardar código.\n\nMotivo: ${error.message}\n\nAsegúrate de haber guardado las "Reglas Maestras" en tu consola de Firebase Firestore.`);
+      alert(`❌ Error al generar código: ${error.message}`);
     }
   };
 
