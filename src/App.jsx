@@ -1481,14 +1481,27 @@ export default function App() {
   };
 
   const handleGenerateAdminCode = async (type, durationDays) => {
-    const prefix = type === 'Mensual' ? 'MES-' : 'ANU-';
-    const newCode = prefix + Math.random().toString(36).substring(2, 8).toUpperCase();
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), {
-        used: false,
-        type: type,
-        durationDays: durationDays,
-        createdAt: new Date().toISOString()
-    });
+    try {
+      const prefix = type === 'Mensual' ? 'MES-' : 'ANU-';
+      const newCode = prefix + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Intentamos subirlo a Firebase
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), {
+          used: false,
+          type: type,
+          durationDays: durationDays,
+          createdAt: new Date().toISOString(),
+          createdBy: user?.uid || 'admin'
+      });
+      
+      // Si la línea de arriba tiene éxito, lanzamos este mensaje
+      alert(`✅ Código ${newCode} generado y guardado exitosamente en tu historial.`);
+      
+    } catch (error) {
+      // Si falla silenciosamente, el bloque atrapará el error y te dirá exactamente por qué
+      console.error("Error al guardar código:", error);
+      alert(`❌ Error de Sistema al guardar código.\n\nMotivo: ${error.message}\n\nAsegúrate de haber guardado las "Reglas Maestras" en tu consola de Firebase Firestore.`);
+    }
   };
 
   const handleUpgradeRequest = () => {
