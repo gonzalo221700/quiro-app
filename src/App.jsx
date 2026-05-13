@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
+  signInWithCustomToken, 
   signInAnonymously, 
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
   signOut,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   EmailAuthProvider,
@@ -15,10 +18,12 @@ import {
 } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   collection, 
   doc, 
   setDoc, 
   getDoc, 
+  getDocFromServer, 
   onSnapshot, 
   addDoc, 
   updateDoc,
@@ -45,8 +50,9 @@ import {
   Lock,
   Activity,
   ShieldAlert,
-  CheckCircle2,
+  ShieldCheck,
   Mail,
+  CheckCircle2,
   Ruler,
   Weight,
   UserCircle,
@@ -83,27 +89,37 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 const appId = firebaseConfig.projectId;
-const apiKey = ""; // API Key de Gemini
+const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integrada
 
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
 // --- UTILIDADES ---
 const fetchGeminiWithRetry = async (prompt) => {
-  if (!apiKey) return "Configura tu API Key para usar la IA.";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    });
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  } catch (error) { return "Error de conexión con la IA."; }
+  let retries = 5;
+  let delay = 1000;
+  
+  while (retries > 0) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      if (!response.ok) throw new Error('Error HTTP');
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el resumen.';
+    } catch (error) {
+      retries -= 1;
+      if (retries === 0) return "Error de conexión con la IA. Asegúrate de haber colocado tu 'apiKey' en el código de la aplicación.";
+      await new Promise(r => setTimeout(r, delay));
+      delay *= 2;
+    }
+  }
 };
 
 const openWhatsApp = (phone, message = "") => {
@@ -365,10 +381,13 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const [activeSection, setActiveSection] = useState('historial'); 
   
   const generateAI = async () => {
-    if (!patient.histories?.length) return;
+    if (!patient.histories || patient.histories.length === 0) {
+      setSum("Para usar la IA, necesitas registrar al menos una sesión o ajuste en el historial del paciente.");
+      return;
+    }
     setLoadingIA(true);
-    const text = patient.histories.map(h => `${h.date}: Dolor ${h.painLevel}. ${h.notes}`).join(' | ');
-    const res = await fetchGeminiWithRetry(`Resume la evolución clínica de este paciente de forma breve: ${text}`);
+    const text = patient.histories.map(h => `${h.date}: Dolor ${h.painLevel}/10. ${h.notes}`).join(' | ');
+    const res = await fetchGeminiWithRetry(`Actúa como un quiropráctico profesional y analítico. Escribe un resumen de evolución clínica fluido y conciso (máximo 3 líneas) basado estrictamente en las siguientes notas y niveles de dolor de los ajustes realizados al paciente: ${text}`);
     setSum(res);
     setLoadingIA(false);
   };
@@ -483,7 +502,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
         </div>
       )}
 
-      {/* SECCIÓN NUEVA: PLANO ANATÓMICO Y POSTURA */}
+      {/* SECCIÓN 6: PLANO ANATÓMICO Y POSTURA */}
       {activeSection === 'anatomia' && (
         <div className="space-y-4 animate-fade-in">
           <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
@@ -512,7 +531,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
         </div>
       )}
 
-      {/* SECCIÓN: TRATAMIENTO Y PLAN */}
+      {/* SECCIÓN 7: TRATAMIENTO Y PLAN */}
       {activeSection === 'tratamiento' && (
         <div className="space-y-4 animate-fade-in">
           <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
@@ -534,7 +553,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
         </div>
       )}
 
-      {/* SECCIÓN: SESIONES E IA */}
+      {/* SECCIÓN 8: SESIONES E IA */}
       {activeSection === 'sesiones' && (
         <div className="animate-fade-in">
           <div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner">
@@ -657,7 +676,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     const headers = [
       'Nombre', 'Teléfono', 'Sexo', 'Edad', 'Fecha de Nac.', 'Lugar Nac.', 'Ocupación', 'Estado Civil', 'Dirección', 'Localidad', 
       'Peso(kg)', 'Altura(cm)', 'Tipo de Sangre', 'Presión', 'Motivo Consulta', 'Enfermedad Actual', 'Exámenes', 'Ant. Médicos', 'Ant. Patológicos', 'Ant. No Patológicos', 
-      'Precauciones (Alertas)', 'Dx Quiropráctico', 'Dx General', 'Subluxaciones', 
+      'Medicamentos Actuales', 'Precauciones (Alertas)', 'Dx Quiropráctico', 'Dx General', 'Subluxaciones', 
       'Postura Anterior', 'Postura Posterior', 'Postura Lateral', 'Desviaciones Posturales', 'Notas Anatómicas',
       'Sueño', 'Cuidado Personal', 'Desplazamientos', 'Recreación', 'Objetivos', 'Plan Tratamiento', 'Observaciones', 'Técnicas', 'Recomendaciones Casa',
       'Ajustes', 'Fecha Registro'
@@ -667,7 +686,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
       const row = [
         p.name || '', p.phone || '', p.gender || '', p.age || '', p.birthDate || '', p.birthPlace || '', p.occupation || '', p.maritalStatus || '', p.address || '', p.location || '',
         p.weight || '', p.height || '', p.bloodType || '', p.pressure || '', p.consultationReason || '', p.currentIllness || '', p.complementaryExams || '', p.relevantMedicalHistory || '', p.pathological || '', p.nonPathological || '',
-        (p.redFlags || []).join('; '), p.chiropracticDiagnosis || '', p.generalDiagnosis || '', p.subluxations || '',
+        p.medications || '', (p.redFlags || []).join('; '), p.chiropracticDiagnosis || '', p.generalDiagnosis || '', p.subluxations || '',
         p.postureAnterior || '', p.posturePosterior || '', p.postureLateral || '', (p.posturalDeviations || []).join('; '), p.anatomicalPlaneNotes || '',
         p.sleepQuality || '', p.personalCare || '', p.mobility || '', p.recreation || '', p.treatmentGoals || '', p.treatmentPlan || '', p.observations || '', (p.chiropracticTechniques || []).join('; '), p.additionalRecommendations || '',
         p.histories ? p.histories.length : 0, p.createdAt ? new Date(p.createdAt).toLocaleDateString() : ''
@@ -1005,10 +1024,10 @@ const NewPatientModal = ({ onClose, onSave }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ 
     name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '',
-    relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '',
+    relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '',
     redFlags: [], chiropracticDiagnosis: '', subluxations: '',
     observations: '', treatmentPlan: '', treatmentGoals: '',
-    sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: 'O+', pressure: '',
+    sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '',
     chiropracticTechniques: [], additionalRecommendations: '',
     posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '',
     histories: []
@@ -1054,13 +1073,15 @@ const NewPatientModal = ({ onClose, onSave }) => {
         
         {step === 2 && (<div className="space-y-4 animate-fade-in text-left">
           <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">2. Historial Clínico</label>
-          <textarea placeholder="Motivo de Consulta" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} />
+          <textarea placeholder="Motivo de Consulta *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} />
           <textarea placeholder="Enfermedad Actual (Descripción)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.currentIllness} onChange={e => setForm({...form, currentIllness: e.target.value})} />
           <textarea placeholder="Antecedentes Médicos Relevantes" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.relevantMedicalHistory} onChange={e => setForm({...form, relevantMedicalHistory: e.target.value})} />
           <div className="grid grid-cols-2 gap-3">
             <textarea placeholder="Ant. Patológicos (Cirugías, Alergias)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
             <textarea placeholder="Ant. No Patológicos (Hábitos, Ejercicio)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
           </div>
+          {/* CAMPO RECTIFICADO Y AÑADIDO: Medicamentos */}
+          <textarea placeholder="Medicamentos que toma actualmente..." className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.medications} onChange={e => setForm({...form, medications: e.target.value})} />
           <textarea placeholder="Exámenes Complementarios (Rayos X, RM, etc. según diagnóstico visual)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.complementaryExams} onChange={e => setForm({...form, complementaryExams: e.target.value})} />
         </div>)}
 
@@ -1350,7 +1371,7 @@ export default function App() {
     const checkTrialAndSync = async () => {
       try {
         const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDoc(docRef); 
+        const snap = await getDocFromServer(docRef); 
         let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
         if (!snap.exists()) await setDoc(docRef, profileData);
         else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
@@ -1509,11 +1530,9 @@ export default function App() {
           createdBy: user?.uid || 'admin'
       };
 
-      // Actualización optimista: lo mostramos de inmediato en pantalla
       setAdminCodes(prev => [{ id: newCode, ...codeData }, ...prev]);
       alert(`✅ Código ${newCode} generado.\n\nYa está visible en tu historial.`);
 
-      // Lo enviamos a la nube en segundo plano
       setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), codeData)
         .catch(e => console.warn("Sincronización de código en segundo plano pausada:", e));
       
