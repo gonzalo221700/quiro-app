@@ -97,58 +97,44 @@ const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integr
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
-// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL ---
+// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL (CONEXIÓN DIRECTA Y ÚNICA) ---
 const fetchGeminiWithRetry = async (prompt) => {
   if (!apiKey) return "❌ Configura tu API Key para usar la IA.";
   
-  // Array de rutas de emergencia. Intentará la más nueva y estable primero en V1BETA
-  const modelsToTry = [
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
-  ];
+  // Conexión DIRECTA al modelo oficial soportado en 2024+. Sin listas de respaldos.
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
   
-  let lastErrorData = null;
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    
+    const data = await response.json();
 
-  for (const url of modelsToTry) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
+    if (response.ok) {
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Resumen generado, pero no se encontró texto legible.';
+    } else {
+      const errorMsg = data.error?.message || 'Error desconocido del servidor';
+      console.error("Fallo exacto de Gemini:", data);
       
-      if (response.ok) {
-        const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Resumen generado, pero la IA no devolvió un texto legible.';
-      } else {
-        lastErrorData = await response.json();
-        console.warn("Fallo con la URL:", url, lastErrorData);
-        // Si el error es de llave inválida, no seguimos probando y cortamos aquí.
-        if (lastErrorData.error?.message?.includes("API key not valid")) {
-          break;
-        }
+      // Si Google lo rechaza, te dirá el motivo EXACTO de esta llave.
+      if (errorMsg.includes("API key not valid")) {
+        return "❌ Error: La API Key está mal escrita o incompleta.";
+      } else if (errorMsg.includes("API key has IP address restrictions")) {
+        return "❌ Error: Tu API Key tiene bloqueos de IP en Google Cloud.";
+      } else if (errorMsg.includes("API key has referer restrictions")) {
+        return "❌ Error: Tu API Key tiene bloqueos de sitio web en Google Cloud.";
+      } else if (errorMsg.includes("API not enabled")) {
+        return "❌ Error: No has habilitado la API de IA en tu Google Cloud.";
       }
-    } catch (error) {
-      console.error("Error de conexión:", error);
-      return `❌ Error de red al conectar con Google: ${error.message}`;
+      return `❌ Error de Google IA: ${errorMsg}`;
     }
+  } catch (error) {
+    console.error("Error de conexión a internet:", error);
+    return `❌ Error de red: No se pudo alcanzar a Google (${error.message}).`;
   }
-
-  // Si todos los modelos fallan, analizamos el error final para darte la solución exacta
-  const errorMsg = lastErrorData?.error?.message || 'Error desconocido del servidor';
-  
-  if (errorMsg.includes("API key not valid")) {
-    return "❌ Error: La API Key no es válida. Revisa que la hayas copiado completa.";
-  } else if (errorMsg.includes("API key has IP address restrictions")) {
-    return "❌ Error: Tu llave en Google Cloud tiene restricciones de IP que bloquean a Vercel.";
-  } else if (errorMsg.includes("API key has referer restrictions")) {
-    return "❌ Error: Tu llave tiene restricciones de sitio web. Debes permitir que tu URL la use en Google Cloud.";
-  } else if (errorMsg.includes("API not enabled")) {
-    return "❌ Error: La 'Generative Language API' no está habilitada en tu proyecto de Google Cloud.";
-  }
-  
-  return `❌ Error de Google IA: ${errorMsg}`;
 };
 
 const openWhatsApp = (phone, message = "") => {
