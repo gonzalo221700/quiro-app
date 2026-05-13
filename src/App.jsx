@@ -97,42 +97,45 @@ const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integr
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
-// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL (MOTOR REFORZADO V1 + V1BETA) ---
+// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL ---
 const fetchGeminiWithRetry = async (prompt) => {
   if (!apiKey) return "❌ Configura tu API Key para usar la IA.";
   
-  // Lista de configuraciones a probar para evadir el error de "model not found"
-  const configsToTry = [
-    { version: 'v1', model: 'gemini-1.5-flash' },           // Intento 1: Estable
-    { version: 'v1beta', model: 'gemini-1.5-flash-latest' }, // Intento 2: Beta con tag latest
-    { version: 'v1beta', model: 'gemini-pro' }               // Intento 3: Legacy Pro
-  ];
+  // Usamos el modelo estándar y global más reciente en su versión oficial (v1)
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
   
-  let lastError = "";
-
-  for (const config of configsToTry) {
-    const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:generateContent?key=${apiKey}`;
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Resumen generado, pero la IA no devolvió un texto legible.';
+    } else {
+      const errorData = await response.json();
+      const errorMsg = errorData.error?.message || 'Error desconocido del servidor';
+      console.error("Error exacto de Gemini:", errorData);
       
-      if (response.ok) {
-        const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'La IA procesó los datos pero no devolvió un texto legible.';
-      } else {
-        const errorData = await response.json();
-        lastError = errorData.error?.message || 'Error desconocido';
-        console.warn(`Configuración ${config.model} (${config.version}) falló:`, lastError);
+      // Filtros de errores comunes para ayudarte a solucionarlo rápido
+      if (errorMsg.includes("API key not valid")) {
+        return "❌ Error: La API Key no es válida. Revisa que la hayas copiado completa.";
+      } else if (errorMsg.includes("API key has IP address restrictions")) {
+        return "❌ Error: Tu llave en Google Cloud tiene restricciones de IP que bloquean a Vercel.";
+      } else if (errorMsg.includes("API key has referer restrictions")) {
+        return "❌ Error: Tu llave tiene restricciones de sitio web. Debes permitir que tu URL la use en Google Cloud.";
+      } else if (errorMsg.includes("API not enabled")) {
+        return "❌ Error: La API 'Generative Language API' no está habilitada en tu proyecto de Google Cloud.";
       }
-    } catch (error) {
-      lastError = error.message;
+      
+      return `❌ Error de Google IA: ${errorMsg}`;
     }
+  } catch (error) {
+    console.error("Error de conexión:", error);
+    return `❌ Error de red al conectar con Google: ${error.message}`;
   }
-  
-  return `❌ Error de Google IA: ${lastError}.\nVerifica que tu API Key no tenga restricciones de IP o de Referer en Google Cloud Console.`;
 };
 
 const openWhatsApp = (phone, message = "") => {
@@ -373,7 +376,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
             <div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between">
               <div>
                 <p className="text-white font-black uppercase italic">{String(patients.find(p => p.id === app.patientId)?.name || 'Paciente no encontrado')}</p>
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1">
+                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {String(app.time)}
                 </p>
               </div>
@@ -517,7 +520,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 
       {/* SECCIÓN 6: PLANO ANATÓMICO Y POSTURA */}
       {activeSection === 'anatomia' && (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-4 animate-fade-in text-left">
           <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
             <div className="flex items-center gap-2 mb-2"><User className="w-4 h-4 text-cyan-400" /><h4 className="text-[10px] font-black text-white uppercase tracking-widest">Alteraciones Posturales</h4></div>
             {patient.posturalDeviations && patient.posturalDeviations.length > 0 ? (
@@ -965,7 +968,7 @@ const UpsellModal = ({ onClose, onUpgrade }) => (
         onClick={() => { onClose(); onUpgrade(); }} 
         className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 transition flex justify-center items-center gap-2"
       >
-        <api-Sparkles className="w-5 h-5" /> Obtener Versión PRO
+        <Sparkles className="w-5 h-5" /> Obtener Versión PRO
       </button>
     </div>
   </Modal>
@@ -1383,7 +1386,7 @@ export default function App() {
     const checkTrialAndSync = async () => {
       try {
         const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDoc(docRef); 
+        const snap = await getDocFromServer(docRef); 
         let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
         if (!snap.exists()) await setDoc(docRef, profileData);
         else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
@@ -1402,7 +1405,7 @@ export default function App() {
           else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
         };
         calculate(); 
-      } catch (e) { console.warn("Modo offline."); } finally { setLoading(false); }
+      } catch (e) { console.warn("Modo offline o error leyendo perfil:", e); } finally { setLoading(false); }
     };
     checkTrialAndSync();
     
