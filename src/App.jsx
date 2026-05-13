@@ -1692,11 +1692,15 @@ export default function App() {
       <nav className="fixed bottom-0 w-full p-5 pb-8 bg-slate-900/90 backdrop-blur-3xl border-t border-indigo-400/20 flex justify-around items-center z-50 shadow-2xl">
         <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
         <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
-        {doctorInfo.isAdmin ? (
+        
+        {/* El botón de Marketing ahora siempre está visible */}
+        <button onClick={() => {setActiveTab('marketing'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'marketing' ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Megaphone className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Marketing</span></button>
+        
+        {/* El botón de Admin se agrega a un lado solo si tienes el modo administrador activado */}
+        {doctorInfo.isAdmin && (
            <button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110' : 'text-slate-500 opacity-50'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>
-        ) : (
-           <button onClick={() => {setActiveTab('marketing'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'marketing' ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Megaphone className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Marketing</span></button>
         )}
+        
         <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
 
