@@ -97,10 +97,11 @@ const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integr
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
-// --- UTILIDADES ---
+// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL ---
 const fetchGeminiWithRetry = async (prompt) => {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-  let retries = 5;
+  // Utilizamos la versión gemini-1.5-flash que es global, rápida y estable
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  let retries = 3;
   let delay = 1000;
   
   while (retries > 0) {
@@ -110,12 +111,19 @@ const fetchGeminiWithRetry = async (prompt) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
-      if (!response.ok) throw new Error('Error HTTP');
+      
+      // Si Google rechaza la llave, mostramos el error exacto
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error devuelto por Google:", errorData);
+        return `❌ Error de Google IA: ${errorData.error?.message || 'Llave API inválida o bloqueada'}`;
+      }
+      
       const data = await response.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el resumen.';
     } catch (error) {
       retries -= 1;
-      if (retries === 0) return "Error de conexión con la IA. Asegúrate de haber colocado tu 'apiKey' en el código de la aplicación.";
+      if (retries === 0) return `Error de red al conectar con Google. Revisa tu internet.`;
       await new Promise(r => setTimeout(r, delay));
       delay *= 2;
     }
@@ -1080,7 +1088,6 @@ const NewPatientModal = ({ onClose, onSave }) => {
             <textarea placeholder="Ant. Patológicos (Cirugías, Alergias)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
             <textarea placeholder="Ant. No Patológicos (Hábitos, Ejercicio)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
           </div>
-          {/* CAMPO RECTIFICADO Y AÑADIDO: Medicamentos */}
           <textarea placeholder="Medicamentos que toma actualmente..." className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.medications} onChange={e => setForm({...form, medications: e.target.value})} />
           <textarea placeholder="Exámenes Complementarios (Rayos X, RM, etc. según diagnóstico visual)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.complementaryExams} onChange={e => setForm({...form, complementaryExams: e.target.value})} />
         </div>)}
@@ -1530,15 +1537,14 @@ export default function App() {
           createdBy: user?.uid || 'admin'
       };
 
-      setAdminCodes(prev => [{ id: newCode, ...codeData }, ...prev]);
-      alert(`✅ Código ${newCode} generado.\n\nYa está visible en tu historial.`);
-
-      setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), codeData)
-        .catch(e => console.warn("Sincronización de código en segundo plano pausada:", e));
+      // Intentamos guardarlo en Firebase de forma estricta primero
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), codeData);
+      
+      alert(`✅ Código ${newCode} generado y guardado exitosamente en la nube.\n\nYa puedes enviarlo a tu cliente.`);
       
     } catch (error) {
       console.error("Error al guardar código:", error);
-      alert(`❌ Error al generar código: ${error.message}`);
+      alert(`❌ Error al crear el código en la base de datos: ${error.message}\n\nPor favor, actualiza tus reglas de Firebase según la guía.`);
     }
   };
 
