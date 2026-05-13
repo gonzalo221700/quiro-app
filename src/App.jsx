@@ -73,7 +73,8 @@ import {
   Image as ImageIcon,
   Download,
   AlertOctagon,
-  FileText
+  FileText,
+  Stethoscope
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
@@ -92,51 +93,11 @@ const auth = getAuth(app);
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 const appId = firebaseConfig.projectId;
-const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integrada
 
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
-// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL (CONEXIÓN DIRECTA Y ÚNICA) ---
-const fetchGeminiWithRetry = async (prompt) => {
-  if (!apiKey) return "❌ Configura tu API Key para usar la IA.";
-  
-  // Conexión DIRECTA al modelo oficial soportado en 2024+. Sin listas de respaldos.
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    });
-    
-    const data = await response.json();
-
-    if (response.ok) {
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Resumen generado, pero no se encontró texto legible.';
-    } else {
-      const errorMsg = data.error?.message || 'Error desconocido del servidor';
-      console.error("Fallo exacto de Gemini:", data);
-      
-      // Si Google lo rechaza, te dirá el motivo EXACTO de esta llave.
-      if (errorMsg.includes("API key not valid")) {
-        return "❌ Error: La API Key está mal escrita o incompleta.";
-      } else if (errorMsg.includes("API key has IP address restrictions")) {
-        return "❌ Error: Tu API Key tiene bloqueos de IP en Google Cloud.";
-      } else if (errorMsg.includes("API key has referer restrictions")) {
-        return "❌ Error: Tu API Key tiene bloqueos de sitio web en Google Cloud.";
-      } else if (errorMsg.includes("API not enabled")) {
-        return "❌ Error: No has habilitado la API de IA en tu Google Cloud.";
-      }
-      return `❌ Error de Google IA: ${errorMsg}`;
-    }
-  } catch (error) {
-    console.error("Error de conexión a internet:", error);
-    return `❌ Error de red: No se pudo alcanzar a Google (${error.message}).`;
-  }
-};
-
+// --- UTILIDADES ---
 const openWhatsApp = (phone, message = "") => {
   if (!phone) return;
   const cleanPhone = String(phone).replace(/\D/g, '');
@@ -395,16 +356,48 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const [loadingIA, setLoadingIA] = useState(false);
   const [activeSection, setActiveSection] = useState('historial'); 
   
-  const generateAI = async () => {
+  // NUEVO: SISTEMA DE ASISTENCIA CLÍNICA BASADO EN REGLAS (SIN IA EXTERNA)
+  const generateLocalAssistant = () => {
     if (!patient.histories || patient.histories.length === 0) {
-      setSum("Para usar la IA, necesitas registrar al menos una sesión o ajuste en el historial del paciente.");
+      setSum("Para recibir sugerencias, necesitas registrar al menos una sesión de ajuste con las áreas tratadas.");
       return;
     }
+
     setLoadingIA(true);
-    const text = patient.histories.map(h => `${h.date}: Dolor ${h.painLevel}/10. ${h.notes}`).join(' | ');
-    const res = await fetchGeminiWithRetry(`Actúa como un quiropráctico profesional y analítico. Escribe un resumen de evolución clínica fluido y conciso (máximo 3 líneas) basado estrictamente en las siguientes notas y niveles de dolor de los ajustes realizados al paciente: ${text}`);
-    setSum(res);
-    setLoadingIA(false);
+
+    // Simulamos un breve tiempo de carga para la experiencia de usuario
+    setTimeout(() => {
+      const allAreas = patient.histories.flatMap(h => h.areas || []);
+      const uniqueAreas = [...new Set(allAreas)];
+      
+      const totalPain = patient.histories.reduce((acc, h) => acc + (Number(h.painLevel) || 0), 0);
+      const avgPain = (totalPain / patient.histories.length).toFixed(1);
+
+      let recommendation = `📊 Análisis de ${patient.histories.length} sesiones (Nivel de dolor histórico promedio: ${avgPain}/10).\n\n💡 Guía y Sugerencias Quiróprácticas según las áreas tratadas recientemente:\n\n`;
+
+      if (uniqueAreas.length === 0) {
+        recommendation += "- No has marcado áreas específicas en los ajustes de este paciente. Edita el historial para obtener recomendaciones puntuales.";
+      }
+
+      if (uniqueAreas.includes('Cervical')) {
+        recommendation += "• CERVICAL: Se sugiere evaluación de Atlas/Axis. Considerar ajuste Diversified (C1-C7) o técnica de Activador. Fundamental recomendar higiene postural y evitar posturas de 'Text Neck' al paciente.\n\n";
+      }
+      if (uniqueAreas.includes('Dorsal')) {
+        recommendation += "• DORSAL: Revisar movilidad costo-vertebral. Suele ser muy útil la técnica Thompson o un ajuste anterior de torácicas. Recomendar estiramientos de apertura de pecho en casa.\n\n";
+      }
+      if (uniqueAreas.includes('Lumbar')) {
+        recommendation += "• LUMBAR: Descartar compresión radicular (ciática). Sugerido ajuste Gonstead o técnica de Flexión-Distracción (Cox). Indicar ejercicios de estabilización y fortalecimiento de core.\n\n";
+      }
+      if (uniqueAreas.includes('Sacro')) {
+        recommendation += "• SACRO/PELVIS: Evaluar bloqueo sacroilíaco (ej. Test de Gillet). Excelente respuesta clínica esperada con uso de Bloques SOT o técnica de Thompson Drop.\n\n";
+      }
+      if (uniqueAreas.some(a => ['Hombros', 'Caderas', 'Rodillas'].includes(a))) {
+        recommendation += "• EXTREMIDADES (Hombros/Rodillas/Cadera): Checar la cadena cinética completa. Se recomienda complementar el ajuste con técnica de liberación miofascial, Graston o Kinesiotaping.\n\n";
+      }
+
+      setSum(recommendation);
+      setLoadingIA(false);
+    }, 600);
   };
   
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
@@ -568,15 +561,24 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
         </div>
       )}
 
-      {/* SECCIÓN 8: SESIONES E IA */}
+      {/* SECCIÓN 8: SESIONES Y ASISTENTE CLÍNICO */}
       {activeSection === 'sesiones' && (
         <div className="animate-fade-in">
           <div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner">
             <div className="flex justify-between items-center mb-4 text-left">
-              <h3 className="text-xs font-black uppercase text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" /> Bio-Log Inteligencia Artificial</h3>
-              {!sum && <button onClick={generateAI} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full shadow-lg active:scale-95 transition">{loadingIA ? "..." : "Generar Evolución"}</button>}
+              <h3 className="text-xs font-black uppercase text-white flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-cyan-400" /> Bio-Guía: Asistente Clínico
+              </h3>
+              {!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full shadow-lg active:scale-95 transition">{loadingIA ? "..." : "Sugerir Técnicas"}</button>}
             </div>
-            <p className="text-xs italic text-indigo-200 leading-relaxed">{String(sum || "Analiza los ajustes clínicos para resumir el progreso del paciente de forma inteligente.")}</p>
+            
+            {sum ? (
+              <div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2">
+                <p className="text-xs text-indigo-100 whitespace-pre-wrap leading-relaxed">{sum}</p>
+              </div>
+            ) : (
+              <p className="text-xs italic text-indigo-200 leading-relaxed">Presiona el botón para recibir recomendaciones exactas de técnicas y cuidados basados en las áreas que has estado tratando.</p>
+            )}
           </div>
 
           <div className="flex justify-between items-center mb-4 px-2">
