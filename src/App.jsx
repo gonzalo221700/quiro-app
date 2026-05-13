@@ -97,14 +97,21 @@ const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integr
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
-// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL ---
+// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL (SISTEMA DE RESPALDO AUTOMÁTICO) ---
 const fetchGeminiWithRetry = async (prompt) => {
-  // Utilizamos la versión gemini-1.5-flash que es global, rápida y estable
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  let retries = 3;
-  let delay = 1000;
+  if (!apiKey) return "❌ Configura tu API Key para usar la IA.";
   
-  while (retries > 0) {
+  // Lista de modelos a probar (si uno falla, intenta el siguiente inmediatamente)
+  const modelsToTry = [
+    'gemini-1.5-flash',
+    'gemini-pro',
+    'gemini-2.5-flash-preview-09-2025'
+  ];
+  
+  let lastError = "";
+
+  for (const model of modelsToTry) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -112,22 +119,27 @@ const fetchGeminiWithRetry = async (prompt) => {
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
       
-      // Si Google rechaza la llave, mostramos el error exacto
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Resumen generado, pero la IA no devolvió texto.';
+      } else {
         const errorData = await response.json();
-        console.error("Error devuelto por Google:", errorData);
-        return `❌ Error de Google IA: ${errorData.error?.message || 'Llave API inválida o bloqueada'}`;
+        lastError = errorData.error?.message || 'Error desconocido del servidor';
+        console.warn(`El modelo ${model} fue rechazado:`, lastError);
+        
+        // Si el error es específicamente de una llave inválida, detenemos el proceso para avisarte
+        if (lastError.includes("API_KEY_INVALID") || lastError.includes("API key not valid")) {
+          return `❌ Error: La llave API Key es inválida. Asegúrate de haberla copiado completa.`;
+        }
       }
-      
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el resumen.';
     } catch (error) {
-      retries -= 1;
-      if (retries === 0) return `Error de red al conectar con Google. Revisa tu internet.`;
-      await new Promise(r => setTimeout(r, delay));
-      delay *= 2;
+      console.warn(`Error de red probando ${model}:`, error);
+      lastError = error.message;
     }
   }
+  
+  // Si los 3 modelos fallan, mostramos el motivo exacto para depurarlo
+  return `❌ Error de Google IA: ${lastError}.\nVerifica que tu proyecto en Google AI Studio no tenga restricciones.`;
 };
 
 const openWhatsApp = (phone, message = "") => {
