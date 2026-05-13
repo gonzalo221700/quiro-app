@@ -97,21 +97,21 @@ const apiKey = "AIzaSyCDnfzYRCQSpNYOgb88dqzaboi3nC7IBH4"; // Tu llave API integr
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3; 
 
-// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL (SISTEMA DE RESPALDO AUTOMÁTICO) ---
+// --- UTILIDADES DE INTELIGENCIA ARTIFICIAL (MOTOR REFORZADO V1 + V1BETA) ---
 const fetchGeminiWithRetry = async (prompt) => {
   if (!apiKey) return "❌ Configura tu API Key para usar la IA.";
   
-  // Lista de modelos a probar (si uno falla, intenta el siguiente inmediatamente)
-  const modelsToTry = [
-    'gemini-1.5-flash',
-    'gemini-pro',
-    'gemini-2.5-flash-preview-09-2025'
+  // Lista de configuraciones a probar para evadir el error de "model not found"
+  const configsToTry = [
+    { version: 'v1', model: 'gemini-1.5-flash' },           // Intento 1: Estable
+    { version: 'v1beta', model: 'gemini-1.5-flash-latest' }, // Intento 2: Beta con tag latest
+    { version: 'v1beta', model: 'gemini-pro' }               // Intento 3: Legacy Pro
   ];
   
   let lastError = "";
 
-  for (const model of modelsToTry) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  for (const config of configsToTry) {
+    const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:generateContent?key=${apiKey}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -121,25 +121,18 @@ const fetchGeminiWithRetry = async (prompt) => {
       
       if (response.ok) {
         const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Resumen generado, pero la IA no devolvió texto.';
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'La IA procesó los datos pero no devolvió un texto legible.';
       } else {
         const errorData = await response.json();
-        lastError = errorData.error?.message || 'Error desconocido del servidor';
-        console.warn(`El modelo ${model} fue rechazado:`, lastError);
-        
-        // Si el error es específicamente de una llave inválida, detenemos el proceso para avisarte
-        if (lastError.includes("API_KEY_INVALID") || lastError.includes("API key not valid")) {
-          return `❌ Error: La llave API Key es inválida. Asegúrate de haberla copiado completa.`;
-        }
+        lastError = errorData.error?.message || 'Error desconocido';
+        console.warn(`Configuración ${config.model} (${config.version}) falló:`, lastError);
       }
     } catch (error) {
-      console.warn(`Error de red probando ${model}:`, error);
       lastError = error.message;
     }
   }
   
-  // Si los 3 modelos fallan, mostramos el motivo exacto para depurarlo
-  return `❌ Error de Google IA: ${lastError}.\nVerifica que tu proyecto en Google AI Studio no tenga restricciones.`;
+  return `❌ Error de Google IA: ${lastError}.\nVerifica que tu API Key no tenga restricciones de IP o de Referer en Google Cloud Console.`;
 };
 
 const openWhatsApp = (phone, message = "") => {
@@ -380,7 +373,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
             <div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between">
               <div>
                 <p className="text-white font-black uppercase italic">{String(patients.find(p => p.id === app.patientId)?.name || 'Paciente no encontrado')}</p>
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1">
                   <Clock className="w-3 h-3" /> {String(app.time)}
                 </p>
               </div>
@@ -863,7 +856,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
                 />
                 <label 
                   htmlFor="banner-upload" 
-                  className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all shadow-xl backdrop-blur-md ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95 hover:bg-black/70'}`}
+                  className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all shadow-xl backdrop-blur-md ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95 hover:bg-black/70'}`}
                 >
                   <Upload className="w-4 h-4" /> {doctorInfo.bannerImage ? 'Cambiar Fondo' : 'Subir Fondo'}
                 </label>
@@ -972,7 +965,7 @@ const UpsellModal = ({ onClose, onUpgrade }) => (
         onClick={() => { onClose(); onUpgrade(); }} 
         className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 transition flex justify-center items-center gap-2"
       >
-        <Sparkles className="w-5 h-5" /> Obtener Versión PRO
+        <api-Sparkles className="w-5 h-5" /> Obtener Versión PRO
       </button>
     </div>
   </Modal>
@@ -1390,7 +1383,7 @@ export default function App() {
     const checkTrialAndSync = async () => {
       try {
         const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDocFromServer(docRef); 
+        const snap = await getDoc(docRef); 
         let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
         if (!snap.exists()) await setDoc(docRef, profileData);
         else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
@@ -1409,7 +1402,7 @@ export default function App() {
           else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
         };
         calculate(); 
-      } catch (e) { console.warn("Modo offline o error leyendo perfil:", e); } finally { setLoading(false); }
+      } catch (e) { console.warn("Modo offline."); } finally { setLoading(false); }
     };
     checkTrialAndSync();
     
@@ -1549,14 +1542,12 @@ export default function App() {
           createdBy: user?.uid || 'admin'
       };
 
-      // Intentamos guardarlo en Firebase de forma estricta primero
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), codeData);
-      
-      alert(`✅ Código ${newCode} generado y guardado exitosamente en la nube.\n\nYa puedes enviarlo a tu cliente.`);
+      alert(`✅ Código ${newCode} generado y guardado exitosamente en la nube.`);
       
     } catch (error) {
       console.error("Error al guardar código:", error);
-      alert(`❌ Error al crear el código en la base de datos: ${error.message}\n\nPor favor, actualiza tus reglas de Firebase según la guía.`);
+      alert(`❌ Error al generar código: ${error.message}`);
     }
   };
 
