@@ -67,7 +67,6 @@ const SpineWatermark = () => (
   </div>
 );
 
-// 🌟 FIX 1: Modal limpio y elegante, sin etiqueta oscura superior
 const Modal = ({ title, children, onClose }) => (
   <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 transition-all">
     <div className="bg-slate-950 w-full sm:w-[600px] rounded-t-[40px] sm:rounded-[50px] max-h-[95vh] overflow-y-auto shadow-2xl p-6 sm:p-8 border-t-4 border-cyan-500 text-white animate-slide-up relative">
@@ -148,6 +147,52 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   );
 };
 
+const SpineMap = ({ selectedAreas, toggleArea }) => {
+  const isSelected = (area) => selectedAreas.includes(area);
+  const getFill = (area) => isSelected(area) ? "currentColor" : "transparent";
+  const getStroke = (area) => isSelected(area) ? "#22d3ee" : "#475569";
+  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#475569";
+
+  return (
+    <div className="flex flex-col items-center bg-slate-900/50 p-6 rounded-[30px] border border-white/5 relative mb-6 shadow-inner">
+       <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico</h4>
+       <svg viewBox="0 0 220 320" className="h-72 w-full max-w-[220px] drop-shadow-2xl">
+         {/* Cervical */}
+         <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
+           <rect x="85" y="10" width="30" height="40" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
+           <line x1="125" y1="30" x2="145" y2="30" stroke={getStroke('Cervical')} strokeWidth="2" strokeDasharray="2,2"/>
+           <text x="150" y="34" fontSize="12" fill={getTextColor('Cervical')} className="font-black uppercase">Cervical</text>
+         </g>
+         {/* Dorsal */}
+         <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
+           <rect x="80" y="60" width="40" height="90" rx="10" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
+           <line x1="130" y1="105" x2="145" y2="105" stroke={getStroke('Dorsal')} strokeWidth="2" strokeDasharray="2,2"/>
+           <text x="150" y="109" fontSize="12" fill={getTextColor('Dorsal')} className="font-black uppercase">Dorsal</text>
+         </g>
+         {/* Lumbar */}
+         <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
+           <rect x="75" y="160" width="50" height="60" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
+           <line x1="135" y1="190" x2="145" y2="190" stroke={getStroke('Lumbar')} strokeWidth="2" strokeDasharray="2,2"/>
+           <text x="150" y="194" fontSize="12" fill={getTextColor('Lumbar')} className="font-black uppercase">Lumbar</text>
+         </g>
+         {/* Pelvis/Sacro */}
+         <g onClick={() => toggleArea('Pelvis/Sacro')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
+           <path d="M60 230 Q 100 250 140 230 L 120 290 Q 100 310 80 290 Z" fill={getFill('Pelvis/Sacro')} stroke={getStroke('Pelvis/Sacro')} strokeWidth="3" strokeLinejoin="round" />
+           <line x1="140" y1="260" x2="145" y2="260" stroke={getStroke('Pelvis/Sacro')} strokeWidth="2" strokeDasharray="2,2"/>
+           <text x="150" y="264" fontSize="12" fill={getTextColor('Pelvis/Sacro')} className="font-black uppercase">Pelvis</text>
+         </g>
+         {/* Extremidades */}
+         <g onClick={() => toggleArea('Extremidades')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
+            <circle cx="35" cy="150" r="15" fill={getFill('Extremidades')} stroke={getStroke('Extremidades')} strokeWidth="3"/>
+            <circle cx="35" cy="260" r="15" fill={getFill('Extremidades')} stroke={getStroke('Extremidades')} strokeWidth="3"/>
+            <line x1="35" y1="165" x2="35" y2="245" stroke={getStroke('Extremidades')} strokeWidth="2" strokeDasharray="2,2"/>
+            <text x="-40" y="25" fontSize="10" fill={getTextColor('Extremidades')} className="font-black uppercase" transform="rotate(-90 0 150)">Extremidades</text>
+         </g>
+       </svg>
+    </div>
+  );
+};
+
 const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule }) => {
   const [activeSection, setActiveSection] = useState('historial'); 
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
@@ -164,7 +209,6 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
       {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura</h4><p className="text-sm text-indigo-100">{patient.postureAnterior || "--"}</p></div>)}
       {activeSection === 'tratamiento' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div></div>)}
       
-      {/* 🌟 FIX 2: Sesiones limpias y sin asistente */}
       {activeSection === 'sesiones' && (
         <div className="animate-fade-in">
           <div className="flex justify-between items-center mb-6 px-2">
@@ -539,58 +583,6 @@ const NewPatientModal = ({ onClose, onSave }) => {
   );
 };
 
-// 🌟 NUEVO MAPA ANATÓMICO INTERACTIVO (SVG)
-const SpineMap = ({ selectedAreas, toggleArea }) => {
-  const isSelected = (area) => selectedAreas.includes(area);
-  const getFill = (area) => isSelected(area) ? "currentColor" : "transparent";
-  const getStroke = (area) => isSelected(area) ? "#22d3ee" : "#475569";
-  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#475569";
-
-  return (
-    <div className="flex flex-col items-center bg-slate-900/50 p-6 rounded-[30px] border border-white/5 relative mb-6 shadow-inner">
-       <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico</h4>
-       <svg viewBox="0 0 220 320" className="h-72 w-full max-w-[220px] drop-shadow-2xl">
-         {/* Cervical C1-C7 */}
-         <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <rect x="85" y="10" width="30" height="40" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
-           <line x1="125" y1="30" x2="145" y2="30" stroke={getStroke('Cervical')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="34" fontSize="12" fill={getTextColor('Cervical')} className="font-black uppercase">Cervical</text>
-         </g>
-         
-         {/* Dorsal T1-T12 */}
-         <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <rect x="80" y="60" width="40" height="90" rx="10" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
-           <line x1="130" y1="105" x2="145" y2="105" stroke={getStroke('Dorsal')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="109" fontSize="12" fill={getTextColor('Dorsal')} className="font-black uppercase">Dorsal</text>
-         </g>
-
-         {/* Lumbar L1-L5 */}
-         <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <rect x="75" y="160" width="50" height="60" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
-           <line x1="135" y1="190" x2="145" y2="190" stroke={getStroke('Lumbar')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="194" fontSize="12" fill={getTextColor('Lumbar')} className="font-black uppercase">Lumbar</text>
-         </g>
-
-         {/* Pelvis/Sacro */}
-         <g onClick={() => toggleArea('Pelvis/Sacro')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <path d="M60 230 Q 100 250 140 230 L 120 290 Q 100 310 80 290 Z" fill={getFill('Pelvis/Sacro')} stroke={getStroke('Pelvis/Sacro')} strokeWidth="3" strokeLinejoin="round" />
-           <line x1="140" y1="260" x2="145" y2="260" stroke={getStroke('Pelvis/Sacro')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="264" fontSize="12" fill={getTextColor('Pelvis/Sacro')} className="font-black uppercase">Pelvis</text>
-         </g>
-         
-         {/* Extremidades */}
-         <g onClick={() => toggleArea('Extremidades')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-            <circle cx="35" cy="150" r="15" fill={getFill('Extremidades')} stroke={getStroke('Extremidades')} strokeWidth="3"/>
-            <circle cx="35" cy="260" r="15" fill={getFill('Extremidades')} stroke={getStroke('Extremidades')} strokeWidth="3"/>
-            <line x1="35" y1="165" x2="35" y2="245" stroke={getStroke('Extremidades')} strokeWidth="2" strokeDasharray="2,2"/>
-            <text x="-40" y="25" fontSize="10" fill={getTextColor('Extremidades')} className="font-black uppercase" transform="rotate(-90 0 150)">Extremidades</text>
-         </g>
-       </svg>
-    </div>
-  );
-};
-
-// 🌟 MOTOR CLÍNICO ACTUALIZADO
 const NewHistoryModal = ({ onClose, onSave }) => {
   const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -687,3 +679,230 @@ const SubscriptionBlockedScreen = ({ onLogout }) => (
     <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
   </div>
 );
+
+const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginView, setIsLoginView] = useState(true);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
+      <SpineWatermark />
+      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
+        
+        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+        
+        {inProcess ? (
+          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
+        ) : (
+          <div className="space-y-4 animate-slide-up">
+            {step === 'initial' && (
+              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
+                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
+                <div className="grid grid-cols-1 gap-3">
+                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
+                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
+                </div></>
+            )}
+            {step === 'email' && (
+              <div className="text-left">
+                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
+                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [activeTab, setActiveTab] = useState('home');
+  const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [doctorInfo, setDoctorInfo] = useState({ title: '', name: '', clinic: '', theme: 'azul', trialStartedAt: null, isPremium: false, isAdmin: false });
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
+  const [adminCodes, setAdminCodes] = useState([]);
+  const [modals, setModals] = useState({});
+  const [authInProcess, setAuthInProcess] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authStep, setAuthStep] = useState('initial');
+
+  const [visualMode, setVisualMode] = useState(localStorage.getItem('quiroTheme') || 'oscuro');
+
+  useEffect(() => {
+    localStorage.setItem('quiroTheme', visualMode);
+  }, [visualMode]);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); if (!currentUser) { setLoading(false); setAuthInProcess(false); } });
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const checkTrialAndSync = async () => {
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
+        const snap = await getDocFromServer(docRef); 
+        let profileData = snap.exists() ? snap.data() : { title: '', name: '', clinic: '', theme: 'azul', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
+        if (!snap.exists()) await setDoc(docRef, profileData);
+        else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
+        
+        if (profileData.isPremium && profileData.premiumExpiresAt && Date.now() > profileData.premiumExpiresAt) {
+          profileData.isPremium = false; await updateDoc(docRef, { isPremium: false });
+        }
+        setDoctorInfo(profileData);
+        if (profileData.isPremium) setTrialTimeLeft({ expired: false, isPremium: true });
+        else {
+          const diffMs = (TRIAL_DAYS * 24 * 60 * 60 * 1000) - (Date.now() - profileData.trialStartedAt);
+          if (diffMs <= 0) setTrialTimeLeft({ days: 0, hours: 0, expired: true });
+          else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
+        }
+      } catch (e) {} finally { setLoading(false); }
+    };
+    checkTrialAndSync();
+    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsubPat(); unsubApp(); };
+  }, [user]);
+
+  useEffect(() => {
+    if (user && doctorInfo?.isAdmin) {
+      const unsubCodes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'codes'), (snap) => setAdminCodes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      return () => unsubCodes();
+    }
+  }, [user, doctorInfo?.isAdmin]);
+
+  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user') setAuthError("Error de Google."); setAuthInProcess(false); } };
+  const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError("Error de conexión."); setAuthInProcess(false); } };
+  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError("Error de credenciales."); setAuthInProcess(false); } };
+  const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+  const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+
+  const handleActivateCode = async (codeStr) => {
+    if (!codeStr) return alert("Ingresa un código.");
+    try {
+      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr.trim().toUpperCase());
+      const codeSnap = await getDoc(codeRef); 
+      if (codeSnap.exists() && !codeSnap.data().used) {
+         const codeData = codeSnap.data();
+         const newExpiresAt = (doctorInfo.premiumExpiresAt || Date.now()) + ((codeData.durationDays || 30) * 86400000);
+         await updateDoc(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
+         await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
+         setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: newExpiresAt}));
+         alert(`¡PRO activado por ${codeData.durationDays} días!`);
+         setActiveTab('settings');
+      } else alert("Código inválido o usado.");
+    } catch (e) { alert("Error de servidor."); }
+  };
+
+  const handleGenerateAdminCode = async (type, durationDays) => {
+    try {
+      const newCode = (type === 'Mensual' ? 'MES-' : 'ANU-') + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), { used: false, type, durationDays, createdAt: new Date().toISOString(), createdBy: user?.uid });
+      alert(`Código generado: ${newCode}`);
+    } catch (e) { alert("Error."); }
+  };
+
+  const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
+  const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
+  const handleAddPatient = (data) => { setModals(prev => ({ ...prev, patient: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() }); };
+  const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
+  const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
+  const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
+
+  const handleOpenNewPatient = () => { if (!doctorInfo.isPremium && patients.length >= MAX_TRIAL_PATIENTS) setModals(m => ({ ...m, upsell: true })); else setModals(m => ({ ...m, patient: true })); };
+
+  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
+  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} inProcess={authInProcess} error={authError} step={authStep} setStep={setAuthStep} />;
+  if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
+
+  return (
+    <div className={`h-screen flex flex-col italic overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-[#020617] text-white'}`}>
+      <SpineWatermark />
+      <header className="p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
+            {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
+          </div>
+          <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
+        </div>
+        <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
+        {selectedPatientId ? (
+          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} />
+        ) : (
+          <>
+            {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} />}
+            {activeTab === 'patients' && (
+              <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
+                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
+                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : patients.map(p => (
+                  <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
+                    <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
+                  </div>
+                ))}
+                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+              </div>
+            )}
+            {activeTab === 'techniques' && (
+              <div className="animate-fade-in space-y-6 text-left pb-10">
+                <h2 className="text-3xl font-black uppercase italic mb-2 underline decoration-cyan-500 decoration-4 underline-offset-8">Guía de Ajustes</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {techniquesData.map((tech, idx) => (
+                    <div key={idx} className="bg-slate-900/80 rounded-[35px] border border-white/5 overflow-hidden shadow-2xl transition hover:border-cyan-500/30 flex flex-col">
+                      <div className="p-6 space-y-5 flex-1">
+                        <h3 className="text-xl font-black uppercase text-cyan-400">{tech.title}</h3>
+                        <div><p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1 flex items-center gap-1"><BookOpen className="w-3 h-3"/> Fundamento</p><p className="text-xs text-indigo-100/90 leading-relaxed">{tech.description}</p></div>
+                        <div className="bg-slate-950 p-4 rounded-2xl border border-white/5 shadow-inner"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest mb-2 flex items-center gap-1"><Target className="w-3 h-3"/> Ejecución</p><p className="text-xs text-white leading-relaxed whitespace-pre-line">{tech.execution}</p></div>
+                        <div className="bg-emerald-950/20 p-4 rounded-2xl border border-emerald-500/20 mt-auto"><p className="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Casa</p><p className="text-xs text-emerald-100/80 leading-relaxed">{tech.help}</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onOpenAdminLogin={() => setModals(m => ({...m, adminLogin: true}))} visualMode={visualMode} setVisualMode={setVisualMode} />}
+            {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
+            {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
+          </>
+        )}
+      </main>
+
+      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
+
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
+        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
+        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
+        {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
+        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
+      </nav>
+
+      {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
+      {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
+      {modals.appointment && <NewAppointmentModal onClose={() => setModals(m => ({...m, appointment: false}))} onSave={handleAddAppointment} />}
+      {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} />}
+      {modals.upsell && <UpsellModal onClose={() => setModals(m => ({...m, upsell: false}))} onUpgrade={() => { setModals(m => ({...m, upsell: false})); handleUpgradeRequest(); }} />}
+      {modals.adminLogin && <AdminLoginModal onClose={() => setModals(m => ({...m, adminLogin: false}))} onSuccess={() => { handleUpdateProfile({ isAdmin: true, isPremium: true }); setModals(m => ({...m, adminLogin: false})); alert("¡ADMIN ACTIVADO!"); setActiveTab('admin'); }} />}
+      
+      <style dangerouslySetInnerHTML={{__html: `@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-up { animation: slideUp 0.4s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; } .scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}} />
+    </div>
+  );
+}
