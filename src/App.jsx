@@ -74,7 +74,6 @@ const Modal = ({ title, children, onClose }) => (
     </div>
   </div>
 );
-
 const PremiumTab = ({ onActivateCode }) => {
   const [code, setCode] = useState('');
   const [activating, setActivating] = useState(false);
@@ -357,7 +356,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     </div>
   );
 };
-
 const AdminLoginModal = ({ onClose, onSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
