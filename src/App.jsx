@@ -37,7 +37,7 @@ const safeFormatDate = (dateStr) => {
   } catch (e) { return String(dateStr); }
 };
 
-// --- DICCIONARIO CLÍNICO COMPACTADO PARA AHORRAR ESPACIO ---
+// --- DICCIONARIO CLÍNICO COMPACTADO ---
 const techniquesData=[{title:"Ajuste Cervical (Diversified)",image:"",description:"Técnica manual de alta velocidad y baja amplitud (HVLA) para corregir rotaciones y restricciones en la columna cervical (C1-C7).",execution:"1. Posiciona al paciente en decúbito supino.\n2. Contacta el pilar articular o la lámina con la falange lateral del dedo índice.\n3. Lleva la articulación a la tensión máxima (lock-out) con leve flexión lateral y rotación.\n4. Aplica el impulso (thrust) HVLA en un vector rápido y superficial (P-A, I-S).",help:"Aplicar frío por 15 min si hay inflamación post-ajuste. Indicar ejercicios de retracción cervical y corregir la postura de 'Text Neck'."},{title:"Ajuste Torácico Anterior (Abrazado)",image:"",description:"Ideal para la zona dorsal (T1-T12). Se realiza con el paciente boca arriba, utilizando el peso del cuerpo como palanca.",execution:"1. Paciente en decúbito supino con los brazos cruzados sobre el pecho.\n2. El quiropráctico hace un contacto con la mano en forma de 'puño suave' o 'garra' debajo de la vértebra dorsal a ajustar.\n3. Usando el esternón sobre los brazos del paciente, se inhala y se baja el peso corporal.\n4. El impulso (thrust) es de Anterior a Posterior (A-P) directamente a través de los brazos cruzados.",help:"Sugerir ejercicios de expansión torácica y estiramiento de pectorales en el marco de una puerta para abrir el pecho."},{title:"Ajuste Lumbar (Side Posture)",image:"",description:"Técnica en postura lateral (pull/push) fundamental para corregir restricciones rotacionales y subluxaciones en la zona lumbar (L1-L5).",execution:"1. Posiciona al paciente en decúbito lateral con la pierna superior flexionada.\n2. Estabiliza el hombro superior del paciente con el antebrazo cefálico.\n3. Contacta el proceso mamilar o espinoso lumbar con el pisiforme de la mano caudal.\n4. Genera tensión (body drop) rotando la pelvis hacia ti y aplica el impulso rotacional.",help:"Recomendar al paciente evitar levantar objetos pesados doblando la espalda. Enseñar técnica de sentadilla profunda."},{title:"Técnica Gonstead",image:"",description:"Enfoque biomecánico ultra específico. Utiliza análisis de radiografías, nervoscopio e instrumentación para ajustes precisos sobre la vértebra aislada.",execution:"1. Uso riguroso de radiografía completa y palpación estática/dinámica.\n2. Para la zona pélvica, posicionar en mesa Knee-Chest o banco cervical para el cuello.\n3. Estabilizar rigurosamente la vértebra inferior al segmento a ajustar.\n4. El empuje se realiza en un vector extremadamente específico sin rotación excesiva.",help:"Explicar al paciente la importancia de caminar 10 minutos inmediatamente después del ajuste para asimilar el cambio neuro-estructural."},{title:"Ajuste Pélvico (Drop Thompson)",image:"",description:"Sistema basado en la ley de inercia de Newton. Usa piezas segmentadas de la camilla que caen (Drop) para realizar un ajuste seguro de baja fuerza.",execution:"1. Paciente en decúbito prono. Evalúa dismetría pélvica (Test de Derifield o largo de piernas).\n2. Ajusta la tensión de la pieza de caída (Drop) pélvica al peso exacto del paciente.\n3. Coloca el contacto doble con eminencias tenares sobre la EIPS (Espina Ilíaca Postero-Superior).\n4. Aplica el impulso P-A, I-S rápido. La pieza caerá absorbiendo la fuerza pesada.",help:"Sugerir al paciente no cruzar las piernas al sentarse para mantener la simetría pélvica. Recomendar usar cojín lumbar al manejar."},{title:"S.O.T. (Sacro Occipital Technique)",image:"",description:"Técnica suave que utiliza cuñas (bloques) posicionados debajo de la pelvis del paciente, usando su propio peso y la respiración para alinear.",execution:"1. Clasificar al paciente en Categoría I, II o III de SOT mediante indicadores y palpación fascial.\n2. Colocar las cuñas bajo trocánteres e ilíacos según la categoría detectada.\n3. Dejar al paciente reposar sobre los bloques durante 10-15 minutos.\n4. Sincronizar manipulaciones craneales suaves con las fases respiratorias (Inhalación/Exhalación).",help:"Ideal para dolores agudos y mujeres embarazadas. Sugerir reposo post-terapia y evitar ejercicio de alto impacto por 24 horas."},{title:"Tracción - Flexión (Mesa Cox)",image:"",description:"Técnica de descompresión espinal guiada. Abre el espacio del canal neural, reduce la presión discal y ayuda al tratamiento de la ciática.",execution:"1. Paciente en posición prona, asegurar las cintas o sujeciones en los tobillos.\n2. Desbloquear el eje de flexión de la sección inferior de la mesa.\n3. Contactar con la eminencia tenar el proceso espinoso de la vértebra inmediatamente superior a la hernia o lesión.\n4. Aplicar presión sostenida mientras se flexiona la mesa en ciclos de 20 segundos.",help:"Vital indicar al paciente evitar las flexiones de tronco. Enseñar a recoger objetos utilizando flexión de rodillas y mantener core activo."},{title:"Técnica de Activador",image:"",description:"Ajuste asistido por un instrumento de impacto mecánico (Activator Adjusting Instrument) con alta velocidad y muy baja fuerza. No genera cavitación (ruido).",execution:"1. Realizar el protocolo de aislamiento básico (aislamiento por zonas pidiendo al paciente mover brazos/piernas y midiendo el largo de las piernas).\n2. Seleccionar la línea de corrección adecuada según el manual.\n3. Posicionar el instrumento directamente sobre el proceso transverso o carilla articular.\n4. Aplicar el impacto mecánico seco.",help:"Ideal para pacientes con osteoporosis, miedo a la cavitación o pediátricos. Explicar al paciente que la rapidez del impacto engaña el reflejo muscular."},{title:"Toggle Recoil (Upper Cervical)",image:"",description:"Técnica de la escuela 'Hole in One' para ajustar la zona cervical superior (Atlas y Axis). Caracterizada por un impulso y retirada hiperrápida.",execution:"1. Paciente en decúbito lateral sobre cabezal de Drop cervical o mesa específica.\n2. Contactar el proceso transverso del Atlas con la eminencia pisiforme.\n3. Mantener los codos ligeramente flexionados y el pecho arriba.\n4. Efectuar un thrust de triceps altísima velocidad e inmediatamente retirar las manos (Recoil) dejando caer el Drop.",help:"Después del ajuste cervical superior, es importante que el paciente descanse 10-15 min en sala de recuperación para equilibrar el sistema nervioso autónomo."},{title:"Técnica Webster (Embarazadas)",image:"",description:"Análisis y ajuste sacropélvico específico para embarazadas, diseñado para reducir interferencias neurológicas y equilibrar el útero.",execution:"1. Evaluar restricción de la flexión de la rodilla en posición prona (con almohadas de soporte para embarazo).\n2. Ajustar el sacro en el lado de mayor restricción usando Drop o el pulgar.\n3. Paciente en supino: Identificar tensión en el ligamento redondo del útero.\n4. Aplicar presión ultra suave y sostenida (sin masajear) sobre el ligamento tenso hasta sentir la liberación.",help:"Indicar que esta técnica ayuda a optimizar el espacio para el bebé (evitar presentación de nalgas). Usar cojín para dormir de lado con apoyo entre rodillas."},{title:"Técnica Logan Basic",image:"",description:"Un enfoque muy ligero y suave que utiliza contactos de presión continua en el ligamento sacrotuberoso para nivelar la columna completa.",execution:"1. Localizar tensión y sensibilidad asimétrica cerca de la tuberosidad isquiática.\n2. Aplicar un contacto con el pulgar bajo la tuberosidad isquiática (ligamento sacrotuberoso).\n3. Mantener una presión en dirección Anterior, Superior y Lateral por 10 a 15 minutos continuos.\n4. Masajear simultáneamente la musculatura paravertebral a lo largo de toda la columna.",help:"Técnica sumamente relajante que activa el sistema parasimpático. Recomendar al paciente tomar mucha agua y descansar."},{title:"Ajuste de Extremidades",image:"",description:"Manipulación de las articulaciones fuera de la columna vertebral, como muñecas (túnel carpiano), hombros, codos, rodillas y tobillos.",execution:"1. Evaluar la restricción del rango de movimiento y juego articular (joint play).\n2. Hombro (A-P): Paciente supino, tracción suave del húmero y thrust sobre la cabeza humeral hacia posterior.\n3. Rodilla/Tobillo: Típicamente ajustes en tracción del eje largo de la pierna o ajuste en mortaja tibioastragalina.\n4. Verificar la recuperación del movimiento.",help:"Usar ejercicios con bandas de resistencia elástica para rehabilitar las articulaciones después de devolverles su biomecánica normal."},{title:"Liberación Miofascial / IASTM",image:"",description:"Movilización de tejidos blandos asistida por herramientas de acero inoxidable (Graston) o terapia manual intensa para romper adherencias fasciales.",execution:"1. Aplicar crema o emoliente sobre la zona afectada (ej. fascia plantar, isquiotibiales, trapecios).\n2. Utilizar el instrumento IASTM o los pulgares con ángulo de 30-45 grados.\n3. Deslizar con presión profunda creando fricción hasta generar petequias ligeras (enrojecimiento terapéutico).\n4. Acompañar de movilización pasiva del paciente.",help:"Indicar al paciente que el enrojecimiento es normal. Realizar estiramientos activos del músculo trabajado para reconstruir las fibras colágenas."},{title:"Vendaje Neuromuscular (Kinesiotaping)",image:"",description:"Aplicación de cintas elásticas transpirables sobre la piel post-ajuste. Alivia el dolor, drena la inflamación y proporciona soporte propioceptivo.",execution:"1. Limpiar y secar bien la piel del área tratada. Recortar los bordes de la cinta en forma redondeada.\n2. Anclar la base de la cinta (sin tensión) en posición neutral.\n3. Llevar el músculo o articulación a tensión (estirado) y aplicar el resto de la cinta con la tensión deseada (0-50% según sea para relajar o tonificar).\n4. Friccionar la cinta para activar el adhesivo con el calor.",help:"Informar que la cinta puede durar de 3 a 5 días y se puede mojar en la ducha. Retirar tirando la piel hacia atrás, no jalando la cinta."}];
 const RED_FLAGS = ['Tumor','Infecciones','Fractura','Problema neurológico','Problemas nerviosos','Herida abierta local','Quemadura','Sangrado prolongado','Implantes artificiales','Marcapasos','Infección articular'];
 const CHIRO_TECHNIQUES = ['Diversified','Gonstead','Thompson','Activador','Toggle Recoil','SOT (Sacro Occipital)','Cox Flexion-Distraction','Miofascial / Graston','Ajuste Cervical Específico'];
@@ -75,7 +75,6 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-// --- PANTALLA PREMIUM DE PAGO Y CANJE ---
 const PremiumTab = ({ onActivateCode }) => {
   const [code, setCode] = useState('');
   const [activating, setActivating] = useState(false);
@@ -89,198 +88,62 @@ const PremiumTab = ({ onActivateCode }) => {
 
   return (
     <div className="animate-fade-in space-y-6 text-center py-6 px-2">
-      <div className="bg-gradient-to-tr from-amber-400 to-orange-600 p-6 rounded-[35px] inline-block mb-2 shadow-[0_0_40px_rgba(251,191,36,0.3)]">
-        <CreditCard className="w-12 h-12 text-black" />
-      </div>
+      <div className="bg-gradient-to-tr from-amber-400 to-orange-600 p-6 rounded-[35px] inline-block mb-2 shadow-[0_0_40px_rgba(251,191,36,0.3)]"><CreditCard className="w-12 h-12 text-black" /></div>
       <h2 className="text-3xl font-black uppercase italic text-white mb-2">Desbloquea <span className="text-amber-400">PRO</span></h2>
-      <p className="text-indigo-200 text-sm leading-relaxed mb-8">
-        Adquiere la licencia para vincular tu cuenta con Google o correo, obtener pacientes ilimitados y utilizar la sincronización en PC.
-      </p>
-
-      <button 
-        onClick={() => openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO de QuiroApp para desbloquear la sincronización multidispositivo.")}
-        className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8"
-      >
-        <MessageSquare className="w-6 h-6" /> Contactar por WhatsApp
-      </button>
-
+      <p className="text-indigo-200 text-sm leading-relaxed mb-8">Adquiere la licencia para vincular tu cuenta con Google o correo, obtener pacientes ilimitados y utilizar la sincronización en PC.</p>
+      <button onClick={() => openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO.")} className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8"><MessageSquare className="w-6 h-6" /> Contactar por WhatsApp</button>
       <div className="bg-slate-900/80 p-8 rounded-[40px] border border-cyan-400/20 text-left space-y-5 shadow-xl relative overflow-hidden">
         <h4 className="text-cyan-400 font-black uppercase tracking-widest text-xs mb-4 flex items-center gap-2"><KeyRound className="w-4 h-4"/> Ya tengo un código</h4>
-        <input 
-          type="text" 
-          placeholder="Ej: PRO-X7Y8Z9" 
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          className="w-full bg-slate-950 p-5 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-400 tracking-[0.2em] uppercase text-center"
-        />
-        <button 
-          onClick={handleActivate}
-          disabled={activating || !code}
-          className="w-full bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase italic border-b-4 border-cyan-700 active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50"
-        >
-          {activating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Activar Código'}
-        </button>
+        <input type="text" placeholder="Ej: PRO-X7Y8Z9" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="w-full bg-slate-950 p-5 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-400 tracking-[0.2em] uppercase text-center" />
+        <button onClick={handleActivate} disabled={activating || !code} className="w-full bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase italic border-b-4 border-cyan-700 active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50">{activating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Activar Código'}</button>
       </div>
     </div>
   );
 };
 
-// --- PANTALLA SECRETA DE ADMINISTRADOR ---
 const AdminTab = ({ codes, onGenerateCode }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGen = async (type, days) => {
-    setIsGenerating(true);
-    await onGenerateCode(type, days);
-    setIsGenerating(false);
-  };
-
+  const handleGen = async (type, days) => { setIsGenerating(true); await onGenerateCode(type, days); setIsGenerating(false); };
   return (
     <div className="animate-fade-in space-y-6 text-left py-6 px-2">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div>
-        <div>
-          <h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2>
-          <p className="text-[10px] text-rose-200/50 uppercase tracking-widest">Suscripciones e Historial</p>
-        </div>
-      </div>
-
+      <div className="flex items-center gap-3 mb-6"><div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div><div><h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2><p className="text-[10px] text-rose-200/50 uppercase tracking-widest">Suscripciones</p></div></div>
       <div className="flex gap-3 mb-8">
-        <button onClick={() => handleGen('Mensual', 30)} disabled={isGenerating} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition border-b-4 border-indigo-700 flex flex-col items-center gap-1 disabled:opacity-50">
-          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Mensual
-        </button>
-        <button onClick={() => handleGen('Anual', 365)} disabled={isGenerating} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(244,63,94,0.3)] active:scale-95 transition border-b-4 border-rose-800 flex flex-col items-center gap-1 disabled:opacity-50">
-          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Anual
-        </button>
+        <button onClick={() => handleGen('Mensual', 30)} disabled={isGenerating} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition border-b-4 border-indigo-700 flex flex-col items-center gap-1 disabled:opacity-50">{isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Mensual</button>
+        <button onClick={() => handleGen('Anual', 365)} disabled={isGenerating} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(244,63,94,0.3)] active:scale-95 transition border-b-4 border-rose-800 flex flex-col items-center gap-1 disabled:opacity-50">{isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Anual</button>
       </div>
-
       <h3 className="text-sm font-black uppercase text-indigo-400 mb-4 tracking-widest">Historial de Códigos ({codes.length})</h3>
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-        {codes.length === 0 ? (
-          <p className="text-center opacity-40 py-10 text-xs uppercase tracking-widest">Sin códigos generados</p>
-        ) : (
-          codes.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map(c => (
-            <div key={c.id} className={`bg-slate-900 p-5 rounded-3xl border flex items-center justify-between shadow-lg ${c.used ? 'border-rose-500/30 opacity-50' : 'border-emerald-500/50'}`}>
-              <div>
-                <p className="font-mono text-xl font-black tracking-widest text-white">{String(c.id)}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className={`text-[9px] font-black uppercase tracking-widest ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>
-                    {c.used ? 'Utilizado' : `Disponible - ${c.type || 'PRO'}`}
-                  </p>
-                  <span className="text-[8px] text-slate-500 uppercase px-2 py-0.5 bg-white/5 rounded-md">{safeFormatDate(c.createdAt)}</span>
-                </div>
-              </div>
-              {!c.used && (
-                <button 
-                  onClick={() => { navigator.clipboard.writeText(c.id); alert("Código copiado al portapapeles"); }}
-                  className="p-3 bg-white/5 rounded-xl text-white hover:bg-white/10 transition"
-                >
-                  <Copy className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          ))
-        )}
+        {codes.length === 0 ? (<p className="text-center opacity-40 py-10 text-xs uppercase tracking-widest">Sin códigos generados</p>) : (codes.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map(c => (<div key={c.id} className={`bg-slate-900 p-5 rounded-3xl border flex items-center justify-between shadow-lg ${c.used ? 'border-rose-500/30 opacity-50' : 'border-emerald-500/50'}`}><div><p className="font-mono text-xl font-black tracking-widest text-white">{String(c.id)}</p><div className="flex items-center gap-2 mt-1"><p className={`text-[9px] font-black uppercase tracking-widest ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>{c.used ? 'Utilizado' : `Disponible - ${c.type || 'PRO'}`}</p><span className="text-[8px] text-slate-500 uppercase px-2 py-0.5 bg-white/5 rounded-md">{safeFormatDate(c.createdAt)}</span></div></div>{!c.used && (<button onClick={() => { navigator.clipboard.writeText(c.id); alert("Código copiado"); }} className="p-3 bg-white/5 rounded-xl text-white hover:bg-white/10 transition"><Copy className="w-5 h-5" /></button>)}</div>)))}
       </div>
     </div>
   );
 };
 
-// --- COMPONENTES DE PANTALLA PRINCIPAL ---
 const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenCalendar, onUpgrade }) => {
   const today = new Date().toISOString().split('T')[0];
   const todays = appointments.filter(a => String(a.date) === today).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-
-  const bannerStyle = doctorInfo.bannerImage
-    ? { backgroundImage: `url(${doctorInfo.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : {};
+  const bannerStyle = doctorInfo.bannerImage ? { backgroundImage: `url(${doctorInfo.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
 
   return (
     <div className="space-y-6 animate-fade-in text-left">
-      <div 
-        className={`p-8 rounded-[40px] border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-500 ${!doctorInfo.bannerImage ? 'bg-gradient-to-br from-indigo-700 to-black' : ''}`}
-        style={bannerStyle}
-      >
+      <div className={`p-8 rounded-[40px] border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-500 ${!doctorInfo.bannerImage ? 'bg-gradient-to-br from-indigo-700 to-black' : ''}`} style={bannerStyle}>
         {doctorInfo.bannerImage && <div className="absolute inset-0 bg-black/60" />}
-        <div className="relative z-10">
-          <p className="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md">
-            {String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}
-          </p>
-          <h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">
-            Dr. {String(doctorInfo.name || "Especialista")}
-          </h2>
-        </div>
-        <div className="absolute -bottom-10 -right-10 opacity-10 z-0">
-          {doctorInfo.logo ? (
-            <img src={doctorInfo.logo} alt="Logo" className="w-48 h-48 object-contain grayscale" />
-          ) : (
-            <SpineLogo className="w-48 h-48" />
-          )}
-        </div>
+        <div className="relative z-10"><p className="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md">{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p><h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">Dr. {String(doctorInfo.name || "Especialista")}</h2></div>
+        <div className="absolute -bottom-10 -right-10 opacity-10 z-0">{doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-48 h-48 object-contain grayscale" /> : <SpineLogo className="w-48 h-48" />}</div>
       </div>
-
-      {!doctorInfo.isPremium && (
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-600/10 border border-amber-500/30 p-5 rounded-[30px] flex items-center justify-between shadow-lg">
-          <div>
-            <h4 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1"><Sparkles className="w-4 h-4"/> Prueba Activa</h4>
-            <p className="text-[9px] text-amber-200/70 mt-1 uppercase tracking-widest">Activa PRO para Sincronizar</p>
-          </div>
-          <button onClick={onUpgrade} className="bg-amber-500 text-black px-4 py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 transition shadow-lg border-b-4 border-amber-700">
-            Obtener PRO
-          </button>
-        </div>
-      )}
-
+      {!doctorInfo.isPremium && (<div className="bg-gradient-to-r from-amber-500/10 to-orange-600/10 border border-amber-500/30 p-5 rounded-[30px] flex items-center justify-between shadow-lg"><div><h4 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1"><Sparkles className="w-4 h-4"/> Prueba Activa</h4><p className="text-[9px] text-amber-200/70 mt-1 uppercase tracking-widest">Activa PRO para Sincronizar</p></div><button onClick={onUpgrade} className="bg-amber-500 text-black px-4 py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 transition shadow-lg border-b-4 border-amber-700">Obtener PRO</button></div>)}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner relative overflow-hidden">
-          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pacientes</p>
-          <p className="text-3xl font-black text-white flex items-end gap-1">
-            {String(patients.length)} 
-            {!doctorInfo.isPremium && <span className="text-[10px] text-amber-500 mb-1 opacity-60">/ {MAX_TRIAL_PATIENTS} Max</span>}
-          </p>
-        </div>
-        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner">
-          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Citas Hoy</p>
-          <p className="text-3xl font-black text-white">{String(todays.length)}</p>
-        </div>
+        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner relative overflow-hidden"><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pacientes</p><p className="text-3xl font-black text-white flex items-end gap-1">{String(patients.length)} {!doctorInfo.isPremium && <span className="text-[10px] text-amber-500 mb-1 opacity-60">/ {MAX_TRIAL_PATIENTS} Max</span>}</p></div>
+        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner"><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Citas Hoy</p><p className="text-3xl font-black text-white">{String(todays.length)}</p></div>
       </div>
-
       <div className="bg-indigo-950/20 p-6 rounded-[40px] border border-indigo-500/20 shadow-xl">
-        <div className="flex justify-between items-center mb-6 px-2">
-          <h3 className="text-xl font-black uppercase italic text-white">Agenda del Día</h3>
-          <div className="flex gap-3">
-             <button onClick={onOpenCalendar} className="p-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-2xl active:scale-90 transition shadow-lg">
-               <CalendarIcon className="w-5 h-5" />
-             </button>
-             <button onClick={onAddAppointment} className="p-3 bg-cyan-400 text-black rounded-2xl active:scale-90 transition shadow-lg">
-               <Plus className="w-5 h-5" />
-             </button>
-          </div>
-        </div>
-        {todays.length === 0 ? (
-          <div className="py-12 text-center opacity-40">
-            <ClipboardList className="w-12 h-12 mx-auto mb-3 text-indigo-400" />
-            <p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Sin citas programadas</p>
-          </div>
-        ) : (
-          todays.map(app => (
-            <div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-white font-black uppercase italic">{String(patients.find(p => p.id === app.patientId)?.name || 'Paciente no encontrado')}</p>
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {String(app.time)}
-                </p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-indigo-800" />
-            </div>
-          ))
-        )}
+        <div className="flex justify-between items-center mb-6 px-2"><h3 className="text-xl font-black uppercase italic text-white">Agenda del Día</h3><div className="flex gap-3"><button onClick={onOpenCalendar} className="p-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-2xl active:scale-90 transition shadow-lg"><CalendarIcon className="w-5 h-5" /></button><button onClick={onAddAppointment} className="p-3 bg-cyan-400 text-black rounded-2xl active:scale-90 transition shadow-lg"><Plus className="w-5 h-5" /></button></div></div>
+        {todays.length === 0 ? (<div className="py-12 text-center opacity-40"><ClipboardList className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Sin citas programadas</p></div>) : (todays.map(app => (<div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between"><div><p className="text-white font-black uppercase italic">{String(patients.find(p => p.id === app.patientId)?.name || 'Paciente no encontrado')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div><ChevronRight className="w-5 h-5 text-indigo-800" /></div>)))}
       </div>
     </div>
   );
 };
 
-// --- PERFIL DEL PACIENTE Y EXPEDIENTE COMPLETO ---
 const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule }) => {
   const [sum, setSum] = useState('');
   const [loadingIA, setLoadingIA] = useState(false);
@@ -313,193 +176,38 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
   const clinicName = doctorInfo?.clinic || "nuestra clínica";
-
-  const handleWhatsApp = () => {
-    const msg = `Hola ${patient.name}, te escribimos de ${clinicName}. Nos comunicamos para dar seguimiento a tu tratamiento quiropráctico.`;
-    openWhatsApp(patient.phone, msg);
-  };
+  const handleWhatsApp = () => { openWhatsApp(patient.phone, `Hola ${patient.name}, te escribimos de ${clinicName}. Nos comunicamos para dar seguimiento a tu tratamiento quiropráctico.`); };
 
   return (
     <div className="animate-fade-in text-left pb-10">
-      <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20">
-        <button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90 transition"><ChevronRight className="rotate-180" /></button>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2>
-          <p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p>
-        </div>
-        <button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90 transition"><Trash2 className="w-5 h-5" /></button>
-      </div>
-
-      <div className="flex gap-3 mb-6">
-        <button onClick={handleWhatsApp} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 transition shadow-lg"><MessageSquare className="w-4 h-4" /> Contactar</button>
-        <button onClick={onSchedule} className="flex-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 transition shadow-lg"><CalendarPlus className="w-4 h-4" /> Agendar Cita</button>
-      </div>
-
-      <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">
-        {['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (
-          <button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
-            {sec}
-          </button>
-        ))}
-      </div>
+      <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20"><button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90 transition"><ChevronRight className="rotate-180" /></button><div className="flex-1 min-w-0"><h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2><p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p></div><button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90 transition"><Trash2 className="w-5 h-5" /></button></div>
+      <div className="flex gap-3 mb-6"><button onClick={handleWhatsApp} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 transition shadow-lg"><MessageSquare className="w-4 h-4" /> Contactar</button><button onClick={onSchedule} className="flex-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 transition shadow-lg"><CalendarPlus className="w-4 h-4" /> Agendar</button></div>
+      <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
 
       {activeSection === 'identidad' && (
         <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2 mb-4"><User className="w-4 h-4 text-cyan-400" /><h4 className="text-[10px] font-black text-white uppercase tracking-widest">Información Personal</h4></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div>
-            <div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad / Fecha Nac.</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'} <br/><span className="text-xs text-slate-400">{patient.birthDate}</span></p></div>
-            <div><p className="text-[8px] text-indigo-400 uppercase font-black">Ocupación</p><p className="text-sm font-bold text-white">{patient.occupation || '--'}</p></div>
-            <div><p className="text-[8px] text-indigo-400 uppercase font-black">Estado Civil</p><p className="text-sm font-bold text-white">{patient.maritalStatus || '--'}</p></div>
-            <div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Lugar de Nacimiento</p><p className="text-sm font-bold text-white">{patient.birthPlace || '--'}</p></div>
-            <div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección y Localidad</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p><p className="text-xs text-slate-400">{patient.location}</p></div>
-          </div>
+          <div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad / Nac.</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'} <br/><span className="text-xs text-slate-400">{patient.birthDate}</span></p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Ocupación</p><p className="text-sm font-bold text-white">{patient.occupation || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Estado Civil</p><p className="text-sm font-bold text-white">{patient.maritalStatus || '--'}</p></div></div>
         </div>
       )}
-
       {activeSection === 'historial' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4 text-cyan-400" /><h4 className="text-[10px] font-black text-white uppercase tracking-widest">Motivo de Consulta</h4></div>
-            <p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.consultationReason || "No registrado"}</p>
-            <div className="flex items-center gap-2 mb-2 mt-6"><Activity className="w-4 h-4 text-rose-400" /><h4 className="text-[10px] font-black text-white uppercase tracking-widest">Enfermedad Actual</h4></div>
-            <p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.currentIllness || "No registrado"}</p>
-          </div>
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-             <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Antecedentes Médicos Relevantes</h5><p className="text-sm text-indigo-100">{patient.relevantMedicalHistory || "--"}</p></div>
-             <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Antecedentes Patológicos (Cirugías, Alergias)</h5><p className="text-sm text-indigo-100">{patient.pathological || "--"}</p></div>
-             <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Antecedentes No Patológicos / Hábitos</h5><p className="text-sm text-indigo-100">{patient.nonPathological || "--"}</p></div>
-             <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Medicamentos Actuales</h5><p className="text-sm text-indigo-100">{patient.medications || "--"}</p></div>
-             <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Exámenes Complementarios (RX, RM)</h5><p className="text-sm text-indigo-100">{patient.complementaryExams || "--"}</p></div>
-          </div>
-        </div>
+        <div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo de Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.consultationReason || "No registrado"}</p></div><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Enfermedad Actual</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.currentIllness || "No registrado"}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Antecedentes Patológicos</h5><p className="text-sm text-indigo-100">{patient.pathological || "--"}</p></div></div></div>
       )}
-
       {activeSection === 'evaluacion' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="grid grid-cols-4 gap-2 mb-2">
-            <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Sangre</p><p className="text-xs font-bold text-white">{patient.bloodType || '-'}</p></div>
-            <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Presión</p><p className="text-xs font-bold text-white">{patient.pressure || '-'}</p></div>
-            <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div>
-            <div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div>
-          </div>
-
-          <div className="bg-rose-950/20 p-6 rounded-[40px] border border-rose-500/20 space-y-4">
-            <div className="flex items-center gap-2 mb-2"><AlertOctagon className="w-4 h-4 text-rose-500" /><h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Alertas y Precauciones</h4></div>
-            {patient.redFlags && patient.redFlags.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {patient.redFlags.map(flag => <span key={flag} className="px-3 py-1 bg-rose-500/20 text-rose-300 text-[10px] font-black uppercase rounded-lg border border-rose-500/30">{flag}</span>)}
-              </div>
-            ) : <p className="text-xs text-rose-200/50 italic">Sin alertas rojas registradas.</p>}
-          </div>
-
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Diagnóstico Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div>
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Diagnóstico General</h5><p className="text-sm text-indigo-100">{patient.generalDiagnosis || "--"}</p></div>
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Subluxaciones Detectadas</h5><p className="text-sm text-indigo-100">{patient.subluxations || "--"}</p></div>
-          </div>
-
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5">
-            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Variables de Estilo de Vida</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-[8px] text-indigo-400 uppercase font-black">Sueño</p><p className="text-sm font-bold text-white">{patient.sleepQuality || '--'}</p></div>
-              <div><p className="text-[8px] text-indigo-400 uppercase font-black">Cuidados Personales</p><p className="text-sm font-bold text-white">{patient.personalCare || '--'}</p></div>
-              <div><p className="text-[8px] text-indigo-400 uppercase font-black">Desplazamientos</p><p className="text-sm font-bold text-white">{patient.mobility || '--'}</p></div>
-              <div><p className="text-[8px] text-indigo-400 uppercase font-black">Recreación</p><p className="text-sm font-bold text-white">{patient.recreation || '--'}</p></div>
-            </div>
-          </div>
-        </div>
+        <div className="space-y-4 animate-fade-in"><div className="grid grid-cols-4 gap-2 mb-2"><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Sangre</p><p className="text-xs font-bold text-white">{patient.bloodType || '-'}</p></div><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Presión</p><p className="text-xs font-bold text-white">{patient.pressure || '-'}</p></div><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div><div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Diagnóstico Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div></div></div>
       )}
-
       {activeSection === 'anatomia' && (
-        <div className="space-y-4 animate-fade-in text-left">
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <div className="flex items-center gap-2 mb-2"><User className="w-4 h-4 text-cyan-400" /><h4 className="text-[10px] font-black text-white uppercase tracking-widest">Alteraciones Posturales</h4></div>
-            {patient.posturalDeviations && patient.posturalDeviations.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {patient.posturalDeviations.map(dev => <span key={dev} className="px-3 py-1 bg-indigo-500/10 text-indigo-300 text-[10px] font-black uppercase rounded-lg border border-indigo-500/30">{dev}</span>)}
-              </div>
-            ) : <p className="text-xs text-slate-500 italic">No se marcaron alteraciones posturales.</p>}
-          </div>
-
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Análisis por Planos Anatómicos</h4>
-            <div className="space-y-4">
-               <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Vista Anterior (Frente)</h5><p className="text-sm text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.postureAnterior || "--"}</p></div>
-               <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Vista Posterior (Espalda)</h5><p className="text-sm text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.posturePosterior || "--"}</p></div>
-               <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Vista Lateral (Perfil)</h5><p className="text-sm text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.postureLateral || "--"}</p></div>
-            </div>
-          </div>
-          {(patient.anatomicalPlaneNotes) && (
-            <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-              <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Notas Adicionales de Anatomía</h5><p className="text-sm text-indigo-100">{patient.anatomicalPlaneNotes}</p></div>
-            </div>
-          )}
-        </div>
+        <div className="space-y-4 animate-fade-in text-left"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Análisis por Planos Anatómicos</h4><div className="space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Vista Anterior</h5><p className="text-sm text-indigo-100 bg-slate-950 p-4 rounded-2xl border border-white/5">{patient.postureAnterior || "--"}</p></div></div></div></div>
       )}
-
       {activeSection === 'tratamiento' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Objetivos del Tratamiento</h5><p className="text-sm font-bold text-white bg-slate-950 p-4 rounded-2xl">{patient.treatmentGoals || "--"}</p></div>
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan de Tratamiento</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div>
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Observaciones Especiales</h5><p className="text-sm text-indigo-100">{patient.observations || "--"}</p></div>
-          </div>
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2">Técnicas a Utilizar</h4>
-            {patient.chiropracticTechniques && patient.chiropracticTechniques.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {patient.chiropracticTechniques.map(tech => <span key={tech} className="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase rounded-lg border border-cyan-500/20">{tech}</span>)}
-              </div>
-            ) : <p className="text-xs text-slate-500 italic">No se especificaron técnicas.</p>}
-            <div className="mt-4"><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Recomendaciones Adicionales (Casa)</h5><p className="text-sm text-indigo-100">{patient.additionalRecommendations || "--"}</p></div>
-          </div>
-        </div>
+        <div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Objetivos del Tratamiento</h5><p className="text-sm font-bold text-white bg-slate-950 p-4 rounded-2xl">{patient.treatmentGoals || "--"}</p></div><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan de Tratamiento</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div></div></div>
       )}
-
       {activeSection === 'sesiones' && (
-        <div className="animate-fade-in">
-          <div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner">
-            <div className="flex justify-between items-center mb-4 text-left">
-              <h3 className="text-xs font-black uppercase text-white flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-cyan-400" /> Bio-Guía: Asistente Clínico
-              </h3>
-              {!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full shadow-lg active:scale-95 transition">{loadingIA ? "..." : "Sugerir Técnicas"}</button>}
-            </div>
-            {sum ? (
-              <div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2">
-                <p className="text-xs text-indigo-100 whitespace-pre-wrap leading-relaxed">{sum}</p>
-              </div>
-            ) : (
-              <p className="text-xs italic text-indigo-200 leading-relaxed">Presiona el botón para recibir recomendaciones exactas de técnicas y cuidados basados en las áreas que has estado tratando.</p>
-            )}
-          </div>
-          <div className="flex justify-between items-center mb-4 px-2">
-            <h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500" /> Ajustes Realizados</h3>
-            <button onClick={onAddHistory} className="bg-white text-black p-3 rounded-2xl active:scale-90 transition shadow-2xl"><Plus className="w-5 h-5" /></button>
-          </div>
-          <div className="space-y-4">
-            {(!patient.histories || patient.histories.length === 0) ? (
-              <div className="py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-[40px]"><p className="text-xs font-black uppercase">Sin ajustes registrados</p></div>
-            ) : patient.histories.map((h, i) => (
-              <div key={i} className="bg-slate-900/50 p-5 rounded-3xl border-l-4 border-cyan-500 shadow-md">
-                <div className="flex justify-between mb-2">
-                  <span className="text-[10px] font-black text-indigo-400 uppercase">{safeFormatDate(h.date)}</span>
-                  <span className="text-[10px] font-black text-rose-500 uppercase px-2 py-0.5 bg-rose-500/10 rounded-full">Dolor {String(h.painLevel)}/10</span>
-                </div>
-                <p className="text-sm italic mb-2 text-indigo-50">"{String(h.notes)}"</p>
-                <div className="flex flex-wrap gap-1">
-                  {h.areas?.map(a => <span key={a} className="text-[8px] bg-slate-950 px-2 py-1 rounded-lg border border-white/5 text-cyan-400 font-black uppercase tracking-widest">{String(a)}</span>)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="animate-fade-in"><div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner"><div className="flex justify-between items-center mb-4 text-left"><h3 className="text-xs font-black uppercase text-white flex items-center gap-2"><Stethoscope className="w-4 h-4 text-cyan-400" /> Bio-Guía: Asistente Clínico</h3>{!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full shadow-lg active:scale-95 transition">{loadingIA ? "..." : "Sugerir Técnicas"}</button>}</div>{sum ? (<div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2"><p className="text-xs text-indigo-100 whitespace-pre-wrap leading-relaxed">{sum}</p></div>) : (<p className="text-xs italic text-indigo-200 leading-relaxed">Presiona el botón para recibir recomendaciones exactas.</p>)}</div><div className="flex justify-between items-center mb-4 px-2"><h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500" /> Ajustes Realizados</h3><button onClick={onAddHistory} className="bg-white text-black p-3 rounded-2xl active:scale-90 transition shadow-2xl"><Plus className="w-5 h-5" /></button></div><div className="space-y-4">{(!patient.histories || patient.histories.length === 0) ? (<div className="py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-[40px]"><p className="text-xs font-black uppercase">Sin ajustes registrados</p></div>) : patient.histories.map((h, i) => (<div key={i} className="bg-slate-900/50 p-5 rounded-3xl border-l-4 border-cyan-500 shadow-md"><div className="flex justify-between mb-2"><span className="text-[10px] font-black text-indigo-400 uppercase">{safeFormatDate(h.date)}</span><span className="text-[10px] font-black text-rose-500 uppercase px-2 py-0.5 bg-rose-500/10 rounded-full">Dolor {String(h.painLevel)}/10</span></div><p className="text-sm italic mb-2 text-indigo-50">"{String(h.notes)}"</p><div className="flex flex-wrap gap-1">{h.areas?.map(a => <span key={a} className="text-[8px] bg-slate-950 px-2 py-1 rounded-lg border border-white/5 text-cyan-400 font-black uppercase tracking-widest">{String(a)}</span>)}</div></div>))}</div></div>
       )}
     </div>
   );
 };
-
+// === INICIO DE LA PARTE 2 ===
 const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin }) => {
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
@@ -843,20 +551,32 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error
   const [isLoginView, setIsLoginView] = useState(true);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#020617] p-6 text-center relative overflow-hidden text-white italic">
+    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
       <SpineWatermark />
-      <div className="mb-8 z-10 animate-fade-in"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-8 rounded-[40px] inline-block mb-6 shadow-2xl border border-white/20"><SpineLogo className="w-14 h-14 text-white" /></div><h2 className="text-5xl font-black uppercase tracking-tighter mb-2 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2><p className="text-indigo-400 font-black tracking-[0.4em] uppercase text-[9px] opacity-60 text-center">Gestión Clínica Profesional</p></div>
-      <div className="w-full max-w-sm space-y-4 z-10 relative">
+      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica</p>
+        
         {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
-        {inProcess ? (<div className="p-10 bg-white/5 rounded-[45px] border border-white/10 backdrop-blur-md flex flex-col items-center"><Loader2 className="w-12 h-12 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Cargando...</p></div>) : (
+        
+        {inProcess ? (
+          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando...</p></div>
+        ) : (
           <div className="space-y-4 animate-slide-up">
-            {step === 'initial' && (<><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-5 rounded-[25px] font-black flex items-center justify-center gap-3 transition border-b-[6px] border-cyan-700 uppercase shadow-xl active:scale-95 text-sm sm:text-base"><PlayCircle className="w-6 h-6" /> Comenzar Prueba (3 Días)</button><div className="flex items-center gap-4 py-2 opacity-30"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[10px] font-black uppercase tracking-widest italic">O tienes cuenta PRO</span><div className="flex-1 h-[1px] bg-white"></div></div><div className="grid grid-cols-1 gap-3"><button onClick={() => setStep('email')} className="bg-white/10 p-4 rounded-[25px] border border-white/10 flex items-center justify-center gap-2 hover:bg-white/20 transition active:scale-95"><Mail className="w-4 h-4 text-cyan-400" /><span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button><button onClick={onGoogleLogin} className="bg-white/5 p-4 rounded-[25px] border border-white/5 flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95 opacity-70"><Globe className="w-4 h-4 text-white" /><span className="text-[10px] font-black uppercase">Google</span></button></div></>)}
+            {step === 'initial' && (
+              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Prueba Gratuita</button>
+                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
+                <div className="grid grid-cols-1 gap-3">
+                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
+                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
+                </div></>
+            )}
             {step === 'email' && (
-              <div className="bg-indigo-950/40 p-6 rounded-[35px] border border-white/10 backdrop-blur-sm text-left">
-                <h3 className="text-sm font-black uppercase text-cyan-400 mb-4 tracking-widest text-center">{isLoginView ? 'Iniciar Sesión' : 'Crear Cuenta'}</h3>
-                <div className="space-y-3 mb-6"><div><input type="email" placeholder="ejemplo@correo.com" className="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 outline-none text-white text-sm focus:border-cyan-500" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 outline-none text-white text-sm focus:border-cyan-500" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
-                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase text-indigo-400 active:scale-95">Atrás</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-500 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
-                <p className="text-center mt-6 text-[9px] text-indigo-300">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+              <div className="text-left">
+                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
+                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Atrás</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
               </div>
             )}
           </div>
@@ -865,7 +585,6 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error
     </div>
   );
 };
-
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1043,3 +762,5 @@ export default function App() {
     </div>
   );
 }
+
+// === FIN DE LA PARTE 1 ===
