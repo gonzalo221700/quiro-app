@@ -3,7 +3,7 @@ import './index.css';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, RecaptchaVerifier, signInWithPhoneNumber, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette } from 'lucide-react';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Download, AlertOctagon, FileText, Stethoscope, Palette } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
@@ -129,7 +129,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   return (
     <div className="space-y-6 animate-fade-in text-left">
       <div className={`p-8 rounded-[45px] border-[6px] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden transition-all duration-500 ${currentTheme.bg}`}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div> {/* Sombra de profundidad interior */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
         <div className="relative z-10">
           <p className={`${currentTheme.text === 'text-white' ? 'text-cyan-400' : 'text-slate-500'} text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md`}>{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p>
           <h2 className={`text-4xl font-black italic ${currentTheme.text} leading-none tracking-tighter drop-shadow-lg`}>{String(doctorInfo.name || "Especialista")}</h2>
@@ -182,7 +182,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   const [customTitle, setCustomTitle] = useState('');
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
-  const [theme, setTheme] = useState(doctorInfo.theme || 'azul'); // 🌟 NUEVO ESTADO DE TEMA
+  const [theme, setTheme] = useState(doctorInfo.theme || 'azul'); 
   
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -200,7 +200,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     if (isLocked) return;
     setIsSaving(true);
     const finalTitle = title === 'Otro' ? customTitle : title;
-    await onUpdateInfo({ title: finalTitle, name, clinic, theme }); // 🌟 GUARDA EL TEMA EN FIREBASE
+    await onUpdateInfo({ title: finalTitle, name, clinic, theme }); 
     setIsSaving(false);
     setSaved(true);
     setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500); 
@@ -218,6 +218,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     return Math.ceil(diffMs / 86400000);
   };
 
+  // 🌟 FUNCIÓN DE SUBIDA CORREGIDA (Solo Logo, ya no hay Banner)
   const handleImageUpload = (e, fieldName) => {
     if (isLocked) return;
     const file = e.target.files[0];
@@ -302,8 +303,8 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
       <div className="bg-slate-900/80 rounded-[40px] border border-cyan-400/20 shadow-xl overflow-hidden relative transition-all duration-500">
         {!isEditing ? (
           <div className="relative animate-fade-in">
-            {/* 🌟 BANNER CON TEMA DE COLOR APLICADO */}
             <div className={`h-36 w-full relative border-b border-white/10 ${currentTheme.bg}`}>
+               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
             <div className="px-8 pb-8 relative mt-[-45px] text-center flex flex-col items-center">
                <div className="w-24 h-24 bg-slate-950 rounded-[25px] border-4 border-cyan-500/50 flex items-center justify-center overflow-hidden mb-4 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
@@ -325,9 +326,11 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
                <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-full flex items-center gap-1 transition-all"><X className="w-3 h-3"/> Cancelar</button>
              </div>
              
-             {/* 🌟 SELECTOR DE TEMAS ELEGANTES */}
+             {/* 🌟 OPCIÓN ÚNICA: COLOR DE FONDO DE VENTANA */}
              <div className="border-b border-white/10 pb-6 mb-6">
-               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}><Palette className="w-3 h-3" /> Tema de Clínica</label>
+               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
+                 <Palette className="w-3 h-3" /> Color de Fondo de Ventana
+               </label>
                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                  {Object.entries(CLINIC_THEMES).map(([key, t]) => (
                    <button 
