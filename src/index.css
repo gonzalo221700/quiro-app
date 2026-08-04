@@ -69,18 +69,94 @@ body {
 }
 
 .theme-light {
-    background-color: #f8fafc !important;
+    background-color: #fafcff !important;
     color: #0f172a !important;
 }
-.theme-light .bg-\[\#020617\] { background-color: #f8fafc !important; }
-.theme-light .bg-slate-900 { background-color: #ffffff !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05) !important; border-color: #e2e8f0 !important; }
-.theme-light .bg-slate-950 { background-color: #f1f5f9 !important; border-color: #e2e8f0 !important; }
-.theme-light .bg-slate-900\/50, .theme-light .bg-slate-900\/80 { background-color: rgba(255,255,255,0.85) !important; backdrop-filter: blur(12px) !important; border-color: rgba(0,0,0,0.1) !important; }
-.theme-light .bg-slate-950\/90 { background-color: rgba(248,250,252,0.9) !important; }
-.theme-light .text-white { color: #0f172a !important; }
-.theme-light .text-indigo-100, .theme-light .text-indigo-200 { color: #334155 !important; }
-.theme-light .text-slate-400 { color: #64748b !important; }
-.theme-light .border-white\/5, .theme-light .border-white\/10, .theme-light .border-white\/20 { border-color: rgba(0,0,0,0.1) !important; }
-.theme-light .bg-white\/5, .theme-light .bg-white\/10 { background-color: rgba(0,0,0,0.05) !important; }
-.theme-light .bg-black\/20 { background-color: rgba(0,0,0,0.05) !important; }
-.theme-light .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1) !important; }
+
+/* Fondos Principales */
+.theme-light .bg-\[\#020617\],
+.theme-light .bg-slate-950 {
+    background-color: #fafcff !important;
+}
+
+/* Tarjetas, Contenedores y Ventanas Principales (Blanco Puro Elevado) */
+.theme-light .bg-slate-900 {
+    background-color: #ffffff !important;
+    box-shadow: 0 20px 30px -10px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03) !important;
+    border: 1px solid rgba(2, 132, 199, 0.15) !important;
+}
+
+/* Contenedores Internos y Secciones Secundarias */
+.theme-light .bg-slate-900\/50, 
+.theme-light .bg-slate-900\/80,
+.theme-light .bg-slate-950\/90 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(2, 132, 199, 0.15) !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Cajas de Información y Tarjetas Destacadas (Azul Helado) */
+.theme-light .bg-indigo-900\/20,
+.theme-light .bg-indigo-950\/20,
+.theme-light .bg-indigo-900\/40 {
+    background-color: #f0f7ff !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+}
+
+/* Modales y Ventanas Emergentes */
+.theme-light .bg-slate-950.w-full {
+    background-color: #ffffff !important;
+    border-top: 4px solid #0284c7 !important;
+    box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.15) !important;
+}
+
+/* TIPOGRAFÍA Y LEGIBILIDAD EXTREMA */
+.theme-light .text-white {
+    color: #0f172a !important; /* Azul Medianoche Oscuro para legibilidad 100% */
+}
+
+.theme-light .text-indigo-100, 
+.theme-light .text-indigo-200 {
+    color: #1e293b !important; /* Cobalto Profundo */
+}
+
+.theme-light .text-slate-400, 
+.theme-light .text-slate-500 {
+    color: #475569 !important; /* Pizarra de Alto Contraste */
+}
+
+/* Acentos Cyan adaptados a fondo claro para lectura perfecta */
+.theme-light .text-cyan-400 {
+    color: #0284c7 !important; /* Cyan Cobalto Profesional */
+}
+
+.theme-light .text-cyan-300 {
+    color: #0369a1 !important;
+}
+
+/* Bordes y Líneas Divisorias */
+.theme-light .border-white\/5, 
+.theme-light .border-white\/10, 
+.theme-light .border-white\/20 {
+    border-color: rgba(2, 132, 199, 0.15) !important;
+}
+
+.theme-light .bg-white\/5, 
+.theme-light .bg-white\/10 {
+    background-color: #f1f5f9 !important;
+}
+
+/* Inputs y Campos de Formulario */
+.theme-light input,
+.theme-light select,
+.theme-light textarea {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+    color: #94a3b8 !important;
+}
