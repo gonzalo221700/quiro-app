@@ -459,7 +459,6 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const [loadingIA, setLoadingIA] = useState(false);
   const [activeSection, setActiveSection] = useState('historial'); 
   
-  // SISTEMA DE ASISTENCIA CLÍNICA BASADO EN REGLAS
   const generateLocalAssistant = () => {
     if (!patient.histories || patient.histories.length === 0) {
       setSum("Para recibir sugerencias, necesitas registrar al menos una sesión de ajuste con las áreas tratadas.");
@@ -1379,6 +1378,7 @@ const SubscriptionBlockedScreen = ({ onLogout }) => (
   </div>
 );
 
+// --- 💎 PANTALLA LOGIN PREMIUM (GLASSMORPHISM APLICADO) ---
 const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1389,51 +1389,70 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#020617] p-6 text-center relative overflow-hidden text-white italic">
+    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
       <SpineWatermark />
-      <div className="mb-8 z-10 animate-fade-in">
-        <div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-8 rounded-[40px] inline-block mb-6 shadow-2xl border border-white/20"><SpineLogo className="w-14 h-14 text-white" /></div>
-        <h2 className="text-5xl font-black uppercase tracking-tighter mb-2 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        <p className="text-indigo-400 font-black tracking-[0.4em] uppercase text-[9px] opacity-60 text-center">Gestión Clínica Profesional</p>
-      </div>
-      <div className="w-full max-w-sm space-y-4 z-10 relative">
+      
+      {/* Tarjeta Glassmorphism Premium */}
+      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+        
+        <div className="flex justify-center mb-6">
+           <div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20">
+             <SpineLogo className="w-10 h-10 text-white" />
+           </div>
+        </div>
+        
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
+        
         {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+        
         {inProcess ? (
-          <div className="p-10 bg-white/5 rounded-[45px] border border-white/10 backdrop-blur-md flex flex-col items-center">
-            <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mb-4" />
+          <div className="py-10 flex flex-col items-center">
+            <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" />
             <p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p>
           </div>
         ) : (
           <div className="space-y-4 animate-slide-up">
             {step === 'initial' && (
-              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-5 rounded-[25px] font-black flex items-center justify-center gap-3 transition border-b-[6px] border-cyan-700 uppercase shadow-xl active:scale-95 text-sm sm:text-base"><PlayCircle className="w-6 h-6" /> Comenzar Prueba (3 Días)</button>
-                <div className="flex items-center gap-4 py-2 opacity-30"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[10px] font-black uppercase tracking-widest italic">O tienes cuenta PRO</span><div className="flex-1 h-[1px] bg-white"></div></div>
+              <>
+                <button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs">
+                  <PlayCircle className="w-5 h-5" /> Iniciar Prueba (3 Días)
+                </button>
+                <div className="flex items-center gap-4 py-3 opacity-40">
+                  <div className="flex-1 h-[1px] bg-white"></div>
+                  <span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa a tu cuenta PRO</span>
+                  <div className="flex-1 h-[1px] bg-white"></div>
+                </div>
                 <div className="grid grid-cols-1 gap-3">
-                   <button onClick={() => setStep('email')} className="bg-white/10 p-4 rounded-[25px] border border-white/10 flex items-center justify-center gap-2 hover:bg-white/20 transition active:scale-95"><Mail className="w-4 h-4 text-cyan-400" /><span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
-                   <button onClick={onGoogleLogin} className="bg-white/5 p-4 rounded-[25px] border border-white/5 flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95 opacity-70"><Globe className="w-4 h-4 text-white" /><span className="text-[10px] font-black uppercase">Google</span></button>
-                </div></>
+                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400">
+                     <Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span>
+                   </button>
+                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white">
+                     <Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Google</span>
+                   </button>
+                </div>
+              </>
             )}
+            
             {step === 'email' && (
-              <div className="bg-indigo-950/40 p-6 rounded-[35px] border border-white/10 backdrop-blur-sm text-left">
-                <h3 className="text-sm font-black uppercase text-cyan-400 mb-4 tracking-widest text-center">{isLoginView ? 'Iniciar Sesión' : 'Crear Cuenta'}</h3>
-                
+              <div className="text-left">
                 <div className="space-y-3 mb-6">
                   <div>
-                    <label className="text-[9px] font-black uppercase text-indigo-400 ml-2 mb-1 block">Correo Electrónico</label>
-                    <input type="email" placeholder="ejemplo@correo.com" className="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 outline-none text-white text-sm focus:border-cyan-500" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} />
                   </div>
                   <div>
-                    <label className="text-[9px] font-black uppercase text-indigo-400 ml-2 mb-1 block">Contraseña</label>
-                    <input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 outline-none text-white text-sm focus:border-cyan-500" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} />
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={() => setStep('initial')} className="flex-1 bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase text-indigo-400 active:scale-95">Atrás</button>
-                  <button onClick={handleSubmit} className="flex-[2] bg-cyan-500 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition">{isLoginView ? 'Ingresar' : 'Registrarse'}</button>
+                  <button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button>
+                  <button onClick={handleSubmit} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+                    {isLoginView ? 'Ingresar' : 'Registrarse'}
+                  </button>
                 </div>
 
-                <p className="text-center mt-6 text-[9px] text-indigo-300">
+                <p className="text-center mt-6 text-[9px] text-indigo-200">
                   {isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} 
                   <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">
                     {isLoginView ? 'Regístrate' : 'Inicia Sesión'}
@@ -1743,7 +1762,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6 z-10 pb-32">
+      {/* Espacio extra abajo para que la lista de pacientes no quede tapada por la Isla Flotante */}
+      <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
         {selectedPatientId ? (
           <PatientProfile 
             patient={patients.find(p => p.id === selectedPatientId)} 
@@ -1766,7 +1786,7 @@ export default function App() {
                     <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
                   </div>
                 ))}
-                <button onClick={handleOpenNewPatient} className="fixed bottom-32 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
               </div>
             )}
             
@@ -1821,20 +1841,20 @@ export default function App() {
         )}
       </main>
 
-      {!doctorInfo.isPremium && <div className="fixed bottom-24 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d {trialTimeLeft.hours}h restantes</span></span></div></div>}
+      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d {trialTimeLeft.hours}h restantes</span></span></div></div>}
 
-      <nav className="fixed bottom-0 w-full p-5 pb-8 bg-slate-900/90 backdrop-blur-3xl border-t border-indigo-400/20 flex justify-around items-center z-50 shadow-2xl">
-        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
-        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
+      {/* 💎 NUEVO MENÚ TIPO ISLA FLOTANTE */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
+        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
         
-        {/* Nuevo botón de Técnicas (Reemplaza a Marketing) */}
-        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
+        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
         
         {doctorInfo.isAdmin && (
-           <button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110' : 'text-slate-500 opacity-50'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>
+           <button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>
         )}
         
-        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
+        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
 
       {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
