@@ -322,7 +322,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImageIcon className="w-3 h-3" /> Imagen de Fondo
           </label>
-          {/* 🌟 INICIO SECCIÓN IMAGEN DE FONDO CORREGIDA */}
+        
         <div className="border-b border-white/10 pb-6 mb-6">
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImageIcon className="w-3 h-3" /> Imagen de Fondo
@@ -330,14 +330,12 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
           <div className="flex flex-col gap-4">
             <div className={`w-full h-32 rounded-[20px] flex items-center justify-center border-2 border-dashed relative overflow-hidden ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950'}`}>
               
-              {/* 1. Mostrar la imagen (si hay) o el ícono (si no hay) */}
               {doctorInfo.bannerImage ? (
                 <img src={doctorInfo.bannerImage} alt="Fondo" className="w-full h-full object-cover opacity-60" />
               ) : (
                 <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
               )}
 
-              {/* 2. El botón SIEMPRE existirá flotando por encima de todo */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
                 <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm transition-all ${isLocked ? 'hidden' : 'bg-black/60 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95 hover:bg-black/80'}`}>
@@ -348,8 +346,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
             </div>
           </div>
         </div>
-        {/* 🌟 FIN SECCIÓN IMAGEN DE FONDO CORREGIDA */}
-
+          
         <div>
           <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400"><User className="w-3 h-3"/> Especialista</label>
           <input type="text" placeholder="Tu Nombre" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
