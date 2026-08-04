@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './index.css'; // CONEXIÓN AL CSS ASEGURADA
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -459,7 +460,6 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const [loadingIA, setLoadingIA] = useState(false);
   const [activeSection, setActiveSection] = useState('historial'); 
   
-  // SISTEMA DE ASISTENCIA CLÍNICA BASADO EN REGLAS
   const generateLocalAssistant = () => {
     if (!patient.histories || patient.histories.length === 0) {
       setSum("Para recibir sugerencias, necesitas registrar al menos una sesión de ajuste con las áreas tratadas.");
@@ -1379,6 +1379,7 @@ const SubscriptionBlockedScreen = ({ onLogout }) => (
   </div>
 );
 
+// --- 💎 PANTALLA LOGIN ORIGINAL RESTAURADA ---
 const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1743,7 +1744,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6 z-10 pb-32">
+      {/* Espacio extra abajo para que la lista de pacientes no quede tapada por la Isla Flotante */}
+      <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
         {selectedPatientId ? (
           <PatientProfile 
             patient={patients.find(p => p.id === selectedPatientId)} 
@@ -1766,7 +1768,7 @@ export default function App() {
                     <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
                   </div>
                 ))}
-                <button onClick={handleOpenNewPatient} className="fixed bottom-32 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
               </div>
             )}
             
@@ -1821,20 +1823,20 @@ export default function App() {
         )}
       </main>
 
-      {!doctorInfo.isPremium && <div className="fixed bottom-24 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d {trialTimeLeft.hours}h restantes</span></span></div></div>}
+      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d {trialTimeLeft.hours}h restantes</span></span></div></div>}
 
-      <nav className="fixed bottom-0 w-full p-5 pb-8 bg-slate-900/90 backdrop-blur-3xl border-t border-indigo-400/20 flex justify-around items-center z-50 shadow-2xl">
-        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
-        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
+      {/* 💎 NUEVO MENÚ TIPO ISLA FLOTANTE */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
+        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
         
-        {/* Nuevo botón de Técnicas (Reemplaza a Marketing) */}
-        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
+        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
         
         {doctorInfo.isAdmin && (
-           <button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110' : 'text-slate-500 opacity-50'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>
+           <button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>
         )}
         
-        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110' : 'text-slate-500 opacity-50'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
+        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
 
       {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
