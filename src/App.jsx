@@ -79,7 +79,6 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-// 🌟 NUEVO COMPONENTE: LISTA DESPLEGABLE (ACORDEÓN)
 const MultiSelectDropdown = ({ title, icon: Icon, items, selectedItems, toggleItem, isDanger }) => {
   const [isOpen, setIsOpen] = useState(false);
   const activeStyle = isDanger 
@@ -107,7 +106,6 @@ const MultiSelectDropdown = ({ title, icon: Icon, items, selectedItems, toggleIt
   );
 };
 
-// 🌟 MAPA ANATÓMICO (Sin fondo gris, letras legibles, 3 Vistas)
 const AnatomyMap = ({ selectedAreas, toggleArea }) => {
   const isSelected = (area) => selectedAreas.includes(area);
   const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.4)" : "rgba(15, 23, 42, 0.1)"; 
@@ -122,9 +120,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
          <div className="min-w-[650px] mx-auto">
            <svg viewBox="0 0 900 600" className="w-full h-[400px]">
              
-             {/* ===================== VISTA 1: ANTERIOR (FRONTAL) x=150 ===================== */}
              <text x="150" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">ANTERIOR</text>
-             
              <circle cx="150" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
              <path d="M 135 115 L 165 115 L 165 140 L 135 140 Z" fill="none" stroke="#64748b" strokeWidth="4" />
 
@@ -186,9 +182,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
              </g>
 
 
-             {/* ===================== VISTA 2: LATERAL x=450 ===================== */}
              <text x="450" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
-             
              <ellipse cx="460" cy="80" rx="30" ry="35" fill="none" stroke="#64748b" strokeWidth="4" />
              
              <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all">
@@ -214,9 +208,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
              <circle cx="455" cy="275" r="15" fill="none" stroke="#64748b" strokeWidth="4" />
 
 
-             {/* ===================== VISTA 3: POSTERIOR (ESPALDA) x=750 ===================== */}
              <text x="750" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">POSTERIOR</text>
-             
              <circle cx="750" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
 
              <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all">
@@ -603,7 +595,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   );
 };
 
-// 🌟 FORMULARIO COMPLETO: RESPONSIVO, DESPLEGABLES, MAPA y 3 VISTAS
 const NewPatientModal = ({ onClose, onSave }) => {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -806,7 +797,7 @@ const NewHistoryModal = ({ onClose, onSave }) => {
         <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
 
         <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Gardando...</> : <><CheckCircle2 className="w-5 h-5"/> Gardar Ajuste Clínico</>}
         </button>
       </div>
     </Modal>
@@ -822,7 +813,7 @@ const NewAppointmentModal = ({ onClose, onSave }) => {
       <div className="space-y-6 text-left">
         <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
         <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Gardando...' : 'Confirmar Cita'}</button>
       </div>
     </Modal>
   );
