@@ -381,78 +381,174 @@ export default function App() {
   const [modals, setModals] = useState({});
   const [authInProcess, setAuthInProcess] = useState(false);
   const [authError, setAuthError] = useState("");
-  
-  // 🌟 MEMORIA DEL MODO CLARO/OSCURO CONECTADA
+  const [authStep, setAuthStep] = useState('initial');
+
   const [visualMode, setVisualMode] = useState(localStorage.getItem('quiroTheme') || 'oscuro');
 
-  // Guardar preferencia para que no se borre al recargar
   useEffect(() => {
     localStorage.setItem('quiroTheme', visualMode);
   }, [visualMode]);
 
   useEffect(() => {
-    const un = onAuthStateChanged(auth, (cu) => { setUser(cu); if (!cu) setLoading(false); });
-    return () => un();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); if (!currentUser) { setLoading(false); setAuthInProcess(false); } });
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!user) return;
-    const check = async () => {
+    const checkTrialAndSync = async () => {
       try {
-        const dRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDocFromServer(dRef);
-        let pD = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false };
-        if (!snap.exists()) await setDoc(dRef, pD);
-        setDoctorInfo(pD);
-        if (pD.isPremium) setTrialTimeLeft({ expired: false, isPremium: true });
-        else setTrialTimeLeft({ days: 3, hours: 0, expired: false });
-      } catch (e) { } finally { setLoading(false); }
+        const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
+        const snap = await getDocFromServer(docRef); 
+        let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
+        if (!snap.exists()) await setDoc(docRef, profileData);
+        else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
+        
+        if (profileData.isPremium && profileData.premiumExpiresAt && Date.now() > profileData.premiumExpiresAt) {
+          profileData.isPremium = false; await updateDoc(docRef, { isPremium: false });
+        }
+        setDoctorInfo(profileData);
+        if (profileData.isPremium) setTrialTimeLeft({ expired: false, isPremium: true });
+        else {
+          const diffMs = (TRIAL_DAYS * 24 * 60 * 60 * 1000) - (Date.now() - profileData.trialStartedAt);
+          if (diffMs <= 0) setTrialTimeLeft({ days: 0, hours: 0, expired: true });
+          else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
+        }
+      } catch (e) {} finally { setLoading(false); }
     };
-    check();
-    const uPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => uPat();
+    checkTrialAndSync();
+    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsubPat(); unsubApp(); };
   }, [user]);
 
-  const hGL = async () => { setAuthInProcess(true); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { setAuthInProcess(false); } };
-  const hTL = async () => { setAuthInProcess(true); try { await signInAnonymously(auth); } catch (e) { setAuthInProcess(false); } };
+  useEffect(() => {
+    if (user && doctorInfo?.isAdmin) {
+      const unsubCodes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'codes'), (snap) => setAdminCodes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      return () => unsubCodes();
+    }
+  }, [user, doctorInfo?.isAdmin]);
 
-  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase"><Loader2 className="w-12 h-12 mb-4 animate-spin"/>Iniciando...</div>;
-  if (!user) return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center text-white italic">
-      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-2xl">
-        <h2 className="text-4xl font-black uppercase mb-8 text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        {authInProcess ? (<Loader2 className="w-10 h-10 text-cyan-400 animate-spin mx-auto"/>) : (
-          <div>
-            <button onClick={hTL} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex justify-center gap-3 uppercase shadow-xl mb-4"><PlayCircle className="w-5 h-5"/> Prueba Gratuita</button>
-            <button onClick={hGL} className="w-full bg-black/20 text-white py-4 rounded-[20px] font-black flex justify-center gap-3 uppercase shadow-xl border border-white/10"><Globe className="w-5 h-5"/> Ingresar con Google</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user') setAuthError("Error de Google."); setAuthInProcess(false); } };
+  const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError("Error de conexión."); setAuthInProcess(false); } };
+  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError("Error de credenciales."); setAuthInProcess(false); } };
+  const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+  const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+
+  const handleActivateCode = async (codeStr) => {
+    if (!codeStr) return alert("Ingresa un código.");
+    try {
+      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr.trim().toUpperCase());
+      const codeSnap = await getDoc(codeRef); 
+      if (codeSnap.exists() && !codeSnap.data().used) {
+         const codeData = codeSnap.data();
+         const newExpiresAt = (doctorInfo.premiumExpiresAt || Date.now()) + ((codeData.durationDays || 30) * 86400000);
+         await updateDoc(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
+         await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
+         setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: newExpiresAt}));
+         alert(`¡PRO activado por ${codeData.durationDays} días!`);
+         setActiveTab('settings');
+      } else alert("Código inválido o usado.");
+    } catch (e) { alert("Error de servidor."); }
+  };
+
+  const handleGenerateAdminCode = async (type, durationDays) => {
+    try {
+      const newCode = (type === 'Mensual' ? 'MES-' : 'ANU-') + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), { used: false, type, durationDays, createdAt: new Date().toISOString(), createdBy: user?.uid });
+      alert(`Código generado: ${newCode}`);
+    } catch (e) { alert("Error."); }
+  };
+
+  const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
+  const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
+  const handleAddPatient = (data) => { setModals(prev => ({ ...prev, patient: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() }); };
+  const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
+  const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
+  const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
+
+  const handleOpenNewPatient = () => { if (!doctorInfo.isPremium && patients.length >= MAX_TRIAL_PATIENTS) setModals(m => ({ ...m, upsell: true })); else setModals(m => ({ ...m, patient: true })); };
+
+  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
+  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} inProcess={authInProcess} error={authError} step={authStep} setStep={setAuthStep} />;
+  if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
 
   return (
-    // 🌟 AQUÍ OCURRE LA MAGIA DEL CAMBIO DE TEMA
     <div className={`h-screen flex flex-col italic overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-[#020617] text-white'}`}>
+      <SpineWatermark />
       <header className="p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
-        <h1 className="text-xl font-black uppercase">Quiro<span className="text-cyan-400">App</span></h1>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
+            {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
+          </div>
+          <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
+        </div>
+        <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
       </header>
+
       <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
         {selectedPatientId ? (
-          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} />
+          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} />
         ) : (
           <>
-            {activeTab === 'home' && <div className="space-y-6"><div className="p-8 rounded-[40px] border border-white/10 bg-gradient-to-br from-indigo-700 to-black"><h2 className="text-4xl font-black italic text-white">Dr. {doctorInfo.name || "Especialista"}</h2></div></div>}
-            
-            {/* 🌟 AQUÍ LE PASAMOS LA MEMORIA AL BOTÓN DE AJUSTES */}
-            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={async (d) => { setDoctorInfo({ ...doctorInfo, ...d }); await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), d); }} onLogout={() => signOut(auth)} visualMode={visualMode} setVisualMode={setVisualMode} />}
+            {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} />}
+            {activeTab === 'patients' && (
+              <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
+                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
+                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : patients.map(p => (
+                  <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
+                    <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
+                  </div>
+                ))}
+                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+              </div>
+            )}
+            {activeTab === 'techniques' && (
+              <div className="animate-fade-in space-y-6 text-left pb-10">
+                <h2 className="text-3xl font-black uppercase italic mb-2 underline decoration-cyan-500 decoration-4 underline-offset-8">Guía de Ajustes</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {techniquesData.map((tech, idx) => (
+                    <div key={idx} className="bg-slate-900/80 rounded-[35px] border border-white/5 overflow-hidden shadow-2xl transition hover:border-cyan-500/30 flex flex-col">
+                      <div className="p-6 space-y-5 flex-1">
+                        <h3 className="text-xl font-black uppercase text-cyan-400">{tech.title}</h3>
+                        <div><p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1 flex items-center gap-1"><BookOpen className="w-3 h-3"/> Fundamento</p><p className="text-xs text-indigo-100/90 leading-relaxed">{tech.description}</p></div>
+                        <div className="bg-slate-950 p-4 rounded-2xl border border-white/5 shadow-inner"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest mb-2 flex items-center gap-1"><Target className="w-3 h-3"/> Ejecución</p><p className="text-xs text-white leading-relaxed whitespace-pre-line">{tech.execution}</p></div>
+                        <div className="bg-emerald-950/20 p-4 rounded-2xl border border-emerald-500/20 mt-auto"><p className="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Casa</p><p className="text-xs text-emerald-100/80 leading-relaxed">{tech.help}</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onOpenAdminLogin={() => setModals(m => ({...m, adminLogin: true}))} visualMode={visualMode} setVisualMode={setVisualMode} />}
+            {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
+            {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
           </>
         )}
       </main>
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around z-50 shadow-2xl">
-        <button onClick={() => { setActiveTab('home'); setSelectedPatientId(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400' : 'text-slate-400'}`}><Home className="w-6 h-6"/><span className="text-[8px] font-black uppercase">Inicio</span></button>
-        <button onClick={() => { setActiveTab('settings'); setSelectedPatientId(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'settings' ? 'text-cyan-400' : 'text-slate-400'}`}><Settings className="w-6 h-6"/><span className="text-[8px] font-black uppercase">Ajustes</span></button>
+
+      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
+
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
+        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
+        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
+        {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
+        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
+
+      {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
+      {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
+      {modals.appointment && <NewAppointmentModal onClose={() => setModals(m => ({...m, appointment: false}))} onSave={handleAddAppointment} />}
+      {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} />}
+      {modals.upsell && <UpsellModal onClose={() => setModals(m => ({...m, upsell: false}))} onUpgrade={() => { setModals(m => ({...m, upsell: false})); handleUpgradeRequest(); }} />}
+      {modals.adminLogin && <AdminLoginModal onClose={() => setModals(m => ({...m, adminLogin: false}))} onSuccess={() => { handleUpdateProfile({ isAdmin: true, isPremium: true }); setModals(m => ({...m, adminLogin: false})); alert("¡ADMIN ACTIVADO!"); setActiveTab('admin'); }} />}
+      
+      <style dangerouslySetInnerHTML={{__html: `@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-up { animation: slideUp 0.4s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; } .scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}} />
     </div>
   );
 }
