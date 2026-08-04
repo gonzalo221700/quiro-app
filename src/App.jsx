@@ -3,7 +3,7 @@ import './index.css';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, RecaptchaVerifier, signInWithPhoneNumber, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette } from 'lucide-react';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
@@ -79,94 +79,107 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-// 🌟 NUEVO MAPA ANATÓMICO CLÍNICO PROFESIONAL (3 VISTAS: Anterior, Lateral, Posterior)
+// 🌟 NUEVO COMPONENTE: LISTA DESPLEGABLE (ACORDEÓN)
+const MultiSelectDropdown = ({ title, icon: Icon, items, selectedItems, toggleItem, isDanger }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const activeStyle = isDanger 
+    ? 'bg-rose-500 text-white border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105' 
+    : 'bg-cyan-500 text-black border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] scale-105';
+  
+  return (
+    <div className="bg-slate-900/50 rounded-[25px] border border-white/5 overflow-hidden transition-all">
+      <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full p-5 flex justify-between items-center text-left hover:bg-slate-800/50 transition">
+        <span className="text-[10px] font-black uppercase text-indigo-400 flex items-center gap-2 tracking-widest">
+          {Icon && <Icon className="w-4 h-4"/>} {title} {selectedItems.length > 0 && <span className={isDanger ? 'text-rose-400' : 'text-cyan-400'}>({selectedItems.length})</span>}
+        </span>
+        <ChevronRight className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+      </button>
+      <div className={`overflow-hidden transition-all duration-500 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="p-5 pt-0 flex flex-wrap gap-2 border-t border-white/5 mt-4">
+          {items.map(item => (
+            <button type="button" key={item} onClick={() => toggleItem(item)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${selectedItems.includes(item) ? activeStyle : 'bg-slate-950 text-slate-400 border-white/5 hover:bg-slate-800'}`}>
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 🌟 MAPA ANATÓMICO (Sin fondo gris, letras legibles, 3 Vistas)
 const AnatomyMap = ({ selectedAreas, toggleArea }) => {
   const isSelected = (area) => selectedAreas.includes(area);
-  const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.4)" : "rgba(15, 23, 42, 0.6)"; 
-  const getStroke = (area) => isSelected(area) ? "#22d3ee" : "#475569";
-  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#64748b";
+  const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.4)" : "rgba(15, 23, 42, 0.1)"; 
+  const getStroke = (area) => isSelected(area) ? "#06b6d4" : "#64748b";
+  const getTextColor = (area) => isSelected(area) ? "#06b6d4" : "#64748b";
 
   return (
-    <div className="flex flex-col items-center bg-slate-900/40 p-4 sm:p-8 rounded-[40px] border border-white/5 relative mb-6 shadow-inner w-full overflow-hidden">
-       <h4 className="text-[12px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-center sm:text-left flex justify-center sm:justify-start items-center gap-2"><Target className="w-4 h-4"/> Mapa Clínico (Anterior - Lateral - Posterior)</h4>
+    <div className="flex flex-col items-center w-full overflow-hidden my-6">
+       <h4 className="text-[12px] font-black uppercase text-indigo-500 mb-6 tracking-widest w-full text-center sm:text-left flex justify-center sm:justify-start items-center gap-2"><Target className="w-4 h-4"/> Mapa Clínico Anatómico</h4>
        
        <div className="w-full overflow-x-auto pb-6 scrollbar-hide">
          <div className="min-w-[650px] mx-auto">
-           <svg viewBox="0 0 900 600" className="w-full h-[400px] drop-shadow-2xl">
+           <svg viewBox="0 0 900 600" className="w-full h-[400px]">
              
              {/* ===================== VISTA 1: ANTERIOR (FRONTAL) x=150 ===================== */}
-             <text x="150" y="580" textAnchor="middle" fill="#94a3b8" fontSize="16" fontWeight="900" letterSpacing="2">ANTERIOR</text>
+             <text x="150" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">ANTERIOR</text>
              
-             {/* Cabeza Frontal (No interactiva) */}
-             <circle cx="150" cy="80" r="35" fill="none" stroke="#334155" strokeWidth="4" />
-             
-             {/* Cuello Frontal */}
-             <path d="M 135 115 L 165 115 L 165 140 L 135 140 Z" fill="none" stroke="#334155" strokeWidth="4" />
+             <circle cx="150" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
+             <path d="M 135 115 L 165 115 L 165 140 L 135 140 Z" fill="none" stroke="#64748b" strokeWidth="4" />
 
-             {/* Hombro Der. (Anatomico: Lado Izq. de pantalla) */}
              <g onClick={() => toggleArea('Hombro Der.')} className="cursor-pointer hover:opacity-80 transition-all">
                <circle cx="85" cy="150" r="25" fill={getFill('Hombro Der.')} stroke={getStroke('Hombro Der.')} strokeWidth="4" />
                <text x="85" y="155" textAnchor="middle" fontSize="11" fill={getTextColor('Hombro Der.')} fontWeight="bold">H. DER</text>
              </g>
 
-             {/* Hombro Izq. (Anatomico: Lado Der. de pantalla) */}
              <g onClick={() => toggleArea('Hombro Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
                <circle cx="215" cy="150" r="25" fill={getFill('Hombro Izq.')} stroke={getStroke('Hombro Izq.')} strokeWidth="4" />
                <text x="215" y="155" textAnchor="middle" fontSize="11" fill={getTextColor('Hombro Izq.')} fontWeight="bold">H. IZQ</text>
              </g>
 
-             {/* Brazo Der. */}
              <g onClick={() => toggleArea('Brazo Der.')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="65" y="180" width="40" height="120" rx="20" fill={getFill('Brazo Der.')} stroke={getStroke('Brazo Der.')} strokeWidth="4" />
                <text x="85" y="245" textAnchor="middle" fontSize="11" fill={getTextColor('Brazo Der.')} fontWeight="bold" transform="rotate(-90 85 245)">BRAZO D.</text>
              </g>
 
-             {/* Brazo Izq. */}
              <g onClick={() => toggleArea('Brazo Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="195" y="180" width="40" height="120" rx="20" fill={getFill('Brazo Izq.')} stroke={getStroke('Brazo Izq.')} strokeWidth="4" />
                <text x="215" y="245" textAnchor="middle" fontSize="11" fill={getTextColor('Brazo Izq.')} fontWeight="bold" transform="rotate(90 215 245)">BRAZO I.</text>
              </g>
 
-             {/* Mano Der. */}
              <g onClick={() => toggleArea('Mano Der.')} className="cursor-pointer hover:opacity-80 transition-all">
                <circle cx="85" cy="325" r="20" fill={getFill('Mano Der.')} stroke={getStroke('Mano Der.')} strokeWidth="4" />
                <text x="85" y="330" textAnchor="middle" fontSize="10" fill={getTextColor('Mano Der.')} fontWeight="bold">MANO</text>
              </g>
 
-             {/* Mano Izq. */}
              <g onClick={() => toggleArea('Mano Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
                <circle cx="215" cy="325" r="20" fill={getFill('Mano Izq.')} stroke={getStroke('Mano Izq.')} strokeWidth="4" />
                <text x="215" y="330" textAnchor="middle" fontSize="10" fill={getTextColor('Mano Izq.')} fontWeight="bold">MANO</text>
              </g>
 
-             {/* Torso Frontal */}
-             <path d="M 105 140 L 195 140 L 180 300 L 120 300 Z" fill="none" stroke="#334155" strokeWidth="4" />
+             <path d="M 105 140 L 195 140 L 180 300 L 120 300 Z" fill="none" stroke="#64748b" strokeWidth="4" />
 
-             {/* Pelvis Frontal */}
              <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer hover:opacity-80 transition-all">
                <path d="M 115 300 L 185 300 L 195 340 L 150 370 L 105 340 Z" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="4" strokeLinejoin="round" />
                <text x="150" y="330" textAnchor="middle" fontSize="12" fill={getTextColor('Pelvis')} fontWeight="bold">PELVIS</text>
              </g>
 
-             {/* Pierna Der. */}
              <g onClick={() => toggleArea('Pierna Der.')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="105" y="350" width="35" height="150" rx="17" fill={getFill('Pierna Der.')} stroke={getStroke('Pierna Der.')} strokeWidth="4" />
                <text x="122" y="430" textAnchor="middle" fontSize="11" fill={getTextColor('Pierna Der.')} fontWeight="bold" transform="rotate(-90 122 430)">PIERNA D.</text>
              </g>
 
-             {/* Pierna Izq. */}
              <g onClick={() => toggleArea('Pierna Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="160" y="350" width="35" height="150" rx="17" fill={getFill('Pierna Izq.')} stroke={getStroke('Pierna Izq.')} strokeWidth="4" />
                <text x="177" y="430" textAnchor="middle" fontSize="11" fill={getTextColor('Pierna Izq.')} fontWeight="bold" transform="rotate(90 177 430)">PIERNA I.</text>
              </g>
 
-             {/* Pie Der. */}
              <g onClick={() => toggleArea('Pie Der.')} className="cursor-pointer hover:opacity-80 transition-all">
                <path d="M 100 500 L 140 500 L 145 525 L 95 525 Z" fill={getFill('Pie Der.')} stroke={getStroke('Pie Der.')} strokeWidth="4" strokeLinejoin="round" />
                <text x="120" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Der.')} fontWeight="bold">PIE</text>
              </g>
 
-             {/* Pie Izq. */}
              <g onClick={() => toggleArea('Pie Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
                <path d="M 160 500 L 200 500 L 205 525 L 155 525 Z" fill={getFill('Pie Izq.')} stroke={getStroke('Pie Izq.')} strokeWidth="4" strokeLinejoin="round" />
                <text x="180" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Izq.')} fontWeight="bold">PIE</text>
@@ -174,88 +187,69 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
 
 
              {/* ===================== VISTA 2: LATERAL x=450 ===================== */}
-             <text x="450" y="580" textAnchor="middle" fill="#94a3b8" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
+             <text x="450" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
              
-             {/* Cabeza Lateral */}
-             <ellipse cx="460" cy="80" rx="30" ry="35" fill="none" stroke="#334155" strokeWidth="4" />
+             <ellipse cx="460" cy="80" rx="30" ry="35" fill="none" stroke="#64748b" strokeWidth="4" />
              
-             {/* Cuello Lateral (Cervical) */}
              <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all">
                <path d="M 445 110 L 470 110 L 475 140 L 440 140 Z" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="4" strokeLinejoin="round" />
                <text x="485" y="130" textAnchor="start" fontSize="12" fill={getTextColor('Cervical')} fontWeight="bold">CERV.</text>
              </g>
 
-             {/* Torso Lateral */}
-             <path d="M 430 140 L 485 140 L 495 240 L 420 240 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
+             <path d="M 430 140 L 485 140 L 495 240 L 420 240 Z" fill="none" stroke="#64748b" strokeWidth="4" strokeLinejoin="round" />
 
-             {/* Lumbar Lateral */}
              <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all">
                <path d="M 420 240 L 495 240 L 490 300 L 425 300 Z" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="4" strokeLinejoin="round" />
                <text x="505" y="275" textAnchor="start" fontSize="12" fill={getTextColor('Lumbar')} fontWeight="bold">LUMB.</text>
              </g>
 
-             {/* Pelvis Lateral */}
              <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer hover:opacity-80 transition-all">
                <ellipse cx="455" cy="320" rx="40" ry="30" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="4" />
                <text x="455" y="325" textAnchor="middle" fontSize="12" fill={getTextColor('Pelvis')} fontWeight="bold">PELVIS</text>
              </g>
 
-             {/* Pierna Lateral */}
-             <rect x="435" y="350" width="40" height="150" rx="20" fill="none" stroke="#334155" strokeWidth="4" />
-             
-             {/* Pie Lateral */}
-             <path d="M 435 500 L 475 500 L 495 525 L 430 525 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
-
-             {/* Brazo Lateral */}
-             <rect x="440" y="150" width="30" height="110" rx="15" fill="none" stroke="#334155" strokeWidth="4" />
-             <circle cx="455" cy="275" r="15" fill="none" stroke="#334155" strokeWidth="4" />
+             <rect x="435" y="350" width="40" height="150" rx="20" fill="none" stroke="#64748b" strokeWidth="4" />
+             <path d="M 435 500 L 475 500 L 495 525 L 430 525 Z" fill="none" stroke="#64748b" strokeWidth="4" strokeLinejoin="round" />
+             <rect x="440" y="150" width="30" height="110" rx="15" fill="none" stroke="#64748b" strokeWidth="4" />
+             <circle cx="455" cy="275" r="15" fill="none" stroke="#64748b" strokeWidth="4" />
 
 
              {/* ===================== VISTA 3: POSTERIOR (ESPALDA) x=750 ===================== */}
-             <text x="750" y="580" textAnchor="middle" fill="#94a3b8" fontSize="16" fontWeight="900" letterSpacing="2">POSTERIOR</text>
+             <text x="750" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">POSTERIOR</text>
              
-             {/* Cabeza Posterior */}
-             <circle cx="750" cy="80" r="35" fill="none" stroke="#334155" strokeWidth="4" />
+             <circle cx="750" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
 
-             {/* Cervical (Posterior) */}
              <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="730" y="115" width="40" height="30" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="4" />
                <text x="750" y="135" textAnchor="middle" fontSize="11" fill={getTextColor('Cervical')} fontWeight="bold">CERV</text>
              </g>
 
-             {/* Hombros Posteriores */}
-             <circle cx="685" cy="150" r="25" fill={getFill('Hombro Izq.')} stroke={getStroke('Hombro Izq.')} strokeWidth="4" />
-             <circle cx="815" cy="150" r="25" fill={getFill('Hombro Der.')} stroke={getStroke('Hombro Der.')} strokeWidth="4" />
+             <circle cx="685" cy="150" r="25" fill="none" stroke="#64748b" strokeWidth="4" />
+             <circle cx="815" cy="150" r="25" fill="none" stroke="#64748b" strokeWidth="4" />
+             <rect x="665" y="180" width="40" height="120" rx="20" fill="none" stroke="#64748b" strokeWidth="4" />
+             <rect x="795" y="180" width="40" height="120" rx="20" fill="none" stroke="#64748b" strokeWidth="4" />
+             <circle cx="685" cy="325" r="20" fill="none" stroke="#64748b" strokeWidth="4" />
+             <circle cx="815" cy="325" r="20" fill="none" stroke="#64748b" strokeWidth="4" />
 
-             {/* Brazos y Manos Posteriores (Reflejos Visuales, estéticos) */}
-             <rect x="665" y="180" width="40" height="120" rx="20" fill="none" stroke="#334155" strokeWidth="4" />
-             <rect x="795" y="180" width="40" height="120" rx="20" fill="none" stroke="#334155" strokeWidth="4" />
-             <circle cx="685" cy="325" r="20" fill="none" stroke="#334155" strokeWidth="4" />
-             <circle cx="815" cy="325" r="20" fill="none" stroke="#334155" strokeWidth="4" />
-
-             {/* Espalda Dorsal */}
              <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="710" y="150" width="80" height="90" rx="15" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="4" />
                <text x="750" y="200" textAnchor="middle" fontSize="14" fill={getTextColor('Dorsal')} fontWeight="bold">DORSAL</text>
              </g>
 
-             {/* Espalda Lumbar */}
              <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all">
                <rect x="720" y="245" width="60" height="60" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="4" />
                <text x="750" y="280" textAnchor="middle" fontSize="12" fill={getTextColor('Lumbar')} fontWeight="bold">LUMBAR</text>
              </g>
 
-             {/* Sacro / Pelvis Posterior */}
              <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer hover:opacity-80 transition-all">
                <path d="M 710 310 L 790 310 L 750 360 Z" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="4" strokeLinejoin="round" />
                <text x="750" y="330" textAnchor="middle" fontSize="10" fill={getTextColor('Pelvis')} fontWeight="bold">SACRO</text>
              </g>
 
-             {/* Piernas Posteriores */}
-             <rect x="705" y="350" width="35" height="150" rx="17" fill="none" stroke="#334155" strokeWidth="4" />
-             <rect x="760" y="350" width="35" height="150" rx="17" fill="none" stroke="#334155" strokeWidth="4" />
-             <path d="M 700 500 L 740 500 L 745 525 L 695 525 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
-             <path d="M 760 500 L 800 500 L 805 525 L 755 525 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
+             <rect x="705" y="350" width="35" height="150" rx="17" fill="none" stroke="#64748b" strokeWidth="4" />
+             <rect x="760" y="350" width="35" height="150" rx="17" fill="none" stroke="#64748b" strokeWidth="4" />
+             <path d="M 700 500 L 740 500 L 745 525 L 695 525 Z" fill="none" stroke="#64748b" strokeWidth="4" strokeLinejoin="round" />
+             <path d="M 760 500 L 800 500 L 805 525 L 755 525 Z" fill="none" stroke="#64748b" strokeWidth="4" strokeLinejoin="round" />
 
            </svg>
          </div>
@@ -345,7 +339,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
       {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
       {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div></div></div>)}
       {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in"><div className="grid grid-cols-4 gap-2 mb-2"><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div><div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div></div></div>)}
-      {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura</h4><p className="text-sm text-indigo-100">{patient.postureAnterior || "--"}</p></div>)}
+      {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Anterior</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureAnterior || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Lateral</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureLateral || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Posterior</h4><p className="text-sm text-indigo-100">{patient.posturePosterior || "--"}</p></div>)}
       {activeSection === 'tratamiento' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div></div>)}
       
       {activeSection === 'sesiones' && (
@@ -393,253 +387,6 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
         </div>
       )}
     </div>
-  );
-};
-
-// 🌟 FIX 1 & 2: Responsive Grid para Fecha/Edad y Listas de Peso/Altura a 190kg
-const NewPatientModal = ({ onClose, onSave }) => {
-  const [step, setStep] = useState(1);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '', relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '', redFlags: [], chiropracticDiagnosis: '', subluxations: '', observations: '', treatmentPlan: '', treatmentGoals: '', sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '', chiropracticTechniques: [], additionalRecommendations: '', posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '', histories: [], painLevel: 0, areas: [], notes: '' });
-  
-  const handleNext = () => { if(form.name) setStep(step + 1); };
-  
-  const handleSaveClick = () => { 
-    if (isSaving) return; 
-    setIsSaving(true); 
-    const finalPatient = { ...form };
-    if (form.painLevel > 0 || form.areas.length > 0 || form.notes || form.redFlags.length > 0) {
-      finalPatient.histories = [{
-        date: new Date().toISOString().split('T')[0],
-        painLevel: form.painLevel,
-        areas: form.areas,
-        redFlags: form.redFlags,
-        notes: form.notes
-      }];
-    }
-    onSave(finalPatient); 
-  };
-  
-  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
-  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
-  const quickFlags = ['Fractura', 'Marcapasos', 'Tumor', 'Osteoporosis', 'Embarazo', 'Cirugía Reciente'];
-
-  const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-400 text-emerald-400';
-    if (level <= 6) return 'accent-amber-400 text-amber-400';
-    return 'accent-rose-500 text-rose-500';
-  };
-  const getPainLabel = (level) => {
-    if (level === 0) return 'Sin Dolor';
-    if (level <= 3) return 'Leve';
-    if (level <= 6) return 'Moderado';
-    if (level <= 9) return 'Severo';
-    return 'Insoportable';
-  };
-
-  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
-  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
-
-  return (
-    <Modal title={`Crear Expediente (${step}/8)`} onClose={onClose}>
-      <div className="space-y-6">
-        {step === 1 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
-          <div>
-            <label className={labelClass}>Nombre completo *</label>
-            <input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
-          </div>
-          
-          {/* Solución a la Fecha y Edad amontonadas */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
-            <div className="w-full sm:w-1/2">
-              <label className={labelClass}>Edad</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.age} onChange={e => setForm({...form, age: e.target.value})}>
-                <option value="">Selecciona la Edad...</option>
-                {Array.from({length: 100}, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} años</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
-        </div>)}
-
-        {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
-          <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
-          </div>
-        </div>)}
-
-        {step === 3 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">3. Precauciones y Diagnóstico</h4>
-          <div><label className="text-[10px] font-black uppercase text-rose-400 ml-4 mb-2 flex items-center gap-1 tracking-widest"><ShieldAlert className="w-3 h-3"/> Banderas Rojas</label>
-            <div className="bg-slate-900 p-6 rounded-[25px] border border-white/5 flex flex-wrap gap-2">
-              {RED_FLAGS.map(flag => (<button key={flag} onClick={() => toggleArrayItem('redFlags', flag)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{flag}</button>))}
-            </div>
-          </div>
-          <div><label className={labelClass}>Diagnóstico Quiropráctico</label><input type="text" placeholder="Ej. Subluxación L4-L5" className={inputClass} value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} /></div>
-        </div>)}
-
-        {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Plan de Tratamiento</h4>
-          <div><label className={labelClass}>Frecuencia y Objetivos</label><textarea placeholder="Ej. 2 sesiones por semana durante 1 mes para reducir dolor..." className={`${inputClass} min-h-[140px]`} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
-        </div>)}
-
-        {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Examen Físico</h4>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2">
-              <label className={labelClass}>Peso Físico</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
-                <option value="">Selecciona...</option>
-                {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
-              </select>
-            </div>
-            <div className="w-full sm:w-1/2">
-              <label className={labelClass}>Altura Total</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
-                <option value="">Selecciona...</option>
-                {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
-              </select>
-            </div>
-          </div>
-        </div>)}
-
-        {step === 6 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">6. Análisis Postural</h4>
-          <div><label className={labelClass}>Desviaciones Detectadas</label>
-            <div className="bg-slate-900 p-6 rounded-[25px] border border-white/5 flex flex-wrap gap-2">
-              {POSTURAL_DEVIATIONS.map(dev => (<button key={dev} onClick={() => toggleArrayItem('posturalDeviations', dev)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${form.posturalDeviations.includes(dev) ? 'bg-indigo-500 text-white border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)] scale-105' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{dev}</button>))}
-            </div>
-          </div>
-        </div>)}
-
-        {step === 7 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">7. Técnicas Sugeridas</h4>
-          <div><label className={labelClass}>Métodos de Ajuste Preferidos</label>
-            <div className="bg-slate-900 p-6 rounded-[25px] border border-white/5 flex flex-wrap gap-2">
-              {CHIRO_TECHNIQUES.map(tech => (<button key={tech} onClick={() => toggleArrayItem('chiropracticTechniques', tech)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${form.chiropracticTechniques.includes(tech) ? 'bg-cyan-500 text-black border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] scale-105' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{tech}</button>))}
-            </div>
-          </div>
-        </div>)}
-
-        {step === 8 && (<div className="space-y-8 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-cyan-400 mb-4 border-b border-white/10 pb-4 flex items-center gap-2"><Target className="w-4 h-4"/> 8. Evaluación Inicial (Primer Ajuste)</h4>
-          
-          <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
-            <div className="flex justify-between items-end mb-6">
-              <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
-              <div className="text-right">
-                <span className={`text-3xl font-black ${getPainColor(form.painLevel)}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
-                <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel)}`}>{getPainLabel(form.painLevel)}</p>
-              </div>
-            </div>
-            <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel)}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-            <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
-          </div>
-
-          <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
-
-          <div>
-            <label className={labelClass}>Notas de la Sesión Inicial</label>
-            <textarea placeholder="Ej. El paciente se ajustó exitosamente. Cita agendada para revisión..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
-          </div>
-        </div>)}
-
-        <div className="flex gap-4 pt-8">
-          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-slate-900 py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition tracking-widest hover:bg-slate-800 border border-white/10">Atrás</button>}
-          {step < 8 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition shadow-[0_10px_20px_rgba(34,211,238,0.2)] border-b-8 border-cyan-700 disabled:opacity-50 tracking-widest">Siguiente Paso</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-emerald-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] border-b-8 border-emerald-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70 shadow-[0_10px_20px_rgba(52,211,153,0.3)] tracking-widest">{isSaving ? 'Guardando...' : 'Crear Expediente'}</button>)}
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const NewHistoryModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '' });
-  const [isSaving, setIsSaving] = useState(false);
-  const quickFlags = ['Fractura', 'Marcapasos', 'Tumor', 'Osteoporosis', 'Embarazo', 'Cirugía Reciente'];
-
-  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
-  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
-
-  const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-400 text-emerald-400 shadow-emerald-500/50';
-    if (level <= 6) return 'accent-amber-400 text-amber-400 shadow-amber-500/50';
-    return 'accent-rose-500 text-rose-500 shadow-rose-500/50';
-  };
-
-  const getPainLabel = (level) => {
-    if (level === 0) return 'Sin Dolor';
-    if (level <= 3) return 'Leve';
-    if (level <= 6) return 'Moderado';
-    if (level <= 9) return 'Severo';
-    return 'Insoportable';
-  };
-
-  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
-  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
-
-  return (
-    <Modal title="Nuevo Registro Clínico" onClose={onClose}>
-      <div className="space-y-8 text-left pb-4">
-        
-        <div>
-          <label className={labelClass}>Fecha del Ajuste</label>
-          <input type="date" className={inputClass} value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
-        </div>
-
-        <div className="bg-rose-950/20 p-8 rounded-[35px] border border-rose-500/20 shadow-inner">
-          <label className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Banderas Rojas (Precauciones)</label>
-          <div className="flex flex-wrap gap-2">
-            {quickFlags.map(flag => (
-              <button 
-                key={flag} 
-                onClick={() => setForm(prev => ({...prev, redFlags: prev.redFlags.includes(flag) ? prev.redFlags.filter(f => f !== flag) : [...prev.redFlags, flag]}))} 
-                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-300 ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105 border-rose-400' : 'bg-slate-950 text-slate-400 border border-white/5 hover:bg-slate-900'}`}
-              >
-                {flag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
-          <div className="flex justify-between items-end mb-6">
-            <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
-            <div className="text-right">
-              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
-              <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
-            </div>
-          </div>
-          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-          <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3">
-            <span>0 (Sin Dolor)</span>
-            <span>10 (Insoportable)</span>
-          </div>
-        </div>
-
-        <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
-
-        <div>
-          <label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label>
-          <textarea placeholder="Ej. Hubo cavitación en C2. El paciente reporta mejoría..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
-        </div>
-
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
-        </button>
-      </div>
-    </Modal>
   );
 };
 
@@ -851,6 +598,322 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-rose-500/20">
           <LogOut className="w-5 h-5"/> Cerrar Sesión
         </button>
+      </div>
+    </div>
+  );
+};
+
+// 🌟 FORMULARIO COMPLETO: RESPONSIVO, DESPLEGABLES, MAPA y 3 VISTAS
+const NewPatientModal = ({ onClose, onSave }) => {
+  const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', consultationReason: '', pathological: '', nonPathological: '', redFlags: [], chiropracticDiagnosis: '', treatmentPlan: '', weight: '', height: '', chiropracticTechniques: [], posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', histories: [], painLevel: 0, areas: [], notes: '' });
+  
+  const handleNext = () => { if(form.name) setStep(step + 1); };
+  
+  const handleSaveClick = () => { 
+    if (isSaving) return; 
+    setIsSaving(true); 
+    const finalPatient = { ...form };
+    if (form.painLevel > 0 || form.areas.length > 0 || form.notes || form.redFlags.length > 0) {
+      finalPatient.histories = [{
+        date: new Date().toISOString().split('T')[0],
+        painLevel: form.painLevel,
+        areas: form.areas,
+        redFlags: form.redFlags,
+        notes: form.notes
+      }];
+    }
+    onSave(finalPatient); 
+  };
+  
+  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
+  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
+  
+  const getPainColor = (level) => {
+    if (level <= 3) return 'accent-emerald-400 text-emerald-400';
+    if (level <= 6) return 'accent-amber-400 text-amber-400';
+    return 'accent-rose-500 text-rose-500';
+  };
+  const getPainLabel = (level) => {
+    if (level === 0) return 'Sin Dolor';
+    if (level <= 3) return 'Leve';
+    if (level <= 6) return 'Moderado';
+    if (level <= 9) return 'Severo';
+    return 'Insoportable';
+  };
+
+  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
+
+  return (
+    <Modal title={`Crear Expediente (${step}/6)`} onClose={onClose}>
+      <div className="space-y-6">
+        
+        {step === 1 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
+          <div><label className={labelClass}>Nombre completo *</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
+            <div className="w-full sm:w-1/2">
+              <label className={labelClass}>Edad</label>
+              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.age} onChange={e => setForm({...form, age: e.target.value})}>
+                <option value="">Selecciona la Edad...</option>
+                {Array.from({length: 100}, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} años</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+        </div>)}
+
+        {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
+          <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
+          </div>
+        </div>)}
+
+        {step === 3 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">3. Precauciones y Diagnóstico</h4>
+          <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
+          <div><label className={labelClass}>Diagnóstico Quiropráctico</label><input type="text" placeholder="Ej. Subluxación L4-L5" className={inputClass} value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} /></div>
+        </div>)}
+
+        {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Físico y Plan</h4>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2">
+              <label className={labelClass}>Peso Físico</label>
+              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
+                <option value="">Selecciona...</option>
+                {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
+              </select>
+            </div>
+            <div className="w-full sm:w-1/2">
+              <label className={labelClass}>Altura Total</label>
+              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
+                <option value="">Selecciona...</option>
+                {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label className={labelClass}>Plan de Tratamiento</label><textarea placeholder="Ej. 2 sesiones por semana..." className={`${inputClass} min-h-[140px]`} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
+        </div>)}
+
+        {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Técnicas Clínicas</h4>
+          <MultiSelectDropdown title="Técnicas Sugeridas" icon={BookOpen} items={CHIRO_TECHNIQUES} selectedItems={form.chiropracticTechniques} toggleItem={(i) => toggleArrayItem('chiropracticTechniques', i)} />
+        </div>)}
+
+        {step === 6 && (<div className="space-y-8 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-cyan-400 mb-4 border-b border-white/10 pb-4 flex items-center gap-2"><Target className="w-4 h-4"/> 6. Evaluación Inicial (Primer Ajuste)</h4>
+          
+          <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
+            <div className="flex justify-between items-end mb-6">
+              <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
+              <div className="text-right">
+                <span className={`text-3xl font-black ${getPainColor(form.painLevel)}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel)}`}>{getPainLabel(form.painLevel)}</p>
+              </div>
+            </div>
+            <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel)}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+            <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
+          </div>
+
+          <MultiSelectDropdown title="Desviaciones Posturales" icon={Activity} items={POSTURAL_DEVIATIONS} selectedItems={form.posturalDeviations} toggleItem={(i) => toggleArrayItem('posturalDeviations', i)} />
+
+          <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos frontales..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
+            <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos de perfil..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
+            <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos de espalda..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
+          </div>
+
+          <div><label className={labelClass}>Notas de la Sesión Inicial</label><textarea placeholder="Ej. Ajuste exitoso..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
+        </div>)}
+
+        <div className="flex gap-4 pt-8">
+          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-slate-900 py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition tracking-widest hover:bg-slate-800 border border-white/10">Atrás</button>}
+          {step < 6 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition shadow-[0_10px_20px_rgba(34,211,238,0.2)] border-b-8 border-cyan-700 disabled:opacity-50 tracking-widest">Siguiente Paso</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-emerald-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] border-b-8 border-emerald-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70 shadow-[0_10px_20px_rgba(52,211,153,0.3)] tracking-widest">{isSaving ? 'Guardando...' : 'Crear Expediente'}</button>)}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const NewHistoryModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '', postureAnterior: '', postureLateral: '', posturePosterior: '' });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
+  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
+
+  const getPainColor = (level) => {
+    if (level <= 3) return 'accent-emerald-400 text-emerald-400 shadow-emerald-500/50';
+    if (level <= 6) return 'accent-amber-400 text-amber-400 shadow-amber-500/50';
+    return 'accent-rose-500 text-rose-500 shadow-rose-500/50';
+  };
+
+  const getPainLabel = (level) => {
+    if (level === 0) return 'Sin Dolor';
+    if (level <= 3) return 'Leve';
+    if (level <= 6) return 'Moderado';
+    if (level <= 9) return 'Severo';
+    return 'Insoportable';
+  };
+
+  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
+
+  return (
+    <Modal title="Nuevo Registro Clínico" onClose={onClose}>
+      <div className="space-y-8 text-left pb-4">
+        
+        <div><label className={labelClass}>Fecha del Ajuste</label><input type="date" className={inputClass} value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+
+        <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
+
+        <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
+          <div className="flex justify-between items-end mb-6">
+            <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
+            <div className="text-right">
+              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
+              <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
+            </div>
+          </div>
+          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+          <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
+        </div>
+
+        <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
+          <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
+          <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
+        </div>
+
+        <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
+
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+const NewAppointmentModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
+  return (
+    <Modal title="Agendar Cita" onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
+      </div>
+    </Modal>
+  );
+};
+
+const AdminLoginModal = ({ onClose, onSuccess }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
+  return (
+    <Modal title="Acceso Clasificado" onClose={onClose}>
+      <div className="space-y-4 text-left pb-4">
+        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
+        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
+        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
+      </div>
+    </Modal>
+  );
+};
+
+const UpsellModal = ({ onClose, onUpgrade }) => (
+  <Modal title="Límite Alcanzado" onClose={onClose}>
+    <div className="text-center space-y-6 pb-4">
+      <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto border border-amber-500/30"><Lock className="w-12 h-12 text-amber-400" /></div>
+      <h3 className="text-2xl font-black uppercase italic text-white">Prueba Limitada</h3>
+      <p className="text-indigo-200 text-sm leading-relaxed px-4">Solo puedes registrar hasta <strong>{MAX_TRIAL_PATIENTS} pacientes</strong>. Adquiere PRO para continuar ilimitadamente.</p>
+      <button onClick={() => { onClose(); onUpgrade(); }} className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 flex justify-center items-center gap-2"><Sparkles className="w-5 h-5" /> Obtener PRO</button>
+    </div>
+  </Modal>
+);
+
+const CalendarModal = ({ appointments, patients, onClose }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+  return (
+    <Modal title="Calendario" onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
+        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
+          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const SubscriptionBlockedScreen = ({ onLogout }) => (
+  <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
+  </div>
+);
+
+const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginView, setIsLoginView] = useState(true);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
+      <SpineWatermark />
+      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
+        
+        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+        
+        {inProcess ? (
+          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
+        ) : (
+          <div className="space-y-4 animate-slide-up">
+            {step === 'initial' && (
+              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
+                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
+                <div className="grid grid-cols-1 gap-3">
+                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
+                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
+                </div></>
+            )}
+            {step === 'email' && (
+              <div className="text-left">
+                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
+                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
