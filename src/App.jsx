@@ -164,6 +164,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
+// 🌟 INICIO DEL CÓDIGO (COPIAR DESDE AQUÍ)
 const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin }) => {
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
@@ -173,6 +174,9 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailLink, setEmailLink] = useState('');
   const [passLink, setPassLink] = useState('');
+  
+  // Nuevo estado para la apariencia visual
+  const [visualMode, setVisualMode] = useState('oscuro'); 
   const isLocked = !doctorInfo.isPremium;
 
   const handleSave = async () => {
@@ -232,61 +236,60 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     <div className="animate-fade-in space-y-6 text-left">
       <h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
       
-      <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 p-6 rounded-[30px] border border-white/10 text-center mb-6 shadow-xl">
-        {!isLocked ? (
-          <>
-            <Cloud className="w-10 h-10 mx-auto mb-3 text-cyan-400" />
-            <h4 className="text-cyan-400 font-black uppercase text-sm mb-2">Sincronización PRO</h4>
-            <p className="text-[10px] text-indigo-200/70 mb-4 leading-relaxed">Protege tu cuenta y ábrela en tu PC vinculándola.</p>
-            {user.isAnonymous ? (
-              !showEmailForm ? (
-                <div className="flex flex-col gap-3">
-                  <button onClick={onLinkGoogle} className="bg-white text-black font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-3 w-full shadow-xl">
-                    <Globe className="w-4 h-4"/> Vincular Google
-                  </button>
-                  <button onClick={() => setShowEmailForm(true)} className="bg-indigo-500 text-white font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-3 w-full shadow-xl">
-                    <Mail className="w-4 h-4"/> Crear Usuario
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-slate-950 p-4 rounded-2xl border border-white/10 space-y-3 mt-4 text-left">
-                  <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-900 p-4 rounded-xl text-white text-xs"/>
-                  <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-900 p-4 rounded-xl text-white text-xs"/>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={() => setShowEmailForm(false)} className="flex-1 bg-white/5 text-white py-3 rounded-xl text-[10px]">Cancelar</button>
-                    <button onClick={() => onLinkEmail(emailLink, passLink)} className="flex-[2] bg-cyan-400 text-black py-3 rounded-xl text-[10px] font-black uppercase">Guardar</button>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="bg-emerald-500/10 text-emerald-400 py-3 rounded-2xl flex justify-center gap-2 font-black text-[10px]">
-                <CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada
+      {/* 🌟 1. SELECTOR DE APARIENCIA (NUEVO) */}
+      <div className="flex gap-3 mb-6">
+        <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
+          ☀️ Modo Claro
+        </button>
+        <button onClick={() => setVisualMode('oscuro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all ${visualMode === 'oscuro' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
+          🌙 Modo Oscuro
+        </button>
+      </div>
+
+      {/* 🌟 2. BANNER COMPACTO DE SINCRONIZACIÓN PRO (REDUCIDO) */}
+      <div className={`p-4 rounded-[20px] border flex flex-col gap-3 shadow-md transition-all ${isLocked ? 'bg-amber-500/10 border-amber-500/20' : 'bg-indigo-900/40 border-cyan-500/20'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className={`p-2 rounded-full ${isLocked ? 'bg-amber-500/20' : 'bg-cyan-500/20'}`}>
+               {isLocked ? <Lock className="w-5 h-5 text-amber-400" /> : <Cloud className="w-5 h-5 text-cyan-400" />}
+             </div>
+             <div>
+               <h4 className={`font-black uppercase text-[10px] ${isLocked ? 'text-amber-400' : 'text-cyan-400'}`}>
+                 {isLocked ? 'Respaldo Pausado' : 'Sync PRO Activa'}
+               </h4>
+               <p className="text-[8px] text-indigo-200/70 leading-tight">
+                 {isLocked ? 'Adquiere PRO para la nube.' : 'Sincronización en PC lista.'}
+               </p>
+             </div>
+          </div>
+          
+          {isLocked ? (
+             <button onClick={onUpgrade} className="bg-amber-500 text-black font-black uppercase text-[8px] py-2 px-3 rounded-xl flex items-center gap-1 shadow-sm"><Sparkles className="w-3 h-3"/> Activar</button>
+          ) : (
+             user.isAnonymous ? (
+               <button onClick={() => setShowEmailForm(!showEmailForm)} className="bg-cyan-400 text-black font-black uppercase text-[8px] py-2 px-3 rounded-xl flex items-center gap-1 shadow-sm">Vincular</button>
+             ) : (
+               <div className="bg-emerald-500/10 text-emerald-400 py-1.5 px-3 rounded-xl flex items-center gap-1 font-black text-[8px]"><CheckCircle2 className="w-3 h-3"/> Ok</div>
+             )
+          )}
+        </div>
+        
+        {/* Formulario de vinculación compacto desplegable */}
+        {(!isLocked && user.isAnonymous && showEmailForm) && (
+          <div className="bg-slate-950 p-3 rounded-xl border border-white/5 flex flex-col gap-2 mt-2 animate-slide-up">
+            <div className="flex gap-2">
+              <button onClick={onLinkGoogle} className="flex-1 bg-white text-black text-[8px] font-black uppercase py-2 rounded-lg flex justify-center items-center gap-1"><Globe className="w-3 h-3"/> Google</button>
+              <div className="flex-1 bg-slate-900 flex rounded-lg overflow-hidden border border-white/5">
+                <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-transparent p-2 text-white text-[8px] outline-none" />
+                <button onClick={() => onLinkEmail(emailLink, 'password123')} className="bg-indigo-500 text-white px-3 font-black text-[8px]">Ok</button>
               </div>
-            )}
-          </>
-        ) : (
-          <>
-            <Lock className="w-10 h-10 mx-auto mb-3 text-amber-400" />
-            <h4 className="text-amber-400 font-black uppercase text-sm mb-2">Respaldo Bloqueado</h4>
-            <button onClick={onUpgrade} className="bg-amber-500 text-black font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-2 mx-auto shadow-xl">
-              <Sparkles className="w-4 h-4"/> Desbloquear PRO
-            </button>
-          </>
+            </div>
+          </div>
         )}
       </div>
 
+      {/* 🌟 3. PERSONALIZACIÓN DE MARCA BLANCA */}
       <div className="bg-indigo-900/20 p-8 rounded-[40px] border border-cyan-400/20 space-y-6 shadow-xl relative">
-        {isLocked ? (
-          <div className="bg-amber-500/10 p-4 rounded-2xl flex justify-between shadow-lg mb-4">
-            <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400"/><span className="text-[10px] font-black uppercase text-amber-400">Bloqueada</span></div>
-            <button onClick={onUpgrade} className="bg-amber-500 text-black px-3 py-1.5 rounded-xl text-[9px] font-black">Desbloquear</button>
-          </div>
-        ) : (
-          <div className="bg-emerald-500/10 p-4 rounded-2xl flex justify-between shadow-lg mb-4">
-            <div className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-400"/><span className="text-[10px] font-black uppercase text-emerald-400">PRO Activa</span></div>
-          </div>
-        )}
-
         <div className="border-b border-white/10 pb-6 mb-6">
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImagePlus className="w-3 h-3" /> Logo de Clínica
@@ -301,14 +304,13 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
             </div>
             <div className="flex-1">
               <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo', false)} disabled={isLocked} />
-              <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 ${isLocked ? 'bg-slate-800 text-slate-500' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'}`}>
+              <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}>
                 <Upload className="w-4 h-4" /> Subir Logo
               </label>
             </div>
           </div>
         </div>
 
-        {/* CORRECCIÓN EXACTA DE LA LÍNEA 64: ENVOLTURA REACT FRAGMENT AÑADIDA */}
         <div className="border-b border-white/10 pb-6 mb-6">
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImageIcon className="w-3 h-3" /> Imagen de Fondo
@@ -322,7 +324,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
                   <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
-                    <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex justify-center gap-2 ${isLocked ? 'hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50'}`}>
+                    <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex justify-center gap-2 ${isLocked ? 'hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95'}`}>
                       <Upload className="w-4 h-4" /> Subir Fondo
                     </label>
                   </div>
