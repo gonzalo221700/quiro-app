@@ -120,8 +120,9 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
         {doctorInfo.bannerImage && <div className="absolute inset-0 bg-black/60" />}
         <div className="relative z-10">
           <p className="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md">{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p>
-          {/* TÍTULO PROFESIONAL INTEGRADO EN EL INICIO */}
-          <h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">{String(doctorInfo.title || "Dr.")} {String(doctorInfo.name || "Especialista")}</h2>
+          {/* 🌟 AQUÍ ESTÁ EL NOMBRE Y EL TÍTULO DEBAJO */}
+          <h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">{String(doctorInfo.name || "Especialista")}</h2>
+          <p className="text-sm font-black uppercase text-cyan-300 tracking-[0.2em] mt-3 drop-shadow-md opacity-90">{String(doctorInfo.title || "Tu Profesión")}</p>
         </div>
         <div className="absolute -bottom-10 -right-10 opacity-10 z-0">{doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-48 h-48 object-contain grayscale" /> : <SpineLogo className="w-48 h-48" />}</div>
       </div>
@@ -165,28 +166,31 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 };
 
 const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin, visualMode, setVisualMode }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(doctorInfo.title || '');
+  const [customTitle, setCustomTitle] = useState('');
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   
-  // Estados para el mini-widget PRO del lado derecho
   const [showProDetails, setShowProDetails] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailLink, setEmailLink] = useState('');
   const [passLink, setPassLink] = useState('');
 
   const isLocked = !doctorInfo.isPremium;
+  const PRO_TITLES = ["Dr.", "Dra.", "Quiropráctico", "Quiropráctica", "Fisioterapeuta", "Terapeuta Físico", "Masoterapeuta", "Terapeuta de Spa", "Osteópata", "Especialista en Rehabilitación", "Lic.", "Otro"];
 
   const handleSave = async () => {
     if (isLocked) return;
     setIsSaving(true);
-    await onUpdateInfo({ title, name, clinic });
+    const finalTitle = title === 'Otro' ? customTitle : title;
+    await onUpdateInfo({ title: finalTitle, name, clinic });
     setIsSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2500); 
+    setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500); 
   };
 
   const handleAdminTap = () => {
@@ -226,28 +230,14 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     reader.readAsDataURL(file);
   };
 
-  const handleExportCSV = () => {
-    if (isLocked) return;
-    if (!patients || patients.length === 0) return alert("No hay datos.");
-    const headers = ['Nombre', 'Teléfono', 'Sexo', 'Edad', 'Ajustes'];
-    const csvRows = patients.map(p => [p.name||'', p.phone||'', p.gender||'', p.age||'', p.histories?p.histories.length:0].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
-    const csvString = headers.join(',') + '\n' + csvRows.join('\n');
-    const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `Respaldo_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  };
-
   const inputClass = `w-full bg-slate-950 p-5 rounded-[25px] border border-white/10 text-white font-bold outline-none transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'focus:border-cyan-400'}`;
 
   return (
     <div className="animate-fade-in space-y-6 text-left">
-      
-      {/* 🌟 ENCABEZADO CON WIDGET PRO REDUCIDO LADO DERECHO */}
       <div className="flex justify-between items-start mb-6">
         <h2 className="text-3xl font-black uppercase italic underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
         
-        <div className="relative">
+        <div className="relative z-50">
           <button 
             onClick={() => isLocked ? onUpgrade() : setShowProDetails(!showProDetails)}
             className={`flex items-center gap-2 px-3 py-2 rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all ${isLocked ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' : 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 hover:bg-cyan-500/20'}`}
@@ -256,7 +246,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
             {isLocked ? 'Activar PRO' : 'Sincronización PRO'}
           </button>
 
-          {/* Menú Desplegable con el tiempo restante */}
           {showProDetails && !isLocked && (
             <div className="absolute right-0 top-full mt-3 w-64 bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl shadow-2xl z-50 animate-slide-up">
               <div className="flex items-center gap-2 mb-3">
@@ -288,7 +277,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         </div>
       </div>
 
-      {/* SELECTOR DE APARIENCIA */}
       <div className="flex gap-3 mb-6">
         <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] border-b-4 border-cyan-600 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
           ☀️ Modo Claro
@@ -298,69 +286,78 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         </button>
       </div>
 
-      <div className="bg-indigo-900/20 p-8 rounded-[40px] border border-cyan-400/20 space-y-6 shadow-xl relative">
-        <div className="border-b border-white/10 pb-6 mb-6">
-          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
-            <ImagePlus className="w-3 h-3" /> Logo de Clínica
-          </label>
-          <div className="flex items-center gap-4">
-            <div className={`w-20 h-20 shrink-0 rounded-[20px] flex items-center justify-center border-2 border-dashed ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950 overflow-hidden'}`}>
-              {doctorInfo.logo ? (
-                <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <ImagePlus className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
-              )}
+      {/* 🌟 WIDGET DE PERFIL (VISTA NORMAL VS EDICIÓN) */}
+      <div className="bg-slate-900/80 rounded-[40px] border border-cyan-400/20 shadow-xl overflow-hidden relative transition-all duration-500">
+        {!isEditing ? (
+          <div className="relative animate-fade-in">
+            <div className="h-36 w-full bg-slate-950 relative border-b border-white/10">
+               {doctorInfo.bannerImage ? <img src={doctorInfo.bannerImage} className="w-full h-full object-cover opacity-70" alt="Fondo" /> : <div className="w-full h-full bg-gradient-to-br from-cyan-900/40 to-indigo-900/40" />}
             </div>
-            <div className="flex-1">
-              <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo', false)} disabled={isLocked} />
-              <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}>
-                <Upload className="w-4 h-4" /> Subir Logo
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-b border-white/10 pb-6 mb-6">
-          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
-            <ImageIcon className="w-3 h-3" /> Imagen de Fondo
-          </label>
-          <div className="flex flex-col gap-4">
-            <div className={`w-full h-32 rounded-[20px] flex items-center justify-center border-2 border-dashed relative overflow-hidden ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950'}`}>
-              
-              {doctorInfo.bannerImage ? (
-                <img src={doctorInfo.bannerImage} alt="Fondo" className="w-full h-full object-cover opacity-60" />
-              ) : (
-                <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
-              )}
-
-              <div className="absolute inset-0 flex items-center justify-center">
-                <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
-                <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm transition-all ${isLocked ? 'hidden' : 'bg-black/60 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95 hover:bg-black/80'}`}>
-                  <Upload className="w-4 h-4" /> {doctorInfo.bannerImage ? 'Cambiar Fondo' : 'Subir Fondo'}
-                </label>
-              </div>
-
+            <div className="px-8 pb-8 relative mt-[-45px] text-center flex flex-col items-center">
+               <div className="w-24 h-24 bg-slate-950 rounded-[25px] border-4 border-cyan-500/50 flex items-center justify-center overflow-hidden mb-4 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                 {doctorInfo.logo ? <img src={doctorInfo.logo} className="w-full h-full object-cover" alt="Logo"/> : <User className="w-10 h-10 text-cyan-500/50"/>}
+               </div>
+               <h3 className="text-3xl font-black uppercase text-white tracking-tight leading-none mb-2">{doctorInfo.name || 'Tu Nombre'}</h3>
+               <p className="text-[11px] font-black uppercase text-cyan-400 tracking-[0.2em]">{doctorInfo.title || 'Especialista'}</p>
+               <p className="text-xs text-indigo-200 mt-4 flex items-center gap-2 bg-black/40 px-5 py-2.5 rounded-xl border border-white/5 uppercase font-bold tracking-widest"><Building className="w-4 h-4 text-indigo-400"/> {doctorInfo.clinic || 'Nombre de Clínica'}</p>
+               
+               <button onClick={() => setIsEditing(true)} className="w-full mt-8 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition-all flex justify-center items-center gap-2 hover:bg-cyan-500/20">
+                 <Settings className="w-4 h-4" /> Configurar Perfil
+               </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-8 space-y-6 animate-fade-in bg-indigo-950/20">
+             <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+               <h3 className="text-sm font-black uppercase text-cyan-400 flex items-center gap-2"><Settings className="w-4 h-4"/> Editar Perfil</h3>
+               <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-full flex items-center gap-1 transition-all"><X className="w-3 h-3"/> Cancelar</button>
+             </div>
+             
+             <div className="border-b border-white/10 pb-6 mb-6">
+               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}><ImagePlus className="w-3 h-3" /> Logo de Clínica</label>
+               <div className="flex items-center gap-4">
+                 <div className={`w-20 h-20 shrink-0 rounded-[20px] flex items-center justify-center border-2 border-dashed ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950 overflow-hidden'}`}>
+                   {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" /> : <ImagePlus className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />}
+                 </div>
+                 <div className="flex-1">
+                   <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo', false)} disabled={isLocked} />
+                   <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
+                 </div>
+               </div>
+             </div>
 
-        {/* 🌟 TÍTULO PROFESIONAL AGREGADO */}
-        <div>
-          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Título Profesional</label>
-          <input type="text" placeholder="Ej. Dr., LFT., Especialista" className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isLocked} />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Tu Nombre</label>
-          <input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><Building className="w-3 h-3"/> Clínica</label>
-          <input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} />
-        </div>
+             <div className="border-b border-white/10 pb-6 mb-6">
+               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}><ImageIcon className="w-3 h-3" /> Imagen de Fondo</label>
+               <div className="flex flex-col gap-4">
+                 <div className={`w-full h-32 rounded-[20px] flex items-center justify-center border-2 border-dashed relative overflow-hidden ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950'}`}>
+                   {doctorInfo.bannerImage ? <img src={doctorInfo.bannerImage} alt="Fondo" className="w-full h-full object-cover opacity-60" /> : <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />}
+                   <div className="absolute inset-0 flex items-center justify-center">
+                     <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
+                     <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm transition-all ${isLocked ? 'hidden' : 'bg-black/60 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95 hover:bg-black/80'}`}><Upload className="w-4 h-4" /> {doctorInfo.bannerImage ? 'Cambiar Fondo' : 'Subir Fondo'}</label>
+                   </div>
+                 </div>
+               </div>
+             </div>
 
-        <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 border-b-8 border-cyan-700 active:scale-95 transition-all ${isLocked ? 'opacity-30' : ''}`}>
-          {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-        </button>
+             <div>
+               <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Título Profesional</label>
+               <select className={`${inputClass} appearance-none cursor-pointer`} value={PRO_TITLES.includes(title) ? title : (title ? 'Otro' : '')} onChange={(e) => {setTitle(e.target.value); if(e.target.value !== 'Otro') setCustomTitle('');}} disabled={isLocked}>
+                 <option value="">Selecciona tu profesión...</option>
+                 {PRO_TITLES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+               </select>
+               {(!PRO_TITLES.includes(title) && title !== '') || title === 'Otro' ? (
+                 <input type="text" placeholder="Escribe tu título..." className={`${inputClass} mt-3`} value={title === 'Otro' ? customTitle : title} onChange={(e) => {setTitle('Otro'); setCustomTitle(e.target.value);}} disabled={isLocked} />
+               ) : null}
+             </div>
+             
+             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Tu Nombre</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} /></div>
+             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><Building className="w-3 h-3"/> Clínica</label><input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} /></div>
+
+             <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 border-b-8 border-cyan-700 active:scale-95 transition-all flex justify-center items-center gap-2 ${isLocked ? 'opacity-30' : ''}`}>
+               {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Cambios</>}
+             </button>
+          </div>
+        )}
       </div>
 
       <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center shadow-xl">
