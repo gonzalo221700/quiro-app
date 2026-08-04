@@ -67,7 +67,6 @@ const SpineWatermark = () => (
   </div>
 );
 
-// 🌟 FIX 1: Modal súper amplio y limpio (sin fondo negro superior)
 const Modal = ({ title, children, onClose }) => (
   <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 transition-all">
     <div className="bg-slate-950 w-full sm:max-w-2xl sm:w-[95%] rounded-t-[40px] sm:rounded-[50px] max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-10 border-t-4 border-cyan-500 text-white animate-slide-up relative scrollbar-hide">
@@ -80,7 +79,7 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-// 🌟 FIX 2: Anatomía Humana Médica Vectorial (Limpia y Profesional)
+// 🌟 NUEVO MAPA ANATÓMICO (Brazos Laterales y Extremidades Independientes)
 const AnatomyMap = ({ selectedAreas, toggleArea }) => {
   const isSelected = (area) => selectedAreas.includes(area);
   const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.2)" : "transparent";
@@ -89,52 +88,62 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
 
   return (
     <div className="flex flex-col items-center bg-slate-900/50 p-8 rounded-[40px] border border-white/5 relative mb-6 shadow-inner">
-       <h4 className="text-[12px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico</h4>
-       <svg viewBox="0 0 240 400" className="mx-auto h-80 w-full drop-shadow-2xl">
+       <h4 className="text-[12px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico Clínico</h4>
+       <svg viewBox="0 0 300 400" className="mx-auto h-80 w-full drop-shadow-2xl">
            
-           {/* Cabeza (Fija, sin clic) */}
-           <path d="M 120 20 C 100 20 95 40 95 55 C 95 70 105 80 120 80 C 135 80 145 70 145 55 C 145 40 140 20 120 20 Z" fill="none" stroke="#334155" strokeWidth="3" />
+           {/* Cabeza (Fija) */}
+           <path d="M 150 20 C 125 20 120 45 120 60 C 120 75 135 85 150 85 C 165 85 180 75 180 60 C 180 45 175 20 150 20 Z" fill="none" stroke="#334155" strokeWidth="3" />
            
-           {/* ZONA 1: Cervical (Cuello) */}
+           {/* Cervical */}
            <g onClick={() => toggleArea('Cervical')} className="cursor-pointer transition-all hover:opacity-80">
-             <rect x="105" y="80" width="30" height="30" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
-             <line x1="135" y1="95" x2="175" y2="95" stroke={getStroke('Cervical')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="180" y="99" fontSize="11" fill={getTextColor('Cervical')} className="font-black uppercase tracking-widest">Cervical</text>
+             <rect x="135" y="85" width="30" height="30" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
+             <line x1="165" y1="100" x2="175" y2="100" stroke={getStroke('Cervical')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="180" y="104" fontSize="11" fill={getTextColor('Cervical')} className="font-black uppercase tracking-widest">Cervical</text>
            </g>
 
-           {/* Hombros (Fijos) */}
-           <path d="M 105 85 C 60 85 50 100 40 120" fill="none" stroke="#334155" strokeWidth="3" />
-           <path d="M 135 85 C 180 85 190 100 200 120" fill="none" stroke="#334155" strokeWidth="3" />
-
-           {/* ZONA 2: Dorsal (Pecho / Tórax superior) */}
+           {/* Dorsal */}
            <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer transition-all hover:opacity-80">
-             <rect x="85" y="115" width="70" height="70" rx="15" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
-             <line x1="155" y1="150" x2="175" y2="150" stroke={getStroke('Dorsal')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="180" y="154" fontSize="11" fill={getTextColor('Dorsal')} className="font-black uppercase tracking-widest">Dorsal</text>
+             <rect x="120" y="120" width="60" height="70" rx="15" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
+             <line x1="180" y1="155" x2="190" y2="155" stroke={getStroke('Dorsal')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="195" y="159" fontSize="11" fill={getTextColor('Dorsal')} className="font-black uppercase tracking-widest">Dorsal</text>
            </g>
 
-           {/* ZONA 3: Lumbar (Cintura) */}
+           {/* Lumbar */}
            <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer transition-all hover:opacity-80">
-             <rect x="90" y="190" width="60" height="50" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
-             <line x1="150" y1="215" x2="175" y2="215" stroke={getStroke('Lumbar')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="180" y="219" fontSize="11" fill={getTextColor('Lumbar')} className="font-black uppercase tracking-widest">Lumbar</text>
+             <rect x="125" y="195" width="50" height="50" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
+             <line x1="175" y1="220" x2="185" y2="220" stroke={getStroke('Lumbar')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="190" y="224" fontSize="11" fill={getTextColor('Lumbar')} className="font-black uppercase tracking-widest">Lumbar</text>
            </g>
 
-           {/* ZONA 4: Pelvis / Sacro */}
-           <g onClick={() => toggleArea('Pelvis/Sacro')} className="cursor-pointer transition-all hover:opacity-80">
-             <path d="M 80 245 C 80 245 120 265 160 245 L 140 300 C 120 315 120 315 100 300 Z" fill={getFill('Pelvis/Sacro')} stroke={getStroke('Pelvis/Sacro')} strokeWidth="3" strokeLinejoin="round" />
-             <line x1="150" y1="275" x2="175" y2="275" stroke={getStroke('Pelvis/Sacro')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="180" y="279" fontSize="11" fill={getTextColor('Pelvis/Sacro')} className="font-black uppercase tracking-widest">Pelvis</text>
+           {/* Pelvis/Sacro */}
+           <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer transition-all hover:opacity-80">
+             <path d="M 115 250 C 115 250 150 270 185 250 L 165 305 C 145 320 145 320 135 305 Z" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="3" strokeLinejoin="round" />
+             <line x1="175" y1="280" x2="185" y2="280" stroke={getStroke('Pelvis')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="190" y="284" fontSize="11" fill={getTextColor('Pelvis')} className="font-black uppercase tracking-widest">Pelvis</text>
            </g>
 
-           {/* ZONA 5: Extremidades (Brazos y Piernas en una sola selección) */}
-           <g onClick={() => toggleArea('Extremidades')} className="cursor-pointer transition-all hover:opacity-80">
-              <path d="M 40 120 C 35 150 25 200 20 280" fill="none" stroke={getStroke('Extremidades')} strokeWidth="16" strokeLinecap="round"/>
-              <path d="M 200 120 C 205 150 215 200 220 280" fill="none" stroke={getStroke('Extremidades')} strokeWidth="16" strokeLinecap="round"/>
-              <path d="M 100 300 L 80 400" fill="none" stroke={getStroke('Extremidades')} strokeWidth="20" strokeLinecap="round"/>
-              <path d="M 140 300 L 160 400" fill="none" stroke={getStroke('Extremidades')} strokeWidth="20" strokeLinecap="round"/>
-              <line x1="30" y1="200" x2="65" y2="200" stroke={getStroke('Extremidades')} strokeWidth="1" strokeDasharray="3,3" />
-              <text x="70" y="204" fontSize="10" fill={getTextColor('Extremidades')} className="font-black uppercase tracking-widest">Miembros</text>
+           {/* Brazo Derecho (Vista Frontal = Lado Izquierdo de Pantalla) */}
+           <g onClick={() => toggleArea('Brazo Der.')} className="cursor-pointer transition-all hover:opacity-80">
+              <path d="M 115 135 L 40 135" fill="none" stroke={getStroke('Brazo Der.')} strokeWidth="16" strokeLinecap="round"/>
+              <text x="77" y="120" fontSize="9" fill={getTextColor('Brazo Der.')} className="font-black uppercase tracking-widest" textAnchor="middle">Brazo Der.</text>
+           </g>
+
+           {/* Brazo Izquierdo (Vista Frontal = Lado Derecho de Pantalla) */}
+           <g onClick={() => toggleArea('Brazo Izq.')} className="cursor-pointer transition-all hover:opacity-80">
+              <path d="M 185 135 L 260 135" fill="none" stroke={getStroke('Brazo Izq.')} strokeWidth="16" strokeLinecap="round"/>
+              <text x="222" y="120" fontSize="9" fill={getTextColor('Brazo Izq.')} className="font-black uppercase tracking-widest" textAnchor="middle">Brazo Izq.</text>
+           </g>
+
+           {/* Pierna Derecha (Vista Frontal = Lado Izquierdo de Pantalla) */}
+           <g onClick={() => toggleArea('Pierna Der.')} className="cursor-pointer transition-all hover:opacity-80">
+              <path d="M 135 305 L 110 400" fill="none" stroke={getStroke('Pierna Der.')} strokeWidth="18" strokeLinecap="round"/>
+              <text x="100" y="360" fontSize="9" fill={getTextColor('Pierna Der.')} className="font-black uppercase tracking-widest" textAnchor="end">Pierna Der.</text>
+           </g>
+
+           {/* Pierna Izquierda (Vista Frontal = Lado Derecho de Pantalla) */}
+           <g onClick={() => toggleArea('Pierna Izq.')} className="cursor-pointer transition-all hover:opacity-80">
+              <path d="M 165 305 L 190 400" fill="none" stroke={getStroke('Pierna Izq.')} strokeWidth="18" strokeLinecap="round"/>
+              <text x="200" y="360" fontSize="9" fill={getTextColor('Pierna Izq.')} className="font-black uppercase tracking-widest" textAnchor="start">Pierna Izq.</text>
            </g>
        </svg>
     </div>
@@ -273,7 +282,6 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
-// 🌟 FIX 3: Formulario Extendido con Etiquetas Claras y Paso Clínico
 const NewPatientModal = ({ onClose, onSave }) => {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -285,7 +293,6 @@ const NewPatientModal = ({ onClose, onSave }) => {
     if (isSaving) return; 
     setIsSaving(true); 
     const finalPatient = { ...form };
-    // Si el usuario configuró dolor, áreas o notas, automáticamente creamos la primera sesión.
     if (form.painLevel > 0 || form.areas.length > 0 || form.notes || form.redFlags.length > 0) {
       finalPatient.histories = [{
         date: new Date().toISOString().split('T')[0],
@@ -330,8 +337,16 @@ const NewPatientModal = ({ onClose, onSave }) => {
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
             <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
-            <div><label className={labelClass}>Fecha de Nac.</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
-            <div><label className={labelClass}>Edad</label><input type="number" placeholder="Ej. 35" className={inputClass} value={form.age} onChange={e => setForm({...form, age: e.target.value})} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
+            <div>
+              <label className={labelClass}>Edad</label>
+              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.age} onChange={e => setForm({...form, age: e.target.value})}>
+                <option value="">Selecciona...</option>
+                {Array.from({length: 100}, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} años</option>)}
+              </select>
+            </div>
           </div>
           <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
         </div>)}
@@ -363,8 +378,20 @@ const NewPatientModal = ({ onClose, onSave }) => {
         {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Examen Físico</h4>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className={labelClass}>Peso (kg)</label><input type="number" placeholder="Ej. 75" className={inputClass} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} /></div>
-            <div><label className={labelClass}>Altura (cm)</label><input type="number" placeholder="Ej. 175" className={inputClass} value={form.height} onChange={e => setForm({...form, height: e.target.value})} /></div>
+            <div>
+              <label className={labelClass}>Peso (kg)</label>
+              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
+                <option value="">Selecciona...</option>
+                {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Altura (cm)</label>
+              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
+                <option value="">Selecciona...</option>
+                {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
+              </select>
+            </div>
           </div>
         </div>)}
 
@@ -386,7 +413,6 @@ const NewPatientModal = ({ onClose, onSave }) => {
           </div>
         </div>)}
 
-        {/* 🌟 NUEVO PASO 8: EVALUACIÓN INICIAL Y PRIMER AJUSTE */}
         {step === 8 && (<div className="space-y-8 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-cyan-400 mb-4 border-b border-white/10 pb-4 flex items-center gap-2"><Target className="w-4 h-4"/> 8. Evaluación Inicial (Primer Ajuste)</h4>
           
@@ -498,63 +524,214 @@ const NewHistoryModal = ({ onClose, onSave }) => {
   );
 };
 
-const NewAppointmentModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
+const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin, visualMode, setVisualMode }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState(doctorInfo.title || '');
+  const [customTitle, setCustomTitle] = useState('');
+  const [name, setName] = useState(doctorInfo.name || '');
+  const [clinic, setClinic] = useState(doctorInfo.clinic || '');
+  const [theme, setTheme] = useState(doctorInfo.theme || 'azul'); 
+  
   const [isSaving, setIsSaving] = useState(false);
-  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
+  const [saved, setSaved] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  
+  const [showProDetails, setShowProDetails] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailLink, setEmailLink] = useState('');
+  const [passLink, setPassLink] = useState('');
+
+  const isLocked = !doctorInfo.isPremium;
+  const PRO_TITLES = ["Dr.", "Dra.", "Quiropráctico", "Quiropráctica", "Fisioterapeuta", "Terapeuta Físico", "Masoterapeuta", "Terapeuta de Spa", "Osteópata", "Especialista en Rehabilitación", "Lic.", "Otro"];
+
+  const handleSave = async () => {
+    if (isLocked) return;
+    setIsSaving(true);
+    const finalTitle = title === 'Otro' ? customTitle : title;
+    await onUpdateInfo({ title: finalTitle, name, clinic, theme }); 
+    setIsSaving(false);
+    setSaved(true);
+    setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500); 
+  };
+
+  const handleAdminTap = () => {
+    if (tapCount >= 6) { onOpenAdminLogin(); setTapCount(0); } 
+    else setTapCount(prev => prev + 1);
+  };
+
+  const getProRemainingDays = () => {
+    if (!doctorInfo.premiumExpiresAt) return null;
+    const diffMs = doctorInfo.premiumExpiresAt - Date.now();
+    if (diffMs <= 0) return 0;
+    return Math.ceil(diffMs / 86400000);
+  };
+
+  const handleImageUpload = (e, fieldName) => {
+    if (isLocked) return;
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsSaving(true); 
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 256; const MAX_HEIGHT = 256;
+        let width = img.width; let height = img.height;
+        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+        await onUpdateInfo({ [fieldName]: canvas.toDataURL('image/jpeg', 0.7) });
+        setIsSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const inputClass = `w-full bg-slate-950 p-5 rounded-[25px] border border-white/10 text-white font-bold outline-none transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'focus:border-cyan-400'}`;
+  const currentTheme = CLINIC_THEMES[doctorInfo.theme] || CLINIC_THEMES['azul'];
+
   return (
-    <Modal title="Agendar Cita" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
-      </div>
-    </Modal>
-  );
-};
-
-const SubscriptionBlockedScreen = ({ onLogout }) => (
-  <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
-    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
-  </div>
-);
-
-const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoginView, setIsLoginView] = useState(true);
-
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
-      <SpineWatermark />
-      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
-        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
-        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
+    <div className="animate-fade-in space-y-6 text-left">
+      <div className="flex justify-between items-start mb-6">
+        <h2 className="text-3xl font-black uppercase italic underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
         
-        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
-        
-        {inProcess ? (
-          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
-        ) : (
-          <div className="space-y-4 animate-slide-up">
-            {step === 'initial' && (
-              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
-                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
-                <div className="grid grid-cols-1 gap-3">
-                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
-                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
-                </div></>
-            )}
-            {step === 'email' && (
-              <div className="text-left">
-                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
-                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
-                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+        <div className="relative z-50">
+          <button 
+            onClick={() => isLocked ? onUpgrade() : setShowProDetails(!showProDetails)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all ${isLocked ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' : 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 hover:bg-cyan-500/20'}`}
+          >
+            {isLocked ? <Lock className="w-3 h-3"/> : <ShieldCheck className="w-3 h-3"/>}
+            {isLocked ? 'Activar PRO' : 'Sincronización PRO'}
+          </button>
+
+          {showProDetails && !isLocked && (
+            <div className="absolute right-0 top-full mt-3 w-64 bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl shadow-2xl z-50 animate-slide-up">
+              <div className="flex items-center gap-2 mb-3">
+                <Cloud className="w-5 h-5 text-cyan-400"/>
+                <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Licencia en Nube</p>
               </div>
-            )}
+              <p className="text-xs text-slate-400 mb-4 uppercase font-bold">Tiempo restante: <br/><span className="text-xl text-emerald-400 font-black">{getProRemainingDays()} días</span></p>
+              
+              <div className="border-t border-white/10 pt-4">
+                <p className="text-[9px] text-slate-400 uppercase mb-3 font-bold tracking-widest">Sincronización de Cuenta</p>
+                {user.isAnonymous ? (
+                  <div className="space-y-2">
+                    <button onClick={onLinkGoogle} className="w-full bg-white text-black text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Globe className="w-4 h-4"/> Google</button>
+                    <button onClick={() => setShowEmailForm(!showEmailForm)} className="w-full bg-indigo-500 text-white text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Mail className="w-4 h-4"/> Correo</button>
+                    {showEmailForm && (
+                      <div className="mt-2 space-y-2">
+                        <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
+                        <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
+                        <button onClick={() => onLinkEmail(emailLink, passLink)} className="w-full bg-cyan-400 text-black py-2 rounded-lg text-[9px] font-black uppercase shadow-lg">Guardar</button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 py-3 rounded-xl flex justify-center items-center gap-2 font-black text-[10px] uppercase"><CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-3 mb-6">
+        <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] border-b-4 border-cyan-600 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
+          ☀️ Modo Claro
+        </button>
+        <button onClick={() => setVisualMode('oscuro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'oscuro' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] border-b-4 border-indigo-800 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
+          🌙 Modo Oscuro
+        </button>
+      </div>
+
+      <div className="bg-slate-900/80 rounded-[40px] border border-cyan-400/20 shadow-xl overflow-hidden relative transition-all duration-500">
+        {!isEditing ? (
+          <div className="relative animate-fade-in">
+            <div className={`h-36 w-full relative border-b border-white/10 ${currentTheme.bg}`}>
+               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
+            <div className="px-8 pb-8 relative mt-[-45px] text-center flex flex-col items-center">
+               <div className="w-24 h-24 bg-slate-950 rounded-[25px] border-4 border-cyan-500/50 flex items-center justify-center overflow-hidden mb-4 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                 {doctorInfo.logo ? <img src={doctorInfo.logo} className="w-full h-full object-cover" alt="Logo"/> : <User className="w-10 h-10 text-cyan-500/50"/>}
+               </div>
+               <h3 className="text-3xl font-black uppercase text-white tracking-tight leading-none mb-2">{doctorInfo.name || 'Tu Nombre'}</h3>
+               <p className="text-[11px] font-black uppercase text-cyan-400 tracking-[0.2em]">{doctorInfo.title || 'Especialista'}</p>
+               <p className="text-xs text-indigo-200 mt-4 flex items-center gap-2 bg-black/40 px-5 py-2.5 rounded-xl border border-white/5 uppercase font-bold tracking-widest"><Building className="w-4 h-4 text-indigo-400"/> {doctorInfo.clinic || 'Nombre de Clínica'}</p>
+               
+               <button onClick={() => setIsEditing(true)} className="w-full mt-8 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition-all flex justify-center items-center gap-2 hover:bg-cyan-500/20">
+                 <Settings className="w-4 h-4" /> Configurar Perfil
+               </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 space-y-6 animate-fade-in bg-indigo-950/20">
+             <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+               <h3 className="text-sm font-black uppercase text-cyan-400 flex items-center gap-2"><Settings className="w-4 h-4"/> Editar Perfil</h3>
+               <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-full flex items-center gap-1 transition-all"><X className="w-3 h-3"/> Cancelar</button>
+             </div>
+             
+             <div className="border-b border-white/10 pb-6 mb-6">
+               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
+                 <Palette className="w-3 h-3" /> Color de Fondo de Ventana
+               </label>
+               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                 {Object.entries(CLINIC_THEMES).map(([key, t]) => (
+                   <button 
+                     key={key} 
+                     onClick={() => setTheme(key)} 
+                     disabled={isLocked}
+                     className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${theme === key ? 'border-cyan-400 scale-105 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'} ${t.bg}`}
+                   >
+                     <span className={`text-[9px] font-black uppercase tracking-widest text-center ${t.text}`}>{t.name}</span>
+                   </button>
+                 ))}
+               </div>
+             </div>
+
+             <div className="border-b border-white/10 pb-6 mb-6">
+               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}><ImagePlus className="w-3 h-3" /> Logo de Clínica</label>
+               <div className="flex items-center gap-4">
+                 <div className={`w-20 h-20 shrink-0 rounded-[20px] flex items-center justify-center border-2 border-dashed ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950 overflow-hidden'}`}>
+                   {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" /> : <ImagePlus className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />}
+                 </div>
+                 <div className="flex-1">
+                   <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={isLocked} />
+                   <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
+                 </div>
+               </div>
+             </div>
+
+             <div>
+               <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Título Profesional</label>
+               <select className={`${inputClass} appearance-none cursor-pointer`} value={PRO_TITLES.includes(title) ? title : (title ? 'Otro' : '')} onChange={(e) => {setTitle(e.target.value); if(e.target.value !== 'Otro') setCustomTitle('');}} disabled={isLocked}>
+                 <option value="">Selecciona tu profesión...</option>
+                 {PRO_TITLES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+               </select>
+               {(!PRO_TITLES.includes(title) && title !== '') || title === 'Otro' ? (
+                 <input type="text" placeholder="Escribe tu título..." className={`${inputClass} mt-3`} value={title === 'Otro' ? customTitle : title} onChange={(e) => {setTitle('Otro'); setCustomTitle(e.target.value);}} disabled={isLocked} />
+               ) : null}
+             </div>
+             
+             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Tu Nombre</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} /></div>
+             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><Building className="w-3 h-3"/> Clínica</label><input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} /></div>
+
+             <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 border-b-8 border-cyan-700 active:scale-95 transition-all flex justify-center items-center gap-2 ${isLocked ? 'opacity-30' : ''}`}>
+               {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Cambios</>}
+             </button>
           </div>
         )}
+      </div>
+
+      <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center shadow-xl">
+        <UserCircle onClick={handleAdminTap} className="w-12 h-12 mx-auto mb-4 text-indigo-500 cursor-pointer"/>
+        <p className="text-[9px] font-black uppercase text-indigo-400 mb-1 tracking-widest">Cuenta Activa</p>
+        <p className="text-xs font-bold text-white mb-6 break-all">{user.isAnonymous ? "Perfil Temporal (No Guardado)" : String(user.email || user.phoneNumber)}</p>
+        <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-rose-500/20">
+          <LogOut className="w-5 h-5"/> Cerrar Sesión
+        </button>
       </div>
     </div>
   );
