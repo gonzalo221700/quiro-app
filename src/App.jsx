@@ -67,9 +67,10 @@ const SpineWatermark = () => (
   </div>
 );
 
+// 🌟 FIX 1: Modal súper amplio y limpio (sin fondo negro superior)
 const Modal = ({ title, children, onClose }) => (
   <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 transition-all">
-    <div className="bg-slate-950 w-full sm:w-[600px] rounded-t-[40px] sm:rounded-[50px] max-h-[95vh] overflow-y-auto shadow-2xl p-6 sm:p-8 border-t-4 border-cyan-500 text-white animate-slide-up relative">
+    <div className="bg-slate-950 w-full sm:max-w-2xl sm:w-[95%] rounded-t-[40px] sm:rounded-[50px] max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-10 border-t-4 border-cyan-500 text-white animate-slide-up relative scrollbar-hide">
       <div className="flex justify-between items-center mb-8 relative z-10">
         <h3 className="text-2xl font-black italic uppercase text-cyan-400 tracking-tight">{String(title)}</h3>
         <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 rounded-full text-white active:scale-90 transition"><X className="w-5 h-5" /></button>
@@ -78,6 +79,67 @@ const Modal = ({ title, children, onClose }) => (
     </div>
   </div>
 );
+
+// 🌟 FIX 2: Anatomía Humana Médica Vectorial (Limpia y Profesional)
+const AnatomyMap = ({ selectedAreas, toggleArea }) => {
+  const isSelected = (area) => selectedAreas.includes(area);
+  const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.2)" : "transparent";
+  const getStroke = (area) => isSelected(area) ? "#22d3ee" : "#475569";
+  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#475569";
+
+  return (
+    <div className="flex flex-col items-center bg-slate-900/50 p-8 rounded-[40px] border border-white/5 relative mb-6 shadow-inner">
+       <h4 className="text-[12px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico</h4>
+       <svg viewBox="0 0 240 400" className="mx-auto h-80 w-full drop-shadow-2xl">
+           
+           {/* Cabeza (Fija, sin clic) */}
+           <path d="M 120 20 C 100 20 95 40 95 55 C 95 70 105 80 120 80 C 135 80 145 70 145 55 C 145 40 140 20 120 20 Z" fill="none" stroke="#334155" strokeWidth="3" />
+           
+           {/* ZONA 1: Cervical (Cuello) */}
+           <g onClick={() => toggleArea('Cervical')} className="cursor-pointer transition-all hover:opacity-80">
+             <rect x="105" y="80" width="30" height="30" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
+             <line x1="135" y1="95" x2="175" y2="95" stroke={getStroke('Cervical')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="180" y="99" fontSize="11" fill={getTextColor('Cervical')} className="font-black uppercase tracking-widest">Cervical</text>
+           </g>
+
+           {/* Hombros (Fijos) */}
+           <path d="M 105 85 C 60 85 50 100 40 120" fill="none" stroke="#334155" strokeWidth="3" />
+           <path d="M 135 85 C 180 85 190 100 200 120" fill="none" stroke="#334155" strokeWidth="3" />
+
+           {/* ZONA 2: Dorsal (Pecho / Tórax superior) */}
+           <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer transition-all hover:opacity-80">
+             <rect x="85" y="115" width="70" height="70" rx="15" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
+             <line x1="155" y1="150" x2="175" y2="150" stroke={getStroke('Dorsal')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="180" y="154" fontSize="11" fill={getTextColor('Dorsal')} className="font-black uppercase tracking-widest">Dorsal</text>
+           </g>
+
+           {/* ZONA 3: Lumbar (Cintura) */}
+           <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer transition-all hover:opacity-80">
+             <rect x="90" y="190" width="60" height="50" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
+             <line x1="150" y1="215" x2="175" y2="215" stroke={getStroke('Lumbar')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="180" y="219" fontSize="11" fill={getTextColor('Lumbar')} className="font-black uppercase tracking-widest">Lumbar</text>
+           </g>
+
+           {/* ZONA 4: Pelvis / Sacro */}
+           <g onClick={() => toggleArea('Pelvis/Sacro')} className="cursor-pointer transition-all hover:opacity-80">
+             <path d="M 80 245 C 80 245 120 265 160 245 L 140 300 C 120 315 120 315 100 300 Z" fill={getFill('Pelvis/Sacro')} stroke={getStroke('Pelvis/Sacro')} strokeWidth="3" strokeLinejoin="round" />
+             <line x1="150" y1="275" x2="175" y2="275" stroke={getStroke('Pelvis/Sacro')} strokeWidth="1" strokeDasharray="3,3" />
+             <text x="180" y="279" fontSize="11" fill={getTextColor('Pelvis/Sacro')} className="font-black uppercase tracking-widest">Pelvis</text>
+           </g>
+
+           {/* ZONA 5: Extremidades (Brazos y Piernas en una sola selección) */}
+           <g onClick={() => toggleArea('Extremidades')} className="cursor-pointer transition-all hover:opacity-80">
+              <path d="M 40 120 C 35 150 25 200 20 280" fill="none" stroke={getStroke('Extremidades')} strokeWidth="16" strokeLinecap="round"/>
+              <path d="M 200 120 C 205 150 215 200 220 280" fill="none" stroke={getStroke('Extremidades')} strokeWidth="16" strokeLinecap="round"/>
+              <path d="M 100 300 L 80 400" fill="none" stroke={getStroke('Extremidades')} strokeWidth="20" strokeLinecap="round"/>
+              <path d="M 140 300 L 160 400" fill="none" stroke={getStroke('Extremidades')} strokeWidth="20" strokeLinecap="round"/>
+              <line x1="30" y1="200" x2="65" y2="200" stroke={getStroke('Extremidades')} strokeWidth="1" strokeDasharray="3,3" />
+              <text x="70" y="204" fontSize="10" fill={getTextColor('Extremidades')} className="font-black uppercase tracking-widest">Miembros</text>
+           </g>
+       </svg>
+    </div>
+  );
+};
 
 const PremiumTab = ({ onActivateCode }) => {
   const [code, setCode] = useState('');
@@ -147,52 +209,6 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   );
 };
 
-const SpineMap = ({ selectedAreas, toggleArea }) => {
-  const isSelected = (area) => selectedAreas.includes(area);
-  const getFill = (area) => isSelected(area) ? "currentColor" : "transparent";
-  const getStroke = (area) => isSelected(area) ? "#22d3ee" : "#475569";
-  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#475569";
-
-  return (
-    <div className="flex flex-col items-center bg-slate-900/50 p-6 rounded-[30px] border border-white/5 relative mb-6 shadow-inner">
-       <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico</h4>
-       <svg viewBox="0 0 220 320" className="h-72 w-full max-w-[220px] drop-shadow-2xl">
-         {/* Cervical */}
-         <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <rect x="85" y="10" width="30" height="40" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
-           <line x1="125" y1="30" x2="145" y2="30" stroke={getStroke('Cervical')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="34" fontSize="12" fill={getTextColor('Cervical')} className="font-black uppercase">Cervical</text>
-         </g>
-         {/* Dorsal */}
-         <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <rect x="80" y="60" width="40" height="90" rx="10" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
-           <line x1="130" y1="105" x2="145" y2="105" stroke={getStroke('Dorsal')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="109" fontSize="12" fill={getTextColor('Dorsal')} className="font-black uppercase">Dorsal</text>
-         </g>
-         {/* Lumbar */}
-         <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <rect x="75" y="160" width="50" height="60" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
-           <line x1="135" y1="190" x2="145" y2="190" stroke={getStroke('Lumbar')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="194" fontSize="12" fill={getTextColor('Lumbar')} className="font-black uppercase">Lumbar</text>
-         </g>
-         {/* Pelvis/Sacro */}
-         <g onClick={() => toggleArea('Pelvis/Sacro')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-           <path d="M60 230 Q 100 250 140 230 L 120 290 Q 100 310 80 290 Z" fill={getFill('Pelvis/Sacro')} stroke={getStroke('Pelvis/Sacro')} strokeWidth="3" strokeLinejoin="round" />
-           <line x1="140" y1="260" x2="145" y2="260" stroke={getStroke('Pelvis/Sacro')} strokeWidth="2" strokeDasharray="2,2"/>
-           <text x="150" y="264" fontSize="12" fill={getTextColor('Pelvis/Sacro')} className="font-black uppercase">Pelvis</text>
-         </g>
-         {/* Extremidades */}
-         <g onClick={() => toggleArea('Extremidades')} className="cursor-pointer hover:opacity-80 transition-all text-cyan-400">
-            <circle cx="35" cy="150" r="15" fill={getFill('Extremidades')} stroke={getStroke('Extremidades')} strokeWidth="3"/>
-            <circle cx="35" cy="260" r="15" fill={getFill('Extremidades')} stroke={getStroke('Extremidades')} strokeWidth="3"/>
-            <line x1="35" y1="165" x2="35" y2="245" stroke={getStroke('Extremidades')} strokeWidth="2" strokeDasharray="2,2"/>
-            <text x="-40" y="25" fontSize="10" fill={getTextColor('Extremidades')} className="font-black uppercase" transform="rotate(-90 0 150)">Extremidades</text>
-         </g>
-       </svg>
-    </div>
-  );
-};
-
 const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule }) => {
   const [activeSection, setActiveSection] = useState('historial'); 
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
@@ -211,7 +227,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
       
       {activeSection === 'sesiones' && (
         <div className="animate-fade-in">
-          <div className="flex justify-between items-center mb-6 px-2">
+          <div className="flex justify-between items-center mb-6 px-2 mt-4">
             <h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500"/> Ajustes Clínicos</h3>
             <button onClick={onAddHistory} className="bg-cyan-400 text-black px-4 py-3 rounded-2xl active:scale-90 transition shadow-2xl font-black uppercase text-[10px] flex items-center gap-2"><Plus className="w-4 h-4"/> Nuevo Ajuste</button>
           </div>
@@ -220,7 +236,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
             {(!patient.histories || patient.histories.length === 0) ? (
               <div className="py-16 text-center opacity-30 border-2 border-dashed border-white/10 rounded-[40px]">
                  <Stethoscope className="w-12 h-12 mx-auto mb-4 text-indigo-400"/>
-                 <p className="text-xs font-black uppercase">Sin registros clínicos</p>
+                 <p className="text-xs font-black uppercase tracking-widest">Sin registros clínicos</p>
               </div>
             ) : patient.histories.map((h, i) => {
               const getPainColor = (lvl) => {
@@ -242,7 +258,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
                     </div>
                   )}
 
-                  <p className="text-sm italic mb-4 text-indigo-50 bg-slate-950/50 p-4 rounded-2xl border border-white/5">"{String(h.notes)}"</p>
+                  {h.notes && <p className="text-sm italic mb-4 text-indigo-50 bg-slate-950/50 p-4 rounded-2xl border border-white/5">"{String(h.notes)}"</p>}
                   
                   <div className="flex flex-wrap gap-2">
                     {h.areas?.map(a => <span key={a} className="text-[9px] bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest flex items-center gap-1"><Target className="w-3 h-3"/> {String(a)}</span>)}
@@ -257,326 +273,146 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
-const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin, visualMode, setVisualMode }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(doctorInfo.title || '');
-  const [customTitle, setCustomTitle] = useState('');
-  const [name, setName] = useState(doctorInfo.name || '');
-  const [clinic, setClinic] = useState(doctorInfo.clinic || '');
-  const [theme, setTheme] = useState(doctorInfo.theme || 'azul'); 
-  
-  const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
-  
-  const [showProDetails, setShowProDetails] = useState(false);
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [emailLink, setEmailLink] = useState('');
-  const [passLink, setPassLink] = useState('');
-
-  const isLocked = !doctorInfo.isPremium;
-  const PRO_TITLES = ["Dr.", "Dra.", "Quiropráctico", "Quiropráctica", "Fisioterapeuta", "Terapeuta Físico", "Masoterapeuta", "Terapeuta de Spa", "Osteópata", "Especialista en Rehabilitación", "Lic.", "Otro"];
-
-  const handleSave = async () => {
-    if (isLocked) return;
-    setIsSaving(true);
-    const finalTitle = title === 'Otro' ? customTitle : title;
-    await onUpdateInfo({ title: finalTitle, name, clinic, theme }); 
-    setIsSaving(false);
-    setSaved(true);
-    setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500); 
-  };
-
-  const handleAdminTap = () => {
-    if (tapCount >= 6) { onOpenAdminLogin(); setTapCount(0); } 
-    else setTapCount(prev => prev + 1);
-  };
-
-  const getProRemainingDays = () => {
-    if (!doctorInfo.premiumExpiresAt) return null;
-    const diffMs = doctorInfo.premiumExpiresAt - Date.now();
-    if (diffMs <= 0) return 0;
-    return Math.ceil(diffMs / 86400000);
-  };
-
-  const handleImageUpload = (e, fieldName) => {
-    if (isLocked) return;
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsSaving(true); 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 256; const MAX_HEIGHT = 256;
-        let width = img.width; let height = img.height;
-        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-        await onUpdateInfo({ [fieldName]: canvas.toDataURL('image/jpeg', 0.7) });
-        setIsSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const inputClass = `w-full bg-slate-950 p-5 rounded-[25px] border border-white/10 text-white font-bold outline-none transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'focus:border-cyan-400'}`;
-  const currentTheme = CLINIC_THEMES[doctorInfo.theme] || CLINIC_THEMES['azul'];
-
-  return (
-    <div className="animate-fade-in space-y-6 text-left">
-      <div className="flex justify-between items-start mb-6">
-        <h2 className="text-3xl font-black uppercase italic underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
-        
-        <div className="relative z-50">
-          <button 
-            onClick={() => isLocked ? onUpgrade() : setShowProDetails(!showProDetails)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all ${isLocked ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' : 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 hover:bg-cyan-500/20'}`}
-          >
-            {isLocked ? <Lock className="w-3 h-3"/> : <ShieldCheck className="w-3 h-3"/>}
-            {isLocked ? 'Activar PRO' : 'Sincronización PRO'}
-          </button>
-
-          {showProDetails && !isLocked && (
-            <div className="absolute right-0 top-full mt-3 w-64 bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl shadow-2xl z-50 animate-slide-up">
-              <div className="flex items-center gap-2 mb-3">
-                <Cloud className="w-5 h-5 text-cyan-400"/>
-                <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Licencia en Nube</p>
-              </div>
-              <p className="text-xs text-slate-400 mb-4 uppercase font-bold">Tiempo restante: <br/><span className="text-xl text-emerald-400 font-black">{getProRemainingDays()} días</span></p>
-              
-              <div className="border-t border-white/10 pt-4">
-                <p className="text-[9px] text-slate-400 uppercase mb-3 font-bold tracking-widest">Sincronización de Cuenta</p>
-                {user.isAnonymous ? (
-                  <div className="space-y-2">
-                    <button onClick={onLinkGoogle} className="w-full bg-white text-black text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Globe className="w-4 h-4"/> Google</button>
-                    <button onClick={() => setShowEmailForm(!showEmailForm)} className="w-full bg-indigo-500 text-white text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Mail className="w-4 h-4"/> Correo</button>
-                    {showEmailForm && (
-                      <div className="mt-2 space-y-2">
-                        <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
-                        <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
-                        <button onClick={() => onLinkEmail(emailLink, passLink)} className="w-full bg-cyan-400 text-black py-2 rounded-lg text-[9px] font-black uppercase shadow-lg">Guardar</button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 py-3 rounded-xl flex justify-center items-center gap-2 font-black text-[10px] uppercase"><CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada</div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex gap-3 mb-6">
-        <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] border-b-4 border-cyan-600 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
-          ☀️ Modo Claro
-        </button>
-        <button onClick={() => setVisualMode('oscuro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'oscuro' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] border-b-4 border-indigo-800 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
-          🌙 Modo Oscuro
-        </button>
-      </div>
-
-      <div className="bg-slate-900/80 rounded-[40px] border border-cyan-400/20 shadow-xl overflow-hidden relative transition-all duration-500">
-        {!isEditing ? (
-          <div className="relative animate-fade-in">
-            <div className={`h-36 w-full relative border-b border-white/10 ${currentTheme.bg}`}>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-            </div>
-            <div className="px-8 pb-8 relative mt-[-45px] text-center flex flex-col items-center">
-               <div className="w-24 h-24 bg-slate-950 rounded-[25px] border-4 border-cyan-500/50 flex items-center justify-center overflow-hidden mb-4 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                 {doctorInfo.logo ? <img src={doctorInfo.logo} className="w-full h-full object-cover" alt="Logo"/> : <User className="w-10 h-10 text-cyan-500/50"/>}
-               </div>
-               <h3 className="text-3xl font-black uppercase text-white tracking-tight leading-none mb-2">{doctorInfo.name || 'Tu Nombre'}</h3>
-               <p className="text-[11px] font-black uppercase text-cyan-400 tracking-[0.2em]">{doctorInfo.title || 'Especialista'}</p>
-               <p className="text-xs text-indigo-200 mt-4 flex items-center gap-2 bg-black/40 px-5 py-2.5 rounded-xl border border-white/5 uppercase font-bold tracking-widest"><Building className="w-4 h-4 text-indigo-400"/> {doctorInfo.clinic || 'Nombre de Clínica'}</p>
-               
-               <button onClick={() => setIsEditing(true)} className="w-full mt-8 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition-all flex justify-center items-center gap-2 hover:bg-cyan-500/20">
-                 <Settings className="w-4 h-4" /> Configurar Perfil
-               </button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-8 space-y-6 animate-fade-in bg-indigo-950/20">
-             <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-               <h3 className="text-sm font-black uppercase text-cyan-400 flex items-center gap-2"><Settings className="w-4 h-4"/> Editar Perfil</h3>
-               <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-full flex items-center gap-1 transition-all"><X className="w-3 h-3"/> Cancelar</button>
-             </div>
-             
-             <div className="border-b border-white/10 pb-6 mb-6">
-               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
-                 <Palette className="w-3 h-3" /> Color de Fondo de Ventana
-               </label>
-               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                 {Object.entries(CLINIC_THEMES).map(([key, t]) => (
-                   <button 
-                     key={key} 
-                     onClick={() => setTheme(key)} 
-                     disabled={isLocked}
-                     className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${theme === key ? 'border-cyan-400 scale-105 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'} ${t.bg}`}
-                   >
-                     <span className={`text-[9px] font-black uppercase tracking-widest text-center ${t.text}`}>{t.name}</span>
-                   </button>
-                 ))}
-               </div>
-             </div>
-
-             <div className="border-b border-white/10 pb-6 mb-6">
-               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}><ImagePlus className="w-3 h-3" /> Logo de Clínica</label>
-               <div className="flex items-center gap-4">
-                 <div className={`w-20 h-20 shrink-0 rounded-[20px] flex items-center justify-center border-2 border-dashed ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950 overflow-hidden'}`}>
-                   {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" /> : <ImagePlus className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />}
-                 </div>
-                 <div className="flex-1">
-                   <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={isLocked} />
-                   <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
-                 </div>
-               </div>
-             </div>
-
-             <div>
-               <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Título Profesional</label>
-               <select className={`${inputClass} appearance-none cursor-pointer`} value={PRO_TITLES.includes(title) ? title : (title ? 'Otro' : '')} onChange={(e) => {setTitle(e.target.value); if(e.target.value !== 'Otro') setCustomTitle('');}} disabled={isLocked}>
-                 <option value="">Selecciona tu profesión...</option>
-                 {PRO_TITLES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
-               </select>
-               {(!PRO_TITLES.includes(title) && title !== '') || title === 'Otro' ? (
-                 <input type="text" placeholder="Escribe tu título..." className={`${inputClass} mt-3`} value={title === 'Otro' ? customTitle : title} onChange={(e) => {setTitle('Otro'); setCustomTitle(e.target.value);}} disabled={isLocked} />
-               ) : null}
-             </div>
-             
-             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Tu Nombre</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} /></div>
-             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><Building className="w-3 h-3"/> Clínica</label><input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} /></div>
-
-             <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 border-b-8 border-cyan-700 active:scale-95 transition-all flex justify-center items-center gap-2 ${isLocked ? 'opacity-30' : ''}`}>
-               {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Cambios</>}
-             </button>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center shadow-xl">
-        <UserCircle onClick={handleAdminTap} className="w-12 h-12 mx-auto mb-4 text-indigo-500 cursor-pointer"/>
-        <p className="text-[9px] font-black uppercase text-indigo-400 mb-1 tracking-widest">Cuenta Activa</p>
-        <p className="text-xs font-bold text-white mb-6 break-all">{user.isAnonymous ? "Perfil Temporal (No Guardado)" : String(user.email || user.phoneNumber)}</p>
-        <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-rose-500/20">
-          <LogOut className="w-5 h-5"/> Cerrar Sesión
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const AdminLoginModal = ({ onClose, onSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
-  return (
-    <Modal title="Acceso Clasificado" onClose={onClose}>
-      <div className="space-y-4 text-left pb-4">
-        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
-        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
-        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
-      </div>
-    </Modal>
-  );
-};
-
-const UpsellModal = ({ onClose, onUpgrade }) => (
-  <Modal title="Límite Alcanzado" onClose={onClose}>
-    <div className="text-center space-y-6 pb-4">
-      <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto border border-amber-500/30"><Lock className="w-12 h-12 text-amber-400" /></div>
-      <h3 className="text-2xl font-black uppercase italic text-white">Prueba Limitada</h3>
-      <p className="text-indigo-200 text-sm leading-relaxed px-4">Solo puedes registrar hasta <strong>{MAX_TRIAL_PATIENTS} pacientes</strong>. Adquiere PRO para continuar ilimitadamente.</p>
-      <button onClick={() => { onClose(); onUpgrade(); }} className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 flex justify-center items-center gap-2"><Sparkles className="w-5 h-5" /> Obtener PRO</button>
-    </div>
-  </Modal>
-);
-
-const CalendarModal = ({ appointments, patients, onClose }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-  return (
-    <Modal title="Calendario" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
-        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
-          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
+// 🌟 FIX 3: Formulario Extendido con Etiquetas Claras y Paso Clínico
 const NewPatientModal = ({ onClose, onSave }) => {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '', relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '', redFlags: [], chiropracticDiagnosis: '', subluxations: '', observations: '', treatmentPlan: '', treatmentGoals: '', sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '', chiropracticTechniques: [], additionalRecommendations: '', posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '', histories: [] });
+  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '', relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '', redFlags: [], chiropracticDiagnosis: '', subluxations: '', observations: '', treatmentPlan: '', treatmentGoals: '', sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '', chiropracticTechniques: [], additionalRecommendations: '', posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '', histories: [], painLevel: 0, areas: [], notes: '' });
+  
   const handleNext = () => { if(form.name) setStep(step + 1); };
-  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  
+  const handleSaveClick = () => { 
+    if (isSaving) return; 
+    setIsSaving(true); 
+    const finalPatient = { ...form };
+    // Si el usuario configuró dolor, áreas o notas, automáticamente creamos la primera sesión.
+    if (form.painLevel > 0 || form.areas.length > 0 || form.notes || form.redFlags.length > 0) {
+      finalPatient.histories = [{
+        date: new Date().toISOString().split('T')[0],
+        painLevel: form.painLevel,
+        areas: form.areas,
+        redFlags: form.redFlags,
+        notes: form.notes
+      }];
+    }
+    onSave(finalPatient); 
+  };
+  
   const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
+  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
+  const quickFlags = ['Fractura', 'Marcapasos', 'Tumor', 'Osteoporosis', 'Embarazo', 'Cirugía Reciente'];
+
+  const getPainColor = (level) => {
+    if (level <= 3) return 'accent-emerald-400 text-emerald-400';
+    if (level <= 6) return 'accent-amber-400 text-amber-400';
+    return 'accent-rose-500 text-rose-500';
+  };
+  const getPainLabel = (level) => {
+    if (level === 0) return 'Sin Dolor';
+    if (level <= 3) return 'Leve';
+    if (level <= 6) return 'Moderado';
+    if (level <= 9) return 'Severo';
+    return 'Insoportable';
+  };
+
+  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
 
   return (
-    <Modal title={`Crear Expediente (${step}/7)`} onClose={onClose}>
-      <div className="space-y-4">
-        {step === 1 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">1. Identidad</label>
-          <input type="text" placeholder="Nombre completo *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-          <div className="grid grid-cols-2 gap-3">
-            <input type="tel" placeholder="Teléfono" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-            <select className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none text-sm appearance-none" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Sexo...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select>
-            <input type="date" placeholder="Fecha Nac." className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} />
-            <input type="number" placeholder="Edad" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.age} onChange={e => setForm({...form, age: e.target.value})} />
+    <Modal title={`Crear Expediente (${step}/8)`} onClose={onClose}>
+      <div className="space-y-6">
+        {step === 1 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
+          <div>
+            <label className={labelClass}>Nombre completo *</label>
+            <input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+            <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
+            <div><label className={labelClass}>Fecha de Nac.</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
+            <div><label className={labelClass}>Edad</label><input type="number" placeholder="Ej. 35" className={inputClass} value={form.age} onChange={e => setForm({...form, age: e.target.value})} /></div>
+          </div>
+          <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+        </div>)}
+
+        {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
+          <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
+            <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
           </div>
         </div>)}
-        {step === 2 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">2. Historial Clínico</label>
-          <textarea placeholder="Motivo de Consulta *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} />
-          <div className="grid grid-cols-2 gap-3">
-            <textarea placeholder="Ant. Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
-            <textarea placeholder="Ant. No Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
+
+        {step === 3 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">3. Precauciones y Diagnóstico</h4>
+          <div><label className="text-[10px] font-black uppercase text-rose-400 ml-4 mb-2 flex items-center gap-1 tracking-widest"><ShieldAlert className="w-3 h-3"/> Banderas Rojas</label>
+            <div className="bg-slate-900 p-6 rounded-[25px] border border-white/5 flex flex-wrap gap-2">
+              {RED_FLAGS.map(flag => (<button key={flag} onClick={() => toggleArrayItem('redFlags', flag)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{flag}</button>))}
+            </div>
+          </div>
+          <div><label className={labelClass}>Diagnóstico Quiropráctico</label><input type="text" placeholder="Ej. Subluxación L4-L5" className={inputClass} value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} /></div>
+        </div>)}
+
+        {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Plan de Tratamiento</h4>
+          <div><label className={labelClass}>Frecuencia y Objetivos</label><textarea placeholder="Ej. 2 sesiones por semana durante 1 mes para reducir dolor..." className={`${inputClass} min-h-[140px]`} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
+        </div>)}
+
+        {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Examen Físico</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className={labelClass}>Peso (kg)</label><input type="number" placeholder="Ej. 75" className={inputClass} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} /></div>
+            <div><label className={labelClass}>Altura (cm)</label><input type="number" placeholder="Ej. 175" className={inputClass} value={form.height} onChange={e => setForm({...form, height: e.target.value})} /></div>
           </div>
         </div>)}
-        {step === 3 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-rose-400 ml-4 mb-1 block">3. Alertas Rojas</label>
-          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5">
-            <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-3">Precauciones</p>
-            <div className="flex flex-wrap gap-2">{RED_FLAGS.map(flag => (<button key={flag} onClick={() => toggleArrayItem('redFlags', flag)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{flag}</button>))}</div>
-          </div>
-          <input type="text" placeholder="Diagnóstico" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm mb-3" value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} />
-        </div>)}
-        {step === 4 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">4. Plan de Tratamiento</label>
-          <textarea placeholder="Plan propuesto" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} />
-        </div>)}
-        {step === 5 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">5. Examen Físico</label>
-          <div className="grid grid-cols-2 gap-3 mb-2">
-            <input type="number" placeholder="Peso (kg)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} />
-            <input type="number" placeholder="Altura (cm)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.height} onChange={e => setForm({...form, height: e.target.value})} />
+
+        {step === 6 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">6. Análisis Postural</h4>
+          <div><label className={labelClass}>Desviaciones Detectadas</label>
+            <div className="bg-slate-900 p-6 rounded-[25px] border border-white/5 flex flex-wrap gap-2">
+              {POSTURAL_DEVIATIONS.map(dev => (<button key={dev} onClick={() => toggleArrayItem('posturalDeviations', dev)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${form.posturalDeviations.includes(dev) ? 'bg-indigo-500 text-white border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)] scale-105' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{dev}</button>))}
+            </div>
           </div>
         </div>)}
-        {step === 6 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">6. Postura</label>
-          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
-            <div className="flex flex-wrap gap-2">{POSTURAL_DEVIATIONS.map(dev => (<button key={dev} onClick={() => toggleArrayItem('posturalDeviations', dev)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.posturalDeviations.includes(dev) ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{dev}</button>))}</div>
+
+        {step === 7 && (<div className="space-y-6 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">7. Técnicas Sugeridas</h4>
+          <div><label className={labelClass}>Métodos de Ajuste Preferidos</label>
+            <div className="bg-slate-900 p-6 rounded-[25px] border border-white/5 flex flex-wrap gap-2">
+              {CHIRO_TECHNIQUES.map(tech => (<button key={tech} onClick={() => toggleArrayItem('chiropracticTechniques', tech)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black border transition-all ${form.chiropracticTechniques.includes(tech) ? 'bg-cyan-500 text-black border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] scale-105' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{tech}</button>))}
+            </div>
           </div>
         </div>)}
-        {step === 7 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">7. Técnicas</label>
-          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
-            <div className="flex flex-wrap gap-2">{CHIRO_TECHNIQUES.map(tech => (<button key={tech} onClick={() => toggleArrayItem('chiropracticTechniques', tech)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.chiropracticTechniques.includes(tech) ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{tech}</button>))}</div>
+
+        {/* 🌟 NUEVO PASO 8: EVALUACIÓN INICIAL Y PRIMER AJUSTE */}
+        {step === 8 && (<div className="space-y-8 animate-fade-in text-left">
+          <h4 className="text-[12px] font-black uppercase text-cyan-400 mb-4 border-b border-white/10 pb-4 flex items-center gap-2"><Target className="w-4 h-4"/> 8. Evaluación Inicial (Primer Ajuste)</h4>
+          
+          <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
+            <div className="flex justify-between items-end mb-6">
+              <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
+              <div className="text-right">
+                <span className={`text-3xl font-black ${getPainColor(form.painLevel)}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel)}`}>{getPainLabel(form.painLevel)}</p>
+              </div>
+            </div>
+            <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel)}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+            <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
+          </div>
+
+          <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
+
+          <div>
+            <label className={labelClass}>Notas de la Sesión Inicial</label>
+            <textarea placeholder="Ej. El paciente se ajustó exitosamente. Cita agendada para revisión..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
           </div>
         </div>)}
-        <div className="flex gap-4 pt-6">
-          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-white/5 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition">Atrás</button>}
-          {step < 7 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition shadow-lg border-b-4 border-cyan-700 disabled:opacity-50">Siguiente</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs border-b-4 border-cyan-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar'}</button>)}
+
+        <div className="flex gap-4 pt-8">
+          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-slate-900 py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition tracking-widest hover:bg-slate-800 border border-white/10">Atrás</button>}
+          {step < 8 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition shadow-[0_10px_20px_rgba(34,211,238,0.2)] border-b-8 border-cyan-700 disabled:opacity-50 tracking-widest">Siguiente Paso</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-emerald-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] border-b-8 border-emerald-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70 shadow-[0_10px_20px_rgba(52,211,153,0.3)] tracking-widest">{isSaving ? 'Guardando...' : 'Crear Expediente'}</button>)}
         </div>
       </div>
     </Modal>
@@ -605,23 +441,26 @@ const NewHistoryModal = ({ onClose, onSave }) => {
     return 'Insoportable';
   };
 
+  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
+
   return (
     <Modal title="Nuevo Registro Clínico" onClose={onClose}>
-      <div className="space-y-6 text-left pb-4">
+      <div className="space-y-8 text-left pb-4">
         
         <div>
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Fecha del Ajuste</label>
-          <input type="date" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+          <label className={labelClass}>Fecha del Ajuste</label>
+          <input type="date" className={inputClass} value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
         </div>
 
-        <div className="bg-rose-950/20 p-5 rounded-[30px] border border-rose-500/20">
-          <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Banderas Rojas (Precauciones)</h4>
+        <div className="bg-rose-950/20 p-8 rounded-[35px] border border-rose-500/20 shadow-inner">
+          <label className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Banderas Rojas (Precauciones)</label>
           <div className="flex flex-wrap gap-2">
             {quickFlags.map(flag => (
               <button 
                 key={flag} 
                 onClick={() => setForm(prev => ({...prev, redFlags: prev.redFlags.includes(flag) ? prev.redFlags.filter(f => f !== flag) : [...prev.redFlags, flag]}))} 
-                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all duration-300 ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105 border-rose-400' : 'bg-slate-950 text-slate-400 border border-white/5 hover:bg-slate-900'}`}
+                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-300 ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105 border-rose-400' : 'bg-slate-950 text-slate-400 border border-white/5 hover:bg-slate-900'}`}
               >
                 {flag}
               </button>
@@ -629,30 +468,30 @@ const NewHistoryModal = ({ onClose, onSave }) => {
           </div>
         </div>
 
-        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5">
-          <div className="flex justify-between items-end mb-4">
-            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Escala de Dolor (EVA)</h4>
+        <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
+          <div className="flex justify-between items-end mb-6">
+            <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
             <div className="text-right">
-              <span className={`text-2xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
-              <p className={`text-[9px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
+              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
+              <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
             </div>
           </div>
-          <input type="range" min="0" max="10" className={`w-full h-2 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-          <div className="flex justify-between text-[8px] font-black uppercase text-slate-500 mt-2">
+          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+          <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3">
             <span>0 (Sin Dolor)</span>
             <span>10 (Insoportable)</span>
           </div>
         </div>
 
-        <SpineMap selectedAreas={form.areas} toggleArea={toggleArea} />
+        <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
 
         <div>
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 flex items-center gap-2"><FileText className="w-3 h-3"/> Notas de Evolución</label>
-          <textarea placeholder="Ej. Hubo cavitación en C2. El paciente reporta mejoría..." className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 min-h-[100px] text-white outline-none focus:border-cyan-500 text-sm" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+          <label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label>
+          <textarea placeholder="Ej. Hubo cavitación en C2. El paciente reporta mejoría..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
         </div>
 
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-4">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste</>}
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
         </button>
       </div>
     </Modal>
@@ -666,9 +505,9 @@ const NewAppointmentModal = ({ onClose, onSave }) => {
   return (
     <Modal title="Agendar Cita" onClose={onClose}>
       <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
       </div>
     </Modal>
   );
