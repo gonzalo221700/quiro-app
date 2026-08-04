@@ -1,25 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, 
-  signInWithPopup, onAuthStateChanged, signOut, RecaptchaVerifier, 
-  signInWithPhoneNumber, createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup 
-} from 'firebase/auth';
-import { 
-  getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, 
-  getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc 
-} from 'firebase/firestore';
-import { 
-  Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, 
-  Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, 
-  BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, 
-  Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, 
-  Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, 
-  Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, 
-  AlertOctagon, FileText, Stethoscope 
-} from 'lucide-react';
+import { getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, RecaptchaVerifier, signInWithPhoneNumber, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
+import { getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
@@ -37,7 +21,7 @@ const auth = getAuth(app);
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 const appId = firebaseConfig.projectId;
 const TRIAL_DAYS = 3;
-const MAX_TRIAL_PATIENTS = 3; 
+const MAX_TRIAL_PATIENTS = 3;
 
 // --- UTILIDADES ---
 const openWhatsApp = (phone, message = "") => {
@@ -53,9 +37,8 @@ const safeFormatDate = (dateStr) => {
   } catch (e) { return String(dateStr); }
 };
 
-// --- DICCIONARIO CLÍNICO (COMPACTADO PARA ESPACIO) ---
+// --- DICCIONARIO CLÍNICO ---
 const techniquesData=[{title:"Ajuste Cervical (Diversified)",image:"",description:"Técnica manual de alta velocidad y baja amplitud (HVLA) para corregir rotaciones y restricciones en la columna cervical (C1-C7).",execution:"1. Posiciona al paciente en decúbito supino.\n2. Contacta el pilar articular o la lámina con la falange lateral del dedo índice.\n3. Lleva la articulación a la tensión máxima (lock-out) con leve flexión lateral y rotación.\n4. Aplica el impulso (thrust) HVLA en un vector rápido y superficial (P-A, I-S).",help:"Aplicar frío por 15 min si hay inflamación post-ajuste. Indicar ejercicios de retracción cervical y corregir la postura de 'Text Neck'."},{title:"Ajuste Torácico Anterior (Abrazado)",image:"",description:"Ideal para la zona dorsal (T1-T12). Se realiza con el paciente boca arriba, utilizando el peso del cuerpo como palanca.",execution:"1. Paciente en decúbito supino con los brazos cruzados sobre el pecho.\n2. El quiropráctico hace un contacto con la mano en forma de 'puño suave' o 'garra' debajo de la vértebra dorsal a ajustar.\n3. Usando el esternón sobre los brazos del paciente, se inhala y se baja el peso corporal.\n4. El impulso (thrust) es de Anterior a Posterior (A-P) directamente a través de los brazos cruzados.",help:"Sugerir ejercicios de expansión torácica y estiramiento de pectorales en el marco de una puerta para abrir el pecho."},{title:"Ajuste Lumbar (Side Posture)",image:"",description:"Técnica en postura lateral (pull/push) fundamental para corregir restricciones rotacionales y subluxaciones en la zona lumbar (L1-L5).",execution:"1. Posiciona al paciente en decúbito lateral con la pierna superior flexionada.\n2. Estabiliza el hombro superior del paciente con el antebrazo cefálico.\n3. Contacta el proceso mamilar o espinoso lumbar con el pisiforme de la mano caudal.\n4. Genera tensión (body drop) rotando la pelvis hacia ti y aplica el impulso rotacional.",help:"Recomendar al paciente evitar levantar objetos pesados doblando la espalda. Enseñar técnica de sentadilla profunda."},{title:"Técnica Gonstead",image:"",description:"Enfoque biomecánico ultra específico. Utiliza análisis de radiografías, nervoscopio e instrumentación para ajustes precisos sobre la vértebra aislada.",execution:"1. Uso riguroso de radiografía completa y palpación estática/dinámica.\n2. Para la zona pélvica, posicionar en mesa Knee-Chest o banco cervical para el cuello.\n3. Estabilizar rigurosamente la vértebra inferior al segmento a ajustar.\n4. El empuje se realiza en un vector extremadamente específico sin rotación excesiva.",help:"Explicar al paciente la importancia de caminar 10 minutos inmediatamente después del ajuste para asimilar el cambio neuro-estructural."},{title:"Ajuste Pélvico (Drop Thompson)",image:"",description:"Sistema basado en la ley de inercia de Newton. Usa piezas segmentadas de la camilla que caen (Drop) para realizar un ajuste seguro de baja fuerza.",execution:"1. Paciente en decúbito prono. Evalúa dismetría pélvica (Test de Derifield o largo de piernas).\n2. Ajusta la tensión de la pieza de caída (Drop) pélvica al peso exacto del paciente.\n3. Coloca el contacto doble con eminencias tenares sobre la EIPS (Espina Ilíaca Postero-Superior).\n4. Aplica el impulso P-A, I-S rápido. La pieza caerá absorbiendo la fuerza pesada.",help:"Sugerir al paciente no cruzar las piernas al sentarse para mantener la simetría pélvica. Recomendar usar cojín lumbar al manejar."},{title:"S.O.T. (Sacro Occipital Technique)",image:"",description:"Técnica suave que utiliza cuñas (bloques) posicionados debajo de la pelvis del paciente, usando su propio peso y la respiración para alinear.",execution:"1. Clasificar al paciente en Categoría I, II o III de SOT mediante indicadores y palpación fascial.\n2. Colocar las cuñas bajo trocánteres e ilíacos según la categoría detectada.\n3. Dejar al paciente reposar sobre los bloques durante 10-15 minutos.\n4. Sincronizar manipulaciones craneales suaves con las fases respiratorias (Inhalación/Exhalación).",help:"Ideal para dolores agudos y mujeres embarazadas. Sugerir reposo post-terapia y evitar ejercicio de alto impacto por 24 horas."},{title:"Tracción - Flexión (Mesa Cox)",image:"",description:"Técnica de descompresión espinal guiada. Abre el espacio del canal neural, reduce la presión discal y ayuda al tratamiento de la ciática.",execution:"1. Paciente en posición prona, asegurar las cintas o sujeciones en los tobillos.\n2. Desbloquear el eje de flexión de la sección inferior de la mesa.\n3. Contactar con la eminencia tenar el proceso espinoso de la vértebra inmediatamente superior a la hernia o lesión.\n4. Aplicar presión sostenida mientras se flexiona la mesa en ciclos de 20 segundos.",help:"Vital indicar al paciente evitar las flexiones de tronco. Enseñar a recoger objetos utilizando flexión de rodillas y mantener core activo."},{title:"Técnica de Activador",image:"",description:"Ajuste asistido por un instrumento de impacto mecánico (Activator Adjusting Instrument) con alta velocidad y muy baja fuerza. No genera cavitación (ruido).",execution:"1. Realizar el protocolo de aislamiento básico (aislamiento por zonas pidiendo al paciente mover brazos/piernas y midiendo el largo de las piernas).\n2. Seleccionar la línea de corrección adecuada según el manual.\n3. Posicionar el instrumento directamente sobre el proceso transverso o carilla articular.\n4. Aplicar el impacto mecánico seco.",help:"Ideal para pacientes con osteoporosis, miedo a la cavitación o pediátricos. Explicar al paciente que la rapidez del impacto engaña el reflejo muscular."},{title:"Toggle Recoil (Upper Cervical)",image:"",description:"Técnica de la escuela 'Hole in One' para ajustar la zona cervical superior (Atlas y Axis). Caracterizada por un impulso y retirada hiperrápida.",execution:"1. Paciente en decúbito lateral sobre cabezal de Drop cervical o mesa específica.\n2. Contactar el proceso transverso del Atlas con la eminencia pisiforme.\n3. Mantener los codos ligeramente flexionados y el pecho arriba.\n4. Efectuar un thrust de triceps altísima velocidad e inmediatamente retirar las manos (Recoil) dejando caer el Drop.",help:"Después del ajuste cervical superior, es importante que el paciente descanse 10-15 min en sala de recuperación para equilibrar el sistema nervioso autónomo."},{title:"Técnica Webster (Embarazadas)",image:"",description:"Análisis y ajuste sacropélvico específico para embarazadas, diseñado para reducir interferencias neurológicas y equilibrar el útero.",execution:"1. Evaluar restricción de la flexión de la rodilla en posición prona (con almohadas de soporte para embarazo).\n2. Ajustar el sacro en el lado de mayor restricción usando Drop o el pulgar.\n3. Paciente en supino: Identificar tensión en el ligamento redondo del útero.\n4. Aplicar presión ultra suave y sostenida (sin masajear) sobre el ligamento tenso hasta sentir la liberación.",help:"Indicar que esta técnica ayuda a optimizar el espacio para el bebé (evitar presentación de nalgas). Usar cojín para dormir de lado con apoyo entre rodillas."},{title:"Técnica Logan Basic",image:"",description:"Un enfoque muy ligero y suave que utiliza contactos de presión continua en el ligamento sacrotuberoso para nivelar la columna completa.",execution:"1. Localizar tensión y sensibilidad asimétrica cerca de la tuberosidad isquiática.\n2. Aplicar un contacto con el pulgar bajo la tuberosidad isquiática (ligamento sacrotuberoso).\n3. Mantener una presión en dirección Anterior, Superior y Lateral por 10 a 15 minutos continuos.\n4. Masajear simultáneamente la musculatura paravertebral a lo largo de toda la columna.",help:"Técnica sumamente relajante que activa el sistema parasimpático. Recomendar al paciente tomar mucha agua y descansar."},{title:"Ajuste de Extremidades",image:"",description:"Manipulación de las articulaciones fuera de la columna vertebral, como muñecas (túnel carpiano), hombros, codos, rodillas y tobillos.",execution:"1. Evaluar la restricción del rango de movimiento y juego articular (joint play).\n2. Hombro (A-P): Paciente supino, tracción suave del húmero y thrust sobre la cabeza humeral hacia posterior.\n3. Rodilla/Tobillo: Típicamente ajustes en tracción del eje largo de la pierna o ajuste en mortaja tibioastragalina.\n4. Verificar la recuperación del movimiento.",help:"Usar ejercicios con bandas de resistencia elástica para rehabilitar las articulaciones después de devolverles su biomecánica normal."},{title:"Liberación Miofascial / IASTM",image:"",description:"Movilización de tejidos blandos asistida por herramientas de acero inoxidable (Graston) o terapia manual intensa para romper adherencias fasciales.",execution:"1. Aplicar crema o emoliente sobre la zona afectada (ej. fascia plantar, isquiotibiales, trapecios).\n2. Utilizar el instrumento IASTM o los pulgares con ángulo de 30-45 grados.\n3. Deslizar con presión profunda creando fricción hasta generar petequias ligeras (enrojecimiento terapéutico).\n4. Acompañar de movilización pasiva del paciente.",help:"Indicar al paciente que el enrojecimiento es normal. Realizar estiramientos activos del músculo trabajado para reconstruir las fibras colágenas."},{title:"Vendaje Neuromuscular (Kinesiotaping)",image:"",description:"Aplicación de cintas elásticas transpirables sobre la piel post-ajuste. Alivia el dolor, drena la inflamación y proporciona soporte propioceptivo.",execution:"1. Limpiar y secar bien la piel del área tratada. Recortar los bordes de la cinta en forma redondeada.\n2. Anclar la base de la cinta (sin tensión) en posición neutral.\n3. Llevar el músculo o articulación a tensión (estirado) y aplicar el resto de la cinta con la tensión deseada (0-50% según sea para relajar o tonificar).\n4. Friccionar la cinta para activar el adhesivo con el calor.",help:"Informar que la cinta puede durar de 3 a 5 días y se puede mojar en la ducha. Retirar tirando la piel hacia atrás, no jalando la cinta."}];
-
 const RED_FLAGS = ['Tumor','Infecciones','Fractura','Problema neurológico','Problemas nerviosos','Herida abierta local','Quemadura','Sangrado prolongado','Implantes artificiales','Marcapasos','Infección articular'];
 const CHIRO_TECHNIQUES = ['Diversified','Gonstead','Thompson','Activador','Toggle Recoil','SOT (Sacro Occipital)','Cox Flexion-Distraction','Miofascial / Graston','Ajuste Cervical Específico'];
 const POSTURAL_DEVIATIONS = ['Cabeza Adelantada','Hombro Elevado','Escápula Alada','Hipercifosis Dorsal','Hiperlordosis Lumbar','Rectificación Cervical','Pelvis Basculada','Escoliosis','Genu Valgo (X)','Genu Varo (O)','Pie Plano/Cavo'];
@@ -92,35 +75,20 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-// --- PANTALLAS Y COMPONENTES ---
-
 const PremiumTab = ({ onActivateCode }) => {
   const [code, setCode] = useState('');
   const [activating, setActivating] = useState(false);
-
-  const handleActivate = async () => {
-    if (!code) return;
-    setActivating(true);
-    await onActivateCode(code);
-    setActivating(false);
-  };
-
+  const handleActivate = async () => { if (!code) return; setActivating(true); await onActivateCode(code); setActivating(false); };
   return (
     <div className="animate-fade-in space-y-6 text-center py-6 px-2">
-      <div className="bg-gradient-to-tr from-amber-400 to-orange-600 p-6 rounded-[35px] inline-block mb-2 shadow-[0_0_40px_rgba(251,191,36,0.3)]">
-        <CreditCard className="w-12 h-12 text-black" />
-      </div>
+      <div className="bg-gradient-to-tr from-amber-400 to-orange-600 p-6 rounded-[35px] inline-block mb-2 shadow-[0_0_40px_rgba(251,191,36,0.3)]"><CreditCard className="w-12 h-12 text-black" /></div>
       <h2 className="text-3xl font-black uppercase italic text-white mb-2">Desbloquea <span className="text-amber-400">PRO</span></h2>
-      <p className="text-indigo-200 text-sm leading-relaxed mb-8">Adquiere licencia para vincular tu cuenta y sincronizar en PC.</p>
-      <button onClick={() => openWhatsApp("529996180031", "Hola, quiero adquirir QuiroApp PRO.")} className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8">
-        <MessageSquare className="w-6 h-6" /> Contactar por WhatsApp
-      </button>
+      <p className="text-indigo-200 text-sm leading-relaxed mb-8">Adquiere licencia para sincronizar tu cuenta en PC.</p>
+      <button onClick={() => openWhatsApp("529996180031", "Hola, me interesa adquirir QuiroApp PRO.")} className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8"><MessageSquare className="w-6 h-6" /> WhatsApp</button>
       <div className="bg-slate-900/80 p-8 rounded-[40px] border border-cyan-400/20 text-left space-y-5 shadow-xl">
-        <h4 className="text-cyan-400 font-black uppercase tracking-widest text-xs mb-4 flex items-center gap-2"><KeyRound className="w-4 h-4"/> Ya tengo un código</h4>
-        <input type="text" placeholder="Ej: PRO-X7Y8Z9" value={code} onChange={e => setCode(e.target.value.toUpperCase())} className="w-full bg-slate-950 p-5 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-400 tracking-[0.2em] uppercase text-center" />
-        <button onClick={handleActivate} disabled={activating || !code} className="w-full bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase italic border-b-4 border-cyan-700 active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-50">
-          {activating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Activar Código'}
-        </button>
+        <h4 className="text-cyan-400 font-black uppercase tracking-widest text-xs mb-4 flex items-center gap-2"><KeyRound className="w-4 h-4"/> Tengo un código</h4>
+        <input type="text" placeholder="Ej: PRO-X7Y8Z9" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="w-full bg-slate-950 p-5 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-400 tracking-[0.2em] uppercase text-center" />
+        <button onClick={handleActivate} disabled={activating || !code} className="w-full bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase italic border-b-4 border-cyan-700 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50">{activating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Activar Código'}</button>
       </div>
     </div>
   );
@@ -128,37 +96,43 @@ const PremiumTab = ({ onActivateCode }) => {
 
 const AdminTab = ({ codes, onGenerateCode }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGen = async (type, days) => {
-    setIsGenerating(true);
-    await onGenerateCode(type, days);
-    setIsGenerating(false);
-  };
-
+  const handleGen = async (type, days) => { setIsGenerating(true); await onGenerateCode(type, days); setIsGenerating(false); };
   return (
     <div className="animate-fade-in space-y-6 text-left py-6 px-2">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div>
-        <div>
-          <h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2>
-          <p className="text-[10px] text-rose-200/50 uppercase tracking-widest">Suscripciones</p>
-        </div>
-      </div>
-      <div className="flex gap-3 mb-8">
-        <button onClick={() => handleGen('Mensual', 30)} disabled={isGenerating} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition border-b-4 border-indigo-700 flex flex-col items-center gap-1 disabled:opacity-50">Mensual</button>
-        <button onClick={() => handleGen('Anual', 365)} disabled={isGenerating} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition border-b-4 border-rose-800 flex flex-col items-center gap-1 disabled:opacity-50">Anual</button>
-      </div>
-      <h3 className="text-sm font-black uppercase text-indigo-400 mb-4 tracking-widest">Historial de Códigos ({codes.length})</h3>
+      <div className="flex items-center gap-3 mb-6"><div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div><div><h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2></div></div>
+      <div className="flex gap-3 mb-8"><button onClick={() => handleGen('Mensual', 30)} disabled={isGenerating} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 border-b-4 border-indigo-700">Mensual</button><button onClick={() => handleGen('Anual', 365)} disabled={isGenerating} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 border-b-4 border-rose-800">Anual</button></div>
+      <h3 className="text-sm font-black uppercase text-indigo-400 mb-4 tracking-widest">Historial Códigos ({codes.length})</h3>
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
         {codes.map(c => (
           <div key={c.id} className="bg-slate-900 p-5 rounded-3xl flex justify-between shadow-lg">
-            <div>
-              <p className="font-mono text-xl font-black text-white">{String(c.id)}</p>
-              <p className={`text-[9px] font-black uppercase tracking-widest ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>{c.used ? 'Usado' : 'Disponible'}</p>
-            </div>
+            <div><p className="font-mono text-xl font-black text-white">{String(c.id)}</p><p className={`text-[9px] font-black uppercase tracking-widest ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>{c.used ? 'Usado' : 'Disponible'}</p></div>
             {!c.used && <button onClick={() => { navigator.clipboard.writeText(c.id); alert("Copiado"); }} className="p-3 bg-white/5 rounded-xl text-white"><Copy className="w-5 h-5"/></button>}
           </div>
         ))}
+      </div>
+    </div>
+  );
+};
+
+const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenCalendar, onUpgrade }) => {
+  const today = new Date().toISOString().split('T')[0];
+  const todays = appointments.filter(a => String(a.date) === today).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+  const bannerStyle = doctorInfo.bannerImage ? { backgroundImage: `url(${doctorInfo.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+  return (
+    <div className="space-y-6 animate-fade-in text-left">
+      <div className={`p-8 rounded-[40px] border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-500 ${!doctorInfo.bannerImage ? 'bg-gradient-to-br from-indigo-700 to-black' : ''}`} style={bannerStyle}>
+        {doctorInfo.bannerImage && <div className="absolute inset-0 bg-black/60" />}
+        <div className="relative z-10"><p className="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md">{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p><h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">Dr. {String(doctorInfo.name || "Especialista")}</h2></div>
+        <div className="absolute -bottom-10 -right-10 opacity-10 z-0">{doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-48 h-48 object-contain grayscale" /> : <SpineLogo className="w-48 h-48" />}</div>
+      </div>
+      {!doctorInfo.isPremium && (<div className="bg-gradient-to-r from-amber-500/10 to-orange-600/10 border border-amber-500/30 p-5 rounded-[30px] flex items-center justify-between shadow-lg"><div><h4 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1"><Sparkles className="w-4 h-4"/> Prueba Activa</h4><p className="text-[9px] text-amber-200/70 mt-1 uppercase tracking-widest">Activa PRO</p></div><button onClick={onUpgrade} className="bg-amber-500 text-black px-4 py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 transition shadow-lg border-b-4 border-amber-700">Obtener PRO</button></div>)}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner relative overflow-hidden"><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pacientes</p><p className="text-3xl font-black text-white flex items-end gap-1">{String(patients.length)} {!doctorInfo.isPremium && <span className="text-[10px] text-amber-500 mb-1 opacity-60">/ {MAX_TRIAL_PATIENTS}</span>}</p></div>
+        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner"><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Citas Hoy</p><p className="text-3xl font-black text-white">{String(todays.length)}</p></div>
+      </div>
+      <div className="bg-indigo-950/20 p-6 rounded-[40px] border border-indigo-500/20 shadow-xl">
+        <div className="flex justify-between items-center mb-6 px-2"><h3 className="text-xl font-black uppercase italic text-white">Agenda del Día</h3><div className="flex gap-3"><button onClick={onOpenCalendar} className="p-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-2xl active:scale-90 shadow-lg"><CalendarIcon className="w-5 h-5" /></button><button onClick={onAddAppointment} className="p-3 bg-cyan-400 text-black rounded-2xl active:scale-90 shadow-lg"><Plus className="w-5 h-5" /></button></div></div>
+        {todays.length === 0 ? (<div className="py-12 text-center opacity-40"><ClipboardList className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (todays.map(app => (<div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between"><div><p className="text-white font-black uppercase italic">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div><ChevronRight className="w-5 h-5 text-indigo-800" /></div>)))}
       </div>
     </div>
   );
@@ -168,122 +142,28 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const [sum, setSum] = useState('');
   const [loadingIA, setLoadingIA] = useState(false);
   const [activeSection, setActiveSection] = useState('historial'); 
-  
   const generateLocalAssistant = () => {
-    if (!patient.histories || patient.histories.length === 0) {
-      setSum("Registra ajustes primero para obtener sugerencias.");
-      return;
-    }
+    if (!patient.histories || patient.histories.length === 0) { setSum("Registra ajustes primero para obtener sugerencias."); return; }
     setLoadingIA(true);
-    setTimeout(() => {
-      setSum("💡 Análisis:\n\n• CERVICAL: Revisar Atlas/Axis. Sugerido Diversified.\n• LUMBAR: Descartar compresión radicular. Sugerido Gonstead.\n• PELVIS: Excelente respuesta con bloques SOT.");
-      setLoadingIA(false);
-    }, 600);
+    setTimeout(() => { setSum("💡 Análisis:\n\n• CERVICAL: Revisar Atlas/Axis. Sugerido Diversified.\n• LUMBAR: Descartar compresión radicular. Sugerido Gonstead.\n• PELVIS: Excelente respuesta con bloques SOT."); setLoadingIA(false); }, 600);
   };
-  
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
 
   return (
     <div className="animate-fade-in text-left pb-10">
-      <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20">
-        <button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90"><ChevronRight className="rotate-180"/></button>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2>
-          <p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p>
-        </div>
-        <button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90"><Trash2 className="w-5 h-5"/></button>
-      </div>
-
-      <div className="flex gap-3 mb-6">
-        <button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><MessageSquare className="w-4 h-4"/> WhatsApp</button>
-        <button onClick={onSchedule} className="flex-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button>
-      </div>
-
-      <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">
-        {['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (
-          <button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>
-        ))}
-      </div>
-
-      {activeSection === 'identidad' && (
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in">
-          <div className="grid grid-cols-2 gap-4">
-            <div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div>
-            <div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'}</p></div>
-            <div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div>
-          </div>
-        </div>
-      )}
-
-      {activeSection === 'historial' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div>
-          </div>
-        </div>
-      )}
-
-      {activeSection === 'evaluacion' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="grid grid-cols-4 gap-2 mb-2">
-            <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div>
-            <div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div>
-          </div>
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div>
-          </div>
-        </div>
-      )}
-
-      {activeSection === 'anatomia' && (
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in">
-          <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura</h4>
-          <p className="text-sm text-indigo-100">{patient.postureAnterior || "--"}</p>
-        </div>
-      )}
-
-      {activeSection === 'tratamiento' && (
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in">
-          <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div>
-        </div>
-      )}
-
-      {activeSection === 'sesiones' && (
-        <div className="animate-fade-in">
-          <div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner">
-            <div className="flex justify-between items-center mb-4 text-left">
-              <h3 className="text-xs font-black uppercase text-white flex items-center gap-2"><Stethoscope className="w-4 h-4 text-cyan-400"/> Asistente</h3>
-              {!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full">{loadingIA ? "..." : "Analizar"}</button>}
-            </div>
-            {sum ? <div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2"><p className="text-xs text-indigo-100 whitespace-pre-wrap">{sum}</p></div> : <p className="text-xs italic text-indigo-200">Presiona para recomendaciones.</p>}
-          </div>
-          <div className="flex justify-between items-center mb-4 px-2">
-            <h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500"/> Ajustes</h3>
-            <button onClick={onAddHistory} className="bg-white text-black p-3 rounded-2xl active:scale-90 transition shadow-2xl"><Plus className="w-5 h-5"/></button>
-          </div>
-          <div className="space-y-4">
-            {(!patient.histories || patient.histories.length === 0) ? (
-              <div className="py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-[40px]"><p className="text-xs font-black uppercase">Sin ajustes</p></div>
-            ) : patient.histories.map((h, i) => (
-              <div key={i} className="bg-slate-900/50 p-5 rounded-3xl border-l-4 border-cyan-500 shadow-md">
-                <div className="flex justify-between mb-2">
-                  <span className="text-[10px] font-black text-indigo-400 uppercase">{safeFormatDate(h.date)}</span>
-                  <span className="text-[10px] font-black text-rose-500 uppercase">Dolor {String(h.painLevel)}/10</span>
-                </div>
-                <p className="text-sm italic mb-2 text-indigo-50">"{String(h.notes)}"</p>
-                <div className="flex flex-wrap gap-1">
-                  {h.areas?.map(a => <span key={a} className="text-[8px] bg-slate-950 px-2 py-1 rounded-lg border border-white/5 text-cyan-400 font-black uppercase tracking-widest">{String(a)}</span>)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20"><button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90"><ChevronRight className="rotate-180"/></button><div className="flex-1 min-w-0"><h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2><p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p></div><button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90"><Trash2 className="w-5 h-5"/></button></div>
+      <div className="flex gap-3 mb-6"><button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><MessageSquare className="w-4 h-4"/> WhatsApp</button><button onClick={onSchedule} className="flex-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button></div>
+      <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
+      {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
+      {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div></div></div>)}
+      {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in"><div className="grid grid-cols-4 gap-2 mb-2"><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div><div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div></div></div>)}
+      {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura</h4><p className="text-sm text-indigo-100">{patient.postureAnterior || "--"}</p></div>)}
+      {activeSection === 'tratamiento' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div></div>)}
+      {activeSection === 'sesiones' && (<div className="animate-fade-in"><div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner"><div className="flex justify-between items-center mb-4 text-left"><h3 className="text-xs font-black uppercase text-white flex items-center gap-2"><Stethoscope className="w-4 h-4 text-cyan-400"/> Asistente</h3>{!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full">{loadingIA ? "..." : "Analizar"}</button>}</div>{sum ? <div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2"><p className="text-xs text-indigo-100 whitespace-pre-wrap">{sum}</p></div> : <p className="text-xs italic text-indigo-200">Presiona para recomendaciones.</p>}</div><div className="flex justify-between items-center mb-4 px-2"><h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500"/> Ajustes</h3><button onClick={onAddHistory} className="bg-white text-black p-3 rounded-2xl active:scale-90 transition shadow-2xl"><Plus className="w-5 h-5"/></button></div><div className="space-y-4">{(!patient.histories || patient.histories.length === 0) ? (<div className="py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-[40px]"><p className="text-xs font-black uppercase">Sin ajustes</p></div>) : patient.histories.map((h, i) => (<div key={i} className="bg-slate-900/50 p-5 rounded-3xl border-l-4 border-cyan-500 shadow-md"><div className="flex justify-between mb-2"><span className="text-[10px] font-black text-indigo-400 uppercase">{safeFormatDate(h.date)}</span><span className="text-[10px] font-black text-rose-500 uppercase">Dolor {String(h.painLevel)}/10</span></div><p className="text-sm italic mb-2 text-indigo-50">"{String(h.notes)}"</p><div className="flex flex-wrap gap-1">{h.areas?.map(a => <span key={a} className="text-[8px] bg-slate-950 px-2 py-1 rounded-lg border border-white/5 text-cyan-400 font-black uppercase tracking-widest">{String(a)}</span>)}</div></div>))}</div></div>)}
     </div>
   );
 };
 
-// --- CORRECCIÓN EXACTA APLICADA EN PROFILE TAB ---
 const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin }) => {
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
@@ -309,13 +189,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     else setTapCount(prev => prev + 1);
   };
 
-  const getProRemainingDays = () => {
-    if (!doctorInfo.premiumExpiresAt) return null;
-    const diffMs = doctorInfo.premiumExpiresAt - Date.now();
-    if (diffMs <= 0) return 0;
-    return Math.ceil(diffMs / 86400000);
-  };
-
   const handleImageUpload = (e, fieldName, isBanner = false) => {
     if (isLocked) return;
     const file = e.target.files[0];
@@ -328,18 +201,13 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         const canvas = document.createElement('canvas');
         const MAX_WIDTH = isBanner ? 800 : 256;
         const MAX_HEIGHT = isBanner ? 400 : 256;
-        let width = img.width;
-        let height = img.height;
+        let width = img.width; let height = img.height;
         if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
         else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
         await onUpdateInfo({ [fieldName]: canvas.toDataURL('image/jpeg', 0.7) });
-        setIsSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
+        setIsSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
       };
       img.src = event.target.result;
     };
@@ -353,12 +221,9 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     const csvRows = patients.map(p => [p.name||'', p.phone||'', p.gender||'', p.age||'', p.histories?p.histories.length:0].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     const csvString = headers.join(',') + '\n' + csvRows.join('\n');
     const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
     link.setAttribute("download", `Respaldo_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
   const inputClass = `w-full bg-slate-950 p-5 rounded-[25px] border border-white/10 text-white font-bold outline-none transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'focus:border-cyan-400'}`;
@@ -422,34 +287,54 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
           </div>
         )}
 
-        {/* REPARACIÓN DEL CONFLICTO EN LA LÍNEA 64: LA IMAGEN DE FONDO */}
+        <div className="border-b border-white/10 pb-6 mb-6">
+          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
+            <ImagePlus className="w-3 h-3" /> Logo de Clínica
+          </label>
+          <div className="flex items-center gap-4">
+            <div className={`w-20 h-20 shrink-0 rounded-[20px] flex items-center justify-center border-2 border-dashed ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950 overflow-hidden'}`}>
+              {doctorInfo.logo ? (
+                <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <ImagePlus className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
+              )}
+            </div>
+            <div className="flex-1">
+              <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo', false)} disabled={isLocked} />
+              <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 ${isLocked ? 'bg-slate-800 text-slate-500' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'}`}>
+                <Upload className="w-4 h-4" /> Subir Logo
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* CORRECCIÓN EXACTA DE LA LÍNEA 64: ENVOLTURA REACT FRAGMENT AÑADIDA */}
         <div className="border-b border-white/10 pb-6 mb-6">
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImageIcon className="w-3 h-3" /> Imagen de Fondo
           </label>
           <div className="flex flex-col gap-4">
             <div className={`w-full h-32 rounded-[20px] flex items-center justify-center border-2 border-dashed relative overflow-hidden ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950'}`}>
-              
-              {/* Aquí estaba el error. Ahora está perfectamente estructurado */}
               {doctorInfo.bannerImage ? (
                 <img src={doctorInfo.bannerImage} alt="Fondo" className="w-full h-full object-cover opacity-60" />
               ) : (
-                <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
+                <>
+                  <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
+                    <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex justify-center gap-2 ${isLocked ? 'hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50'}`}>
+                      <Upload className="w-4 h-4" /> Subir Fondo
+                    </label>
+                  </div>
+                </>
               )}
-              
-              <div className="absolute inset-0 flex items-center justify-center">
-                <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
-                <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex justify-center gap-2 ${isLocked ? 'hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95'}`}>
-                  <Upload className="w-4 h-4" /> Subir Fondo
-                </label>
-              </div>
             </div>
           </div>
         </div>
 
         <div>
           <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400"><User className="w-3 h-3"/> Especialista</label>
-          <input type="text" placeholder="Dr. / LFT." className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
+          <input type="text" placeholder="Tu Nombre" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
         </div>
         <div>
           <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400"><Building className="w-3 h-3"/> Clínica</label>
@@ -473,6 +358,202 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   );
 };
 
+const AdminLoginModal = ({ onClose, onSuccess }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
+  return (
+    <Modal title="Acceso Clasificado" onClose={onClose}>
+      <div className="space-y-4 text-left pb-4">
+        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
+        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
+        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
+      </div>
+    </Modal>
+  );
+};
+
+const UpsellModal = ({ onClose, onUpgrade }) => (
+  <Modal title="Límite Alcanzado" onClose={onClose}>
+    <div className="text-center space-y-6 pb-4">
+      <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto border border-amber-500/30"><Lock className="w-12 h-12 text-amber-400" /></div>
+      <h3 className="text-2xl font-black uppercase italic text-white">Prueba Limitada</h3>
+      <p className="text-indigo-200 text-sm leading-relaxed px-4">Solo puedes registrar hasta <strong>{MAX_TRIAL_PATIENTS} pacientes</strong>. Adquiere PRO para continuar ilimitadamente.</p>
+      <button onClick={() => { onClose(); onUpgrade(); }} className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 flex justify-center items-center gap-2"><Sparkles className="w-5 h-5" /> Obtener PRO</button>
+    </div>
+  </Modal>
+);
+
+const CalendarModal = ({ appointments, patients, onClose }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+  return (
+    <Modal title="Calendario" onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
+        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
+          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const NewPatientModal = ({ onClose, onSave }) => {
+  const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '', relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '', redFlags: [], chiropracticDiagnosis: '', subluxations: '', observations: '', treatmentPlan: '', treatmentGoals: '', sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '', chiropracticTechniques: [], additionalRecommendations: '', posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '', histories: [] });
+  const handleNext = () => { if(form.name) setStep(step + 1); };
+  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
+
+  return (
+    <Modal title={`Crear Expediente (${step}/7)`} onClose={onClose}>
+      <div className="space-y-4">
+        {step === 1 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">1. Identidad</label>
+          <input type="text" placeholder="Nombre completo *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="tel" placeholder="Teléfono" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            <select className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none text-sm appearance-none" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Sexo...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select>
+            <input type="date" placeholder="Fecha Nac." className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} />
+            <input type="number" placeholder="Edad" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.age} onChange={e => setForm({...form, age: e.target.value})} />
+          </div>
+        </div>)}
+        {step === 2 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">2. Historial Clínico</label>
+          <textarea placeholder="Motivo de Consulta *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} />
+          <div className="grid grid-cols-2 gap-3">
+            <textarea placeholder="Ant. Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
+            <textarea placeholder="Ant. No Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
+          </div>
+        </div>)}
+        {step === 3 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-rose-400 ml-4 mb-1 block">3. Alertas Rojas</label>
+          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5">
+            <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-3">Precauciones</p>
+            <div className="flex flex-wrap gap-2">{RED_FLAGS.map(flag => (<button key={flag} onClick={() => toggleArrayItem('redFlags', flag)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{flag}</button>))}</div>
+          </div>
+          <input type="text" placeholder="Diagnóstico" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm mb-3" value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} />
+        </div>)}
+        {step === 4 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">4. Plan de Tratamiento</label>
+          <textarea placeholder="Plan propuesto" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} />
+        </div>)}
+        {step === 5 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">5. Examen Físico</label>
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <input type="number" placeholder="Peso (kg)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} />
+            <input type="number" placeholder="Altura (cm)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.height} onChange={e => setForm({...form, height: e.target.value})} />
+          </div>
+        </div>)}
+        {step === 6 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">6. Postura</label>
+          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
+            <div className="flex flex-wrap gap-2">{POSTURAL_DEVIATIONS.map(dev => (<button key={dev} onClick={() => toggleArrayItem('posturalDeviations', dev)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.posturalDeviations.includes(dev) ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{dev}</button>))}</div>
+          </div>
+        </div>)}
+        {step === 7 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">7. Técnicas</label>
+          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
+            <div className="flex flex-wrap gap-2">{CHIRO_TECHNIQUES.map(tech => (<button key={tech} onClick={() => toggleArrayItem('chiropracticTechniques', tech)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.chiropracticTechniques.includes(tech) ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{tech}</button>))}</div>
+          </div>
+        </div>)}
+        <div className="flex gap-4 pt-6">
+          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-white/5 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition">Atrás</button>}
+          {step < 7 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition shadow-lg border-b-4 border-cyan-700 disabled:opacity-50">Siguiente</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs border-b-4 border-cyan-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar'}</button>)}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const NewHistoryModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 5, areas: [], notes: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const areas = ['Cervical', 'Dorsal', 'Lumbar', 'Sacro', 'Hombros', 'Caderas', 'Rodillas'];
+  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  return (
+    <Modal title="Nuevo Ajuste" onClose={onClose}>
+      <div className="space-y-6">
+        <input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+        <div className="bg-slate-900 p-5 rounded-3xl text-left border border-white/5">
+          <div className="flex justify-between mb-4"><span className="text-[10px] font-black uppercase text-indigo-400">Escala de Dolor</span><span className="text-rose-500 font-black">{form.painLevel}/10</span></div>
+          <input type="range" min="0" max="10" className="w-full accent-cyan-400 h-2 bg-slate-800 rounded-full appearance-none outline-none" value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+        </div>
+        <div className="flex flex-wrap gap-2">{areas.map(a => (<button key={a} onClick={() => setForm({...form, areas: form.areas.includes(a) ? form.areas.filter(x => x !== a) : [...form.areas, a]})} className={`px-4 py-2 rounded-2xl text-[10px] font-black border transition-all ${form.areas.includes(a) ? 'bg-cyan-400 border-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-900 border-white/10 text-indigo-400 hover:bg-slate-800'}`}>{String(a)}</button>))}</div>
+        <textarea placeholder="Notas clínicas..." className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 min-h-[120px] text-white outline-none focus:border-cyan-500" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar Ajuste'}</button>
+      </div>
+    </Modal>
+  );
+};
+
+const NewAppointmentModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
+  return (
+    <Modal title="Agendar Cita" onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
+      </div>
+    </Modal>
+  );
+};
+
+const SubscriptionBlockedScreen = ({ onLogout }) => (
+  <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
+  </div>
+);
+
+const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginView, setIsLoginView] = useState(true);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
+      <SpineWatermark />
+      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
+        
+        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+        
+        {inProcess ? (
+          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
+        ) : (
+          <div className="space-y-4 animate-slide-up">
+            {step === 'initial' && (
+              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
+                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
+                <div className="grid grid-cols-1 gap-3">
+                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
+                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
+                </div></>
+            )}
+            {step === 'email' && (
+              <div className="text-left">
+                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
+                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -483,71 +564,172 @@ export default function App() {
   const [doctorInfo, setDoctorInfo] = useState({ name: '', clinic: '', trialStartedAt: null, isPremium: false, isAdmin: false });
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
-  const [adminCodes, setAdminCodes] = useState([]);
+  const [adminCodes, setAdminCodes] = useState([]); 
   const [modals, setModals] = useState({});
   const [authInProcess, setAuthInProcess] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [authStep, setAuthStep] = useState('initial');
 
   useEffect(() => {
-    const un = onAuthStateChanged(auth, (cu) => { setUser(cu); if (!cu) setLoading(false); });
-    return () => un();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); if (!currentUser) { setLoading(false); setAuthInProcess(false); } });
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!user) return;
-    const check = async () => {
+    const checkTrialAndSync = async () => {
       try {
-        const dRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDocFromServer(dRef);
-        let pD = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false };
-        if (!snap.exists()) await setDoc(dRef, pD);
-        setDoctorInfo(pD);
-        if (pD.isPremium) setTrialTimeLeft({ expired: false, isPremium: true });
-        else setTrialTimeLeft({ days: 3, hours: 0, expired: false });
-      } catch (e) { } finally { setLoading(false); }
+        const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
+        const snap = await getDocFromServer(docRef); 
+        let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
+        if (!snap.exists()) await setDoc(docRef, profileData);
+        else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
+        
+        if (profileData.isPremium && profileData.premiumExpiresAt && Date.now() > profileData.premiumExpiresAt) {
+          profileData.isPremium = false; await updateDoc(docRef, { isPremium: false });
+        }
+        setDoctorInfo(profileData);
+        if (profileData.isPremium) setTrialTimeLeft({ expired: false, isPremium: true });
+        else {
+          const diffMs = (TRIAL_DAYS * 24 * 60 * 60 * 1000) - (Date.now() - profileData.trialStartedAt);
+          if (diffMs <= 0) setTrialTimeLeft({ days: 0, hours: 0, expired: true });
+          else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
+        }
+      } catch (e) {} finally { setLoading(false); }
     };
-    check();
-    const uPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => uPat();
+    checkTrialAndSync();
+    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsubPat(); unsubApp(); };
   }, [user]);
 
-  const hGL = async () => { setAuthInProcess(true); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { setAuthInProcess(false); } };
-  const hTL = async () => { setAuthInProcess(true); try { await signInAnonymously(auth); } catch (e) { setAuthInProcess(false); } };
+  useEffect(() => {
+    if (user && doctorInfo?.isAdmin) {
+      const unsubCodes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'codes'), (snap) => setAdminCodes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      return () => unsubCodes();
+    }
+  }, [user, doctorInfo?.isAdmin]);
 
-  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase"><Loader2 className="w-12 h-12 mb-4 animate-spin"/>Iniciando...</div>;
-  if (!user) return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#020617] p-6 text-center text-white italic">
-      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-2xl">
-        <h2 className="text-4xl font-black uppercase mb-8 text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        {authInProcess ? (<Loader2 className="w-10 h-10 text-cyan-400 animate-spin mx-auto"/>) : (
-          <div>
-            <button onClick={hTL} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex justify-center gap-3 uppercase shadow-xl mb-4"><PlayCircle className="w-5 h-5"/> Prueba Gratuita</button>
-            <button onClick={hGL} className="w-full bg-black/20 text-white py-4 rounded-[20px] font-black flex justify-center gap-3 uppercase shadow-xl border border-white/10"><Globe className="w-5 h-5"/> Ingresar con Google</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user') setAuthError("Error de Google."); setAuthInProcess(false); } };
+  const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError("Error de conexión."); setAuthInProcess(false); } };
+  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError("Error de credenciales."); setAuthInProcess(false); } };
+  const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+  const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+
+  const handleActivateCode = async (codeStr) => {
+    if (!codeStr) return alert("Ingresa un código.");
+    try {
+      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr.trim().toUpperCase());
+      const codeSnap = await getDoc(codeRef); 
+      if (codeSnap.exists() && !codeSnap.data().used) {
+         const codeData = codeSnap.data();
+         const newExpiresAt = (doctorInfo.premiumExpiresAt || Date.now()) + ((codeData.durationDays || 30) * 86400000);
+         await updateDoc(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
+         await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
+         setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: newExpiresAt}));
+         alert(`¡PRO activado por ${codeData.durationDays} días!`);
+         setActiveTab('settings');
+      } else alert("Código inválido o usado.");
+    } catch (e) { alert("Error de servidor."); }
+  };
+
+  const handleGenerateAdminCode = async (type, durationDays) => {
+    try {
+      const newCode = (type === 'Mensual' ? 'MES-' : 'ANU-') + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), { used: false, type, durationDays, createdAt: new Date().toISOString(), createdBy: user?.uid });
+      alert(`Código generado: ${newCode}`);
+    } catch (e) { alert("Error."); }
+  };
+
+  const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
+  const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
+  const handleAddPatient = (data) => { setModals(prev => ({ ...prev, patient: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() }); };
+  const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
+  const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
+  const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
+
+  const handleOpenNewPatient = () => { if (!doctorInfo.isPremium && patients.length >= MAX_TRIAL_PATIENTS) setModals(m => ({ ...m, upsell: true })); else setModals(m => ({ ...m, patient: true })); };
+
+  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
+  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} inProcess={authInProcess} error={authError} step={authStep} setStep={setAuthStep} />;
+  if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
 
   return (
     <div className="h-screen bg-[#020617] text-white flex flex-col italic overflow-hidden">
+      <SpineWatermark />
       <header className="p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
-        <h1 className="text-xl font-black uppercase">Quiro<span className="text-cyan-400">App</span></h1>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
+            {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
+          </div>
+          <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
+        </div>
+        <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
       </header>
+
       <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
         {selectedPatientId ? (
-          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} />
+          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} />
         ) : (
           <>
-            {activeTab === 'home' && <div className="space-y-6"><div className="p-8 rounded-[40px] border border-white/10 bg-gradient-to-br from-indigo-700 to-black"><h2 className="text-4xl font-black italic text-white">Dr. {doctorInfo.name || "Especialista"}</h2></div></div>}
-            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={async (d) => { setDoctorInfo({ ...doctorInfo, ...d }); await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), d); }} onLogout={() => signOut(auth)} />}
+            {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} />}
+            {activeTab === 'patients' && (
+              <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
+                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
+                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : patients.map(p => (
+                  <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
+                    <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
+                  </div>
+                ))}
+                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+              </div>
+            )}
+            {activeTab === 'techniques' && (
+              <div className="animate-fade-in space-y-6 text-left pb-10">
+                <h2 className="text-3xl font-black uppercase italic mb-2 underline decoration-cyan-500 decoration-4 underline-offset-8">Guía de Ajustes</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {techniquesData.map((tech, idx) => (
+                    <div key={idx} className="bg-slate-900/80 rounded-[35px] border border-white/5 overflow-hidden shadow-2xl transition hover:border-cyan-500/30 flex flex-col">
+                      <div className="p-6 space-y-5 flex-1">
+                        <h3 className="text-xl font-black uppercase text-cyan-400">{tech.title}</h3>
+                        <div><p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1 flex items-center gap-1"><BookOpen className="w-3 h-3"/> Fundamento</p><p className="text-xs text-indigo-100/90 leading-relaxed">{tech.description}</p></div>
+                        <div className="bg-slate-950 p-4 rounded-2xl border border-white/5 shadow-inner"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest mb-2 flex items-center gap-1"><Target className="w-3 h-3"/> Ejecución</p><p className="text-xs text-white leading-relaxed whitespace-pre-line">{tech.execution}</p></div>
+                        <div className="bg-emerald-950/20 p-4 rounded-2xl border border-emerald-500/20 mt-auto"><p className="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Casa</p><p className="text-xs text-emerald-100/80 leading-relaxed">{tech.help}</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onOpenAdminLogin={() => setModals(m => ({...m, adminLogin: true}))} />}
+            {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
+            {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
           </>
         )}
       </main>
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around z-50 shadow-2xl">
-        <button onClick={() => { setActiveTab('home'); setSelectedPatientId(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400' : 'text-slate-400'}`}><Home className="w-6 h-6"/><span className="text-[8px] font-black uppercase">Inicio</span></button>
-        <button onClick={() => { setActiveTab('settings'); setSelectedPatientId(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'settings' ? 'text-cyan-400' : 'text-slate-400'}`}><Settings className="w-6 h-6"/><span className="text-[8px] font-black uppercase">Ajustes</span></button>
+
+      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
+
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
+        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
+        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
+        {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
+        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
+
+      {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
+      {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
+      {modals.appointment && <NewAppointmentModal onClose={() => setModals(m => ({...m, appointment: false}))} onSave={handleAddAppointment} />}
+      {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} />}
+      {modals.upsell && <UpsellModal onClose={() => setModals(m => ({...m, upsell: false}))} onUpgrade={() => { setModals(m => ({...m, upsell: false})); handleUpgradeRequest(); }} />}
+      {modals.adminLogin && <AdminLoginModal onClose={() => setModals(m => ({...m, adminLogin: false}))} onSuccess={() => { handleUpdateProfile({ isAdmin: true, isPremium: true }); setModals(m => ({...m, adminLogin: false})); alert("¡ADMIN ACTIVADO!"); setActiveTab('admin'); }} />}
+      
+      <style dangerouslySetInnerHTML={{__html: `@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-up { animation: slideUp 0.4s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; } .scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}} />
     </div>
   );
 }
