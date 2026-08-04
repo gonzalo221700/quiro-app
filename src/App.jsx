@@ -69,7 +69,7 @@ const SpineWatermark = () => (
 
 const Modal = ({ title, children, onClose }) => (
   <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 transition-all">
-    <div className="bg-slate-950 w-full sm:max-w-2xl sm:w-[95%] rounded-t-[40px] sm:rounded-[50px] max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-10 border-t-4 border-cyan-500 text-white animate-slide-up relative scrollbar-hide">
+    <div className="bg-slate-950 w-full sm:max-w-3xl sm:w-[95%] rounded-t-[40px] sm:rounded-[50px] max-h-[95vh] overflow-y-auto shadow-2xl p-6 sm:p-10 border-t-4 border-cyan-500 text-white animate-slide-up relative scrollbar-hide">
       <div className="flex justify-between items-center mb-8 relative z-10">
         <h3 className="text-2xl font-black italic uppercase text-cyan-400 tracking-tight">{String(title)}</h3>
         <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 rounded-full text-white active:scale-90 transition"><X className="w-5 h-5" /></button>
@@ -79,73 +79,187 @@ const Modal = ({ title, children, onClose }) => (
   </div>
 );
 
-// 🌟 NUEVO MAPA ANATÓMICO (Brazos Laterales y Extremidades Independientes)
+// 🌟 NUEVO MAPA ANATÓMICO CLÍNICO PROFESIONAL (3 VISTAS: Anterior, Lateral, Posterior)
 const AnatomyMap = ({ selectedAreas, toggleArea }) => {
   const isSelected = (area) => selectedAreas.includes(area);
-  const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.2)" : "transparent";
+  const getFill = (area) => isSelected(area) ? "rgba(34, 211, 238, 0.4)" : "rgba(15, 23, 42, 0.6)"; 
   const getStroke = (area) => isSelected(area) ? "#22d3ee" : "#475569";
-  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#475569";
+  const getTextColor = (area) => isSelected(area) ? "#22d3ee" : "#64748b";
 
   return (
-    <div className="flex flex-col items-center bg-slate-900/50 p-8 rounded-[40px] border border-white/5 relative mb-6 shadow-inner">
-       <h4 className="text-[12px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-left flex items-center gap-2"><Target className="w-4 h-4"/> Mapa Anatómico Clínico</h4>
-       <svg viewBox="0 0 300 400" className="mx-auto h-80 w-full drop-shadow-2xl">
-           
-           {/* Cabeza (Fija) */}
-           <path d="M 150 20 C 125 20 120 45 120 60 C 120 75 135 85 150 85 C 165 85 180 75 180 60 C 180 45 175 20 150 20 Z" fill="none" stroke="#334155" strokeWidth="3" />
-           
-           {/* Cervical */}
-           <g onClick={() => toggleArea('Cervical')} className="cursor-pointer transition-all hover:opacity-80">
-             <rect x="135" y="85" width="30" height="30" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="3" />
-             <line x1="165" y1="100" x2="175" y2="100" stroke={getStroke('Cervical')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="180" y="104" fontSize="11" fill={getTextColor('Cervical')} className="font-black uppercase tracking-widest">Cervical</text>
-           </g>
+    <div className="flex flex-col items-center bg-slate-900/40 p-4 sm:p-8 rounded-[40px] border border-white/5 relative mb-6 shadow-inner w-full overflow-hidden">
+       <h4 className="text-[12px] font-black uppercase text-indigo-400 mb-6 tracking-widest w-full text-center sm:text-left flex justify-center sm:justify-start items-center gap-2"><Target className="w-4 h-4"/> Mapa Clínico (Anterior - Lateral - Posterior)</h4>
+       
+       <div className="w-full overflow-x-auto pb-6 scrollbar-hide">
+         <div className="min-w-[650px] mx-auto">
+           <svg viewBox="0 0 900 600" className="w-full h-[400px] drop-shadow-2xl">
+             
+             {/* ===================== VISTA 1: ANTERIOR (FRONTAL) x=150 ===================== */}
+             <text x="150" y="580" textAnchor="middle" fill="#94a3b8" fontSize="16" fontWeight="900" letterSpacing="2">ANTERIOR</text>
+             
+             {/* Cabeza Frontal (No interactiva) */}
+             <circle cx="150" cy="80" r="35" fill="none" stroke="#334155" strokeWidth="4" />
+             
+             {/* Cuello Frontal */}
+             <path d="M 135 115 L 165 115 L 165 140 L 135 140 Z" fill="none" stroke="#334155" strokeWidth="4" />
 
-           {/* Dorsal */}
-           <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer transition-all hover:opacity-80">
-             <rect x="120" y="120" width="60" height="70" rx="15" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="3" />
-             <line x1="180" y1="155" x2="190" y2="155" stroke={getStroke('Dorsal')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="195" y="159" fontSize="11" fill={getTextColor('Dorsal')} className="font-black uppercase tracking-widest">Dorsal</text>
-           </g>
+             {/* Hombro Der. (Anatomico: Lado Izq. de pantalla) */}
+             <g onClick={() => toggleArea('Hombro Der.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <circle cx="85" cy="150" r="25" fill={getFill('Hombro Der.')} stroke={getStroke('Hombro Der.')} strokeWidth="4" />
+               <text x="85" y="155" textAnchor="middle" fontSize="11" fill={getTextColor('Hombro Der.')} fontWeight="bold">H. DER</text>
+             </g>
 
-           {/* Lumbar */}
-           <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer transition-all hover:opacity-80">
-             <rect x="125" y="195" width="50" height="50" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="3" />
-             <line x1="175" y1="220" x2="185" y2="220" stroke={getStroke('Lumbar')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="190" y="224" fontSize="11" fill={getTextColor('Lumbar')} className="font-black uppercase tracking-widest">Lumbar</text>
-           </g>
+             {/* Hombro Izq. (Anatomico: Lado Der. de pantalla) */}
+             <g onClick={() => toggleArea('Hombro Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <circle cx="215" cy="150" r="25" fill={getFill('Hombro Izq.')} stroke={getStroke('Hombro Izq.')} strokeWidth="4" />
+               <text x="215" y="155" textAnchor="middle" fontSize="11" fill={getTextColor('Hombro Izq.')} fontWeight="bold">H. IZQ</text>
+             </g>
 
-           {/* Pelvis/Sacro */}
-           <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer transition-all hover:opacity-80">
-             <path d="M 115 250 C 115 250 150 270 185 250 L 165 305 C 145 320 145 320 135 305 Z" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="3" strokeLinejoin="round" />
-             <line x1="175" y1="280" x2="185" y2="280" stroke={getStroke('Pelvis')} strokeWidth="1" strokeDasharray="3,3" />
-             <text x="190" y="284" fontSize="11" fill={getTextColor('Pelvis')} className="font-black uppercase tracking-widest">Pelvis</text>
-           </g>
+             {/* Brazo Der. */}
+             <g onClick={() => toggleArea('Brazo Der.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="65" y="180" width="40" height="120" rx="20" fill={getFill('Brazo Der.')} stroke={getStroke('Brazo Der.')} strokeWidth="4" />
+               <text x="85" y="245" textAnchor="middle" fontSize="11" fill={getTextColor('Brazo Der.')} fontWeight="bold" transform="rotate(-90 85 245)">BRAZO D.</text>
+             </g>
 
-           {/* Brazo Derecho (Vista Frontal = Lado Izquierdo de Pantalla) */}
-           <g onClick={() => toggleArea('Brazo Der.')} className="cursor-pointer transition-all hover:opacity-80">
-              <path d="M 115 135 L 40 135" fill="none" stroke={getStroke('Brazo Der.')} strokeWidth="16" strokeLinecap="round"/>
-              <text x="77" y="120" fontSize="9" fill={getTextColor('Brazo Der.')} className="font-black uppercase tracking-widest" textAnchor="middle">Brazo Der.</text>
-           </g>
+             {/* Brazo Izq. */}
+             <g onClick={() => toggleArea('Brazo Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="195" y="180" width="40" height="120" rx="20" fill={getFill('Brazo Izq.')} stroke={getStroke('Brazo Izq.')} strokeWidth="4" />
+               <text x="215" y="245" textAnchor="middle" fontSize="11" fill={getTextColor('Brazo Izq.')} fontWeight="bold" transform="rotate(90 215 245)">BRAZO I.</text>
+             </g>
 
-           {/* Brazo Izquierdo (Vista Frontal = Lado Derecho de Pantalla) */}
-           <g onClick={() => toggleArea('Brazo Izq.')} className="cursor-pointer transition-all hover:opacity-80">
-              <path d="M 185 135 L 260 135" fill="none" stroke={getStroke('Brazo Izq.')} strokeWidth="16" strokeLinecap="round"/>
-              <text x="222" y="120" fontSize="9" fill={getTextColor('Brazo Izq.')} className="font-black uppercase tracking-widest" textAnchor="middle">Brazo Izq.</text>
-           </g>
+             {/* Mano Der. */}
+             <g onClick={() => toggleArea('Mano Der.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <circle cx="85" cy="325" r="20" fill={getFill('Mano Der.')} stroke={getStroke('Mano Der.')} strokeWidth="4" />
+               <text x="85" y="330" textAnchor="middle" fontSize="10" fill={getTextColor('Mano Der.')} fontWeight="bold">MANO</text>
+             </g>
 
-           {/* Pierna Derecha (Vista Frontal = Lado Izquierdo de Pantalla) */}
-           <g onClick={() => toggleArea('Pierna Der.')} className="cursor-pointer transition-all hover:opacity-80">
-              <path d="M 135 305 L 110 400" fill="none" stroke={getStroke('Pierna Der.')} strokeWidth="18" strokeLinecap="round"/>
-              <text x="100" y="360" fontSize="9" fill={getTextColor('Pierna Der.')} className="font-black uppercase tracking-widest" textAnchor="end">Pierna Der.</text>
-           </g>
+             {/* Mano Izq. */}
+             <g onClick={() => toggleArea('Mano Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <circle cx="215" cy="325" r="20" fill={getFill('Mano Izq.')} stroke={getStroke('Mano Izq.')} strokeWidth="4" />
+               <text x="215" y="330" textAnchor="middle" fontSize="10" fill={getTextColor('Mano Izq.')} fontWeight="bold">MANO</text>
+             </g>
 
-           {/* Pierna Izquierda (Vista Frontal = Lado Derecho de Pantalla) */}
-           <g onClick={() => toggleArea('Pierna Izq.')} className="cursor-pointer transition-all hover:opacity-80">
-              <path d="M 165 305 L 190 400" fill="none" stroke={getStroke('Pierna Izq.')} strokeWidth="18" strokeLinecap="round"/>
-              <text x="200" y="360" fontSize="9" fill={getTextColor('Pierna Izq.')} className="font-black uppercase tracking-widest" textAnchor="start">Pierna Izq.</text>
-           </g>
-       </svg>
+             {/* Torso Frontal */}
+             <path d="M 105 140 L 195 140 L 180 300 L 120 300 Z" fill="none" stroke="#334155" strokeWidth="4" />
+
+             {/* Pelvis Frontal */}
+             <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer hover:opacity-80 transition-all">
+               <path d="M 115 300 L 185 300 L 195 340 L 150 370 L 105 340 Z" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="4" strokeLinejoin="round" />
+               <text x="150" y="330" textAnchor="middle" fontSize="12" fill={getTextColor('Pelvis')} fontWeight="bold">PELVIS</text>
+             </g>
+
+             {/* Pierna Der. */}
+             <g onClick={() => toggleArea('Pierna Der.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="105" y="350" width="35" height="150" rx="17" fill={getFill('Pierna Der.')} stroke={getStroke('Pierna Der.')} strokeWidth="4" />
+               <text x="122" y="430" textAnchor="middle" fontSize="11" fill={getTextColor('Pierna Der.')} fontWeight="bold" transform="rotate(-90 122 430)">PIERNA D.</text>
+             </g>
+
+             {/* Pierna Izq. */}
+             <g onClick={() => toggleArea('Pierna Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="160" y="350" width="35" height="150" rx="17" fill={getFill('Pierna Izq.')} stroke={getStroke('Pierna Izq.')} strokeWidth="4" />
+               <text x="177" y="430" textAnchor="middle" fontSize="11" fill={getTextColor('Pierna Izq.')} fontWeight="bold" transform="rotate(90 177 430)">PIERNA I.</text>
+             </g>
+
+             {/* Pie Der. */}
+             <g onClick={() => toggleArea('Pie Der.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <path d="M 100 500 L 140 500 L 145 525 L 95 525 Z" fill={getFill('Pie Der.')} stroke={getStroke('Pie Der.')} strokeWidth="4" strokeLinejoin="round" />
+               <text x="120" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Der.')} fontWeight="bold">PIE</text>
+             </g>
+
+             {/* Pie Izq. */}
+             <g onClick={() => toggleArea('Pie Izq.')} className="cursor-pointer hover:opacity-80 transition-all">
+               <path d="M 160 500 L 200 500 L 205 525 L 155 525 Z" fill={getFill('Pie Izq.')} stroke={getStroke('Pie Izq.')} strokeWidth="4" strokeLinejoin="round" />
+               <text x="180" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Izq.')} fontWeight="bold">PIE</text>
+             </g>
+
+
+             {/* ===================== VISTA 2: LATERAL x=450 ===================== */}
+             <text x="450" y="580" textAnchor="middle" fill="#94a3b8" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
+             
+             {/* Cabeza Lateral */}
+             <ellipse cx="460" cy="80" rx="30" ry="35" fill="none" stroke="#334155" strokeWidth="4" />
+             
+             {/* Cuello Lateral (Cervical) */}
+             <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all">
+               <path d="M 445 110 L 470 110 L 475 140 L 440 140 Z" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="4" strokeLinejoin="round" />
+               <text x="485" y="130" textAnchor="start" fontSize="12" fill={getTextColor('Cervical')} fontWeight="bold">CERV.</text>
+             </g>
+
+             {/* Torso Lateral */}
+             <path d="M 430 140 L 485 140 L 495 240 L 420 240 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
+
+             {/* Lumbar Lateral */}
+             <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all">
+               <path d="M 420 240 L 495 240 L 490 300 L 425 300 Z" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="4" strokeLinejoin="round" />
+               <text x="505" y="275" textAnchor="start" fontSize="12" fill={getTextColor('Lumbar')} fontWeight="bold">LUMB.</text>
+             </g>
+
+             {/* Pelvis Lateral */}
+             <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer hover:opacity-80 transition-all">
+               <ellipse cx="455" cy="320" rx="40" ry="30" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="4" />
+               <text x="455" y="325" textAnchor="middle" fontSize="12" fill={getTextColor('Pelvis')} fontWeight="bold">PELVIS</text>
+             </g>
+
+             {/* Pierna Lateral */}
+             <rect x="435" y="350" width="40" height="150" rx="20" fill="none" stroke="#334155" strokeWidth="4" />
+             
+             {/* Pie Lateral */}
+             <path d="M 435 500 L 475 500 L 495 525 L 430 525 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
+
+             {/* Brazo Lateral */}
+             <rect x="440" y="150" width="30" height="110" rx="15" fill="none" stroke="#334155" strokeWidth="4" />
+             <circle cx="455" cy="275" r="15" fill="none" stroke="#334155" strokeWidth="4" />
+
+
+             {/* ===================== VISTA 3: POSTERIOR (ESPALDA) x=750 ===================== */}
+             <text x="750" y="580" textAnchor="middle" fill="#94a3b8" fontSize="16" fontWeight="900" letterSpacing="2">POSTERIOR</text>
+             
+             {/* Cabeza Posterior */}
+             <circle cx="750" cy="80" r="35" fill="none" stroke="#334155" strokeWidth="4" />
+
+             {/* Cervical (Posterior) */}
+             <g onClick={() => toggleArea('Cervical')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="730" y="115" width="40" height="30" rx="8" fill={getFill('Cervical')} stroke={getStroke('Cervical')} strokeWidth="4" />
+               <text x="750" y="135" textAnchor="middle" fontSize="11" fill={getTextColor('Cervical')} fontWeight="bold">CERV</text>
+             </g>
+
+             {/* Hombros Posteriores */}
+             <circle cx="685" cy="150" r="25" fill={getFill('Hombro Izq.')} stroke={getStroke('Hombro Izq.')} strokeWidth="4" />
+             <circle cx="815" cy="150" r="25" fill={getFill('Hombro Der.')} stroke={getStroke('Hombro Der.')} strokeWidth="4" />
+
+             {/* Brazos y Manos Posteriores (Reflejos Visuales, estéticos) */}
+             <rect x="665" y="180" width="40" height="120" rx="20" fill="none" stroke="#334155" strokeWidth="4" />
+             <rect x="795" y="180" width="40" height="120" rx="20" fill="none" stroke="#334155" strokeWidth="4" />
+             <circle cx="685" cy="325" r="20" fill="none" stroke="#334155" strokeWidth="4" />
+             <circle cx="815" cy="325" r="20" fill="none" stroke="#334155" strokeWidth="4" />
+
+             {/* Espalda Dorsal */}
+             <g onClick={() => toggleArea('Dorsal')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="710" y="150" width="80" height="90" rx="15" fill={getFill('Dorsal')} stroke={getStroke('Dorsal')} strokeWidth="4" />
+               <text x="750" y="200" textAnchor="middle" fontSize="14" fill={getTextColor('Dorsal')} fontWeight="bold">DORSAL</text>
+             </g>
+
+             {/* Espalda Lumbar */}
+             <g onClick={() => toggleArea('Lumbar')} className="cursor-pointer hover:opacity-80 transition-all">
+               <rect x="720" y="245" width="60" height="60" rx="12" fill={getFill('Lumbar')} stroke={getStroke('Lumbar')} strokeWidth="4" />
+               <text x="750" y="280" textAnchor="middle" fontSize="12" fill={getTextColor('Lumbar')} fontWeight="bold">LUMBAR</text>
+             </g>
+
+             {/* Sacro / Pelvis Posterior */}
+             <g onClick={() => toggleArea('Pelvis')} className="cursor-pointer hover:opacity-80 transition-all">
+               <path d="M 710 310 L 790 310 L 750 360 Z" fill={getFill('Pelvis')} stroke={getStroke('Pelvis')} strokeWidth="4" strokeLinejoin="round" />
+               <text x="750" y="330" textAnchor="middle" fontSize="10" fill={getTextColor('Pelvis')} fontWeight="bold">SACRO</text>
+             </g>
+
+             {/* Piernas Posteriores */}
+             <rect x="705" y="350" width="35" height="150" rx="17" fill="none" stroke="#334155" strokeWidth="4" />
+             <rect x="760" y="350" width="35" height="150" rx="17" fill="none" stroke="#334155" strokeWidth="4" />
+             <path d="M 700 500 L 740 500 L 745 525 L 695 525 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
+             <path d="M 760 500 L 800 500 L 805 525 L 755 525 Z" fill="none" stroke="#334155" strokeWidth="4" strokeLinejoin="round" />
+
+           </svg>
+         </div>
+       </div>
     </div>
   );
 };
@@ -282,6 +396,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
+// 🌟 FIX 1 & 2: Responsive Grid para Fecha/Edad y Listas de Peso/Altura a 190kg
 const NewPatientModal = ({ onClose, onSave }) => {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -334,29 +449,33 @@ const NewPatientModal = ({ onClose, onSave }) => {
             <label className={labelClass}>Nombre completo *</label>
             <input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-            <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
-            <div>
+          
+          {/* Solución a la Fecha y Edad amontonadas */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
+            <div className="w-full sm:w-1/2">
               <label className={labelClass}>Edad</label>
               <select className={`${inputClass} appearance-none cursor-pointer`} value={form.age} onChange={e => setForm({...form, age: e.target.value})}>
-                <option value="">Selecciona...</option>
+                <option value="">Selecciona la Edad...</option>
                 {Array.from({length: 100}, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} años</option>)}
               </select>
             </div>
           </div>
+
           <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
         </div>)}
 
         {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
           <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
-            <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
+            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
           </div>
         </div>)}
 
@@ -377,16 +496,16 @@ const NewPatientModal = ({ onClose, onSave }) => {
 
         {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Examen Físico</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Peso (kg)</label>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-1/2">
+              <label className={labelClass}>Peso Físico</label>
               <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
                 <option value="">Selecciona...</option>
                 {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
               </select>
             </div>
-            <div>
-              <label className={labelClass}>Altura (cm)</label>
+            <div className="w-full sm:w-1/2">
+              <label className={labelClass}>Altura Total</label>
               <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
                 <option value="">Selecciona...</option>
                 {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
