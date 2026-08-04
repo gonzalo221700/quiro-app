@@ -5,7 +5,6 @@ import { getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, 
 import { getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope } from 'lucide-react';
 
-// --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
   authDomain: "quiroapp-e9b0a.firebaseapp.com",
@@ -23,7 +22,6 @@ const appId = firebaseConfig.projectId;
 const TRIAL_DAYS = 3;
 const MAX_TRIAL_PATIENTS = 3;
 
-// --- UTILIDADES ---
 const openWhatsApp = (phone, message = "") => {
   if (!phone) return;
   const cleanPhone = String(phone).replace(/\D/g, '');
@@ -37,13 +35,11 @@ const safeFormatDate = (dateStr) => {
   } catch (e) { return String(dateStr); }
 };
 
-// --- DICCIONARIO CLÍNICO ---
 const techniquesData=[{title:"Ajuste Cervical (Diversified)",image:"",description:"Técnica manual de alta velocidad y baja amplitud (HVLA) para corregir rotaciones y restricciones en la columna cervical (C1-C7).",execution:"1. Posiciona al paciente en decúbito supino.\n2. Contacta el pilar articular o la lámina con la falange lateral del dedo índice.\n3. Lleva la articulación a la tensión máxima (lock-out) con leve flexión lateral y rotación.\n4. Aplica el impulso (thrust) HVLA en un vector rápido y superficial (P-A, I-S).",help:"Aplicar frío por 15 min si hay inflamación post-ajuste. Indicar ejercicios de retracción cervical y corregir la postura de 'Text Neck'."},{title:"Ajuste Torácico Anterior (Abrazado)",image:"",description:"Ideal para la zona dorsal (T1-T12). Se realiza con el paciente boca arriba, utilizando el peso del cuerpo como palanca.",execution:"1. Paciente en decúbito supino con los brazos cruzados sobre el pecho.\n2. El quiropráctico hace un contacto con la mano en forma de 'puño suave' o 'garra' debajo de la vértebra dorsal a ajustar.\n3. Usando el esternón sobre los brazos del paciente, se inhala y se baja el peso corporal.\n4. El impulso (thrust) es de Anterior a Posterior (A-P) directamente a través de los brazos cruzados.",help:"Sugerir ejercicios de expansión torácica y estiramiento de pectorales en el marco de una puerta para abrir el pecho."},{title:"Ajuste Lumbar (Side Posture)",image:"",description:"Técnica en postura lateral (pull/push) fundamental para corregir restricciones rotacionales y subluxaciones en la zona lumbar (L1-L5).",execution:"1. Posiciona al paciente en decúbito lateral con la pierna superior flexionada.\n2. Estabiliza el hombro superior del paciente con el antebrazo cefálico.\n3. Contacta el proceso mamilar o espinoso lumbar con el pisiforme de la mano caudal.\n4. Genera tensión (body drop) rotando la pelvis hacia ti y aplica el impulso rotacional.",help:"Recomendar al paciente evitar levantar objetos pesados doblando la espalda. Enseñar técnica de sentadilla profunda."},{title:"Técnica Gonstead",image:"",description:"Enfoque biomecánico ultra específico. Utiliza análisis de radiografías, nervoscopio e instrumentación para ajustes precisos sobre la vértebra aislada.",execution:"1. Uso riguroso de radiografía completa y palpación estática/dinámica.\n2. Para la zona pélvica, posicionar en mesa Knee-Chest o banco cervical para el cuello.\n3. Estabilizar rigurosamente la vértebra inferior al segmento a ajustar.\n4. El empuje se realiza en un vector extremadamente específico sin rotación excesiva.",help:"Explicar al paciente la importancia de caminar 10 minutos inmediatamente después del ajuste para asimilar el cambio neuro-estructural."},{title:"Ajuste Pélvico (Drop Thompson)",image:"",description:"Sistema basado en la ley de inercia de Newton. Usa piezas segmentadas de la camilla que caen (Drop) para realizar un ajuste seguro de baja fuerza.",execution:"1. Paciente en decúbito prono. Evalúa dismetría pélvica (Test de Derifield o largo de piernas).\n2. Ajusta la tensión de la pieza de caída (Drop) pélvica al peso exacto del paciente.\n3. Coloca el contacto doble con eminencias tenares sobre la EIPS (Espina Ilíaca Postero-Superior).\n4. Aplica el impulso P-A, I-S rápido. La pieza caerá absorbiendo la fuerza pesada.",help:"Sugerir al paciente no cruzar las piernas al sentarse para mantener la simetría pélvica. Recomendar usar cojín lumbar al manejar."},{title:"S.O.T. (Sacro Occipital Technique)",image:"",description:"Técnica suave que utiliza cuñas (bloques) posicionados debajo de la pelvis del paciente, usando su propio peso y la respiración para alinear.",execution:"1. Clasificar al paciente en Categoría I, II o III de SOT mediante indicadores y palpación fascial.\n2. Colocar las cuñas bajo trocánteres e ilíacos según la categoría detectada.\n3. Dejar al paciente reposar sobre los bloques durante 10-15 minutos.\n4. Sincronizar manipulaciones craneales suaves con las fases respiratorias (Inhalación/Exhalación).",help:"Ideal para dolores agudos y mujeres embarazadas. Sugerir reposo post-terapia y evitar ejercicio de alto impacto por 24 horas."},{title:"Tracción - Flexión (Mesa Cox)",image:"",description:"Técnica de descompresión espinal guiada. Abre el espacio del canal neural, reduce la presión discal y ayuda al tratamiento de la ciática.",execution:"1. Paciente en posición prona, asegurar las cintas o sujeciones en los tobillos.\n2. Desbloquear el eje de flexión de la sección inferior de la mesa.\n3. Contactar con la eminencia tenar el proceso espinoso de la vértebra inmediatamente superior a la hernia o lesión.\n4. Aplicar presión sostenida mientras se flexiona la mesa en ciclos de 20 segundos.",help:"Vital indicar al paciente evitar las flexiones de tronco. Enseñar a recoger objetos utilizando flexión de rodillas y mantener core activo."},{title:"Técnica de Activador",image:"",description:"Ajuste asistido por un instrumento de impacto mecánico (Activator Adjusting Instrument) con alta velocidad y muy baja fuerza. No genera cavitación (ruido).",execution:"1. Realizar el protocolo de aislamiento básico (aislamiento por zonas pidiendo al paciente mover brazos/piernas y midiendo el largo de las piernas).\n2. Seleccionar la línea de corrección adecuada según el manual.\n3. Posicionar el instrumento directamente sobre el proceso transverso o carilla articular.\n4. Aplicar el impacto mecánico seco.",help:"Ideal para pacientes con osteoporosis, miedo a la cavitación o pediátricos. Explicar al paciente que la rapidez del impacto engaña el reflejo muscular."},{title:"Toggle Recoil (Upper Cervical)",image:"",description:"Técnica de la escuela 'Hole in One' para ajustar la zona cervical superior (Atlas y Axis). Caracterizada por un impulso y retirada hiperrápida.",execution:"1. Paciente en decúbito lateral sobre cabezal de Drop cervical o mesa específica.\n2. Contactar el proceso transverso del Atlas con la eminencia pisiforme.\n3. Mantener los codos ligeramente flexionados y el pecho arriba.\n4. Efectuar un thrust de triceps altísima velocidad e inmediatamente retirar las manos (Recoil) dejando caer el Drop.",help:"Después del ajuste cervical superior, es importante que el paciente descanse 10-15 min en sala de recuperación para equilibrar el sistema nervioso autónomo."},{title:"Técnica Webster (Embarazadas)",image:"",description:"Análisis y ajuste sacropélvico específico para embarazadas, diseñado para reducir interferencias neurológicas y equilibrar el útero.",execution:"1. Evaluar restricción de la flexión de la rodilla en posición prona (con almohadas de soporte para embarazo).\n2. Ajustar el sacro en el lado de mayor restricción usando Drop o el pulgar.\n3. Paciente en supino: Identificar tensión en el ligamento redondo del útero.\n4. Aplicar presión ultra suave y sostenida (sin masajear) sobre el ligamento tenso hasta sentir la liberación.",help:"Indicar que esta técnica ayuda a optimizar el espacio para el bebé (evitar presentación de nalgas). Usar cojín para dormir de lado con apoyo entre rodillas."},{title:"Técnica Logan Basic",image:"",description:"Un enfoque muy ligero y suave que utiliza contactos de presión continua en el ligamento sacrotuberoso para nivelar la columna completa.",execution:"1. Localizar tensión y sensibilidad asimétrica cerca de la tuberosidad isquiática.\n2. Aplicar un contacto con el pulgar bajo la tuberosidad isquiática (ligamento sacrotuberoso).\n3. Mantener una presión en dirección Anterior, Superior y Lateral por 10 a 15 minutos continuos.\n4. Masajear simultáneamente la musculatura paravertebral a lo largo de toda la columna.",help:"Técnica sumamente relajante que activa el sistema parasimpático. Recomendar al paciente tomar mucha agua y descansar."},{title:"Ajuste de Extremidades",image:"",description:"Manipulación de las articulaciones fuera de la columna vertebral, como muñecas (túnel carpiano), hombros, codos, rodillas y tobillos.",execution:"1. Evaluar la restricción del rango de movimiento y juego articular (joint play).\n2. Hombro (A-P): Paciente supino, tracción suave del húmero y thrust sobre la cabeza humeral hacia posterior.\n3. Rodilla/Tobillo: Típicamente ajustes en tracción del eje largo de la pierna o ajuste en mortaja tibioastragalina.\n4. Verificar la recuperación del movimiento.",help:"Usar ejercicios con bandas de resistencia elástica para rehabilitar las articulaciones después de devolverles su biomecánica normal."},{title:"Liberación Miofascial / IASTM",image:"",description:"Movilización de tejidos blandos asistida por herramientas de acero inoxidable (Graston) o terapia manual intensa para romper adherencias fasciales.",execution:"1. Aplicar crema o emoliente sobre la zona afectada (ej. fascia plantar, isquiotibiales, trapecios).\n2. Utilizar el instrumento IASTM o los pulgares con ángulo de 30-45 grados.\n3. Deslizar con presión profunda creando fricción hasta generar petequias ligeras (enrojecimiento terapéutico).\n4. Acompañar de movilización pasiva del paciente.",help:"Indicar al paciente que el enrojecimiento es normal. Realizar estiramientos activos del músculo trabajado para reconstruir las fibras colágenas."},{title:"Vendaje Neuromuscular (Kinesiotaping)",image:"",description:"Aplicación de cintas elásticas transpirables sobre la piel post-ajuste. Alivia el dolor, drena la inflamación y proporciona soporte propioceptivo.",execution:"1. Limpiar y secar bien la piel del área tratada. Recortar los bordes de la cinta en forma redondeada.\n2. Anclar la base de la cinta (sin tensión) en posición neutral.\n3. Llevar el músculo o articulación a tensión (estirado) y aplicar el resto de la cinta con la tensión deseada (0-50% según sea para relajar o tonificar).\n4. Friccionar la cinta para activar el adhesivo con el calor.",help:"Informar que la cinta puede durar de 3 a 5 días y se puede mojar en la ducha. Retirar tirando la piel hacia atrás, no jalando la cinta."}];
 const RED_FLAGS = ['Tumor','Infecciones','Fractura','Problema neurológico','Problemas nerviosos','Herida abierta local','Quemadura','Sangrado prolongado','Implantes artificiales','Marcapasos','Infección articular'];
 const CHIRO_TECHNIQUES = ['Diversified','Gonstead','Thompson','Activador','Toggle Recoil','SOT (Sacro Occipital)','Cox Flexion-Distraction','Miofascial / Graston','Ajuste Cervical Específico'];
 const POSTURAL_DEVIATIONS = ['Cabeza Adelantada','Hombro Elevado','Escápula Alada','Hipercifosis Dorsal','Hiperlordosis Lumbar','Rectificación Cervical','Pelvis Basculada','Escoliosis','Genu Valgo (X)','Genu Varo (O)','Pie Plano/Cavo'];
 
-// --- COMPONENTES VISUALES ---
 const SpineLogo = ({ className }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <rect x="9" y="2" width="6" height="2" rx="1" />
@@ -318,11 +314,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
           </div>
         </div>
 
-        <div className="border-b border-white/10 pb-6 mb-6">
-          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
-            <ImageIcon className="w-3 h-3" /> Imagen de Fondo
-          </label>
-        
+        {/* 🌟 BOTÓN DE SUBIR FONDO ARREGLADO */}
         <div className="border-b border-white/10 pb-6 mb-6">
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImageIcon className="w-3 h-3" /> Imagen de Fondo
@@ -346,7 +338,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
             </div>
           </div>
         </div>
-          
+
         <div>
           <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400"><User className="w-3 h-3"/> Especialista</label>
           <input type="text" placeholder="Tu Nombre" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
@@ -373,6 +365,202 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   );
 };
 
+const AdminLoginModal = ({ onClose, onSuccess }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
+  return (
+    <Modal title="Acceso Clasificado" onClose={onClose}>
+      <div className="space-y-4 text-left pb-4">
+        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
+        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
+        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
+      </div>
+    </Modal>
+  );
+};
+
+const UpsellModal = ({ onClose, onUpgrade }) => (
+  <Modal title="Límite Alcanzado" onClose={onClose}>
+    <div className="text-center space-y-6 pb-4">
+      <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto border border-amber-500/30"><Lock className="w-12 h-12 text-amber-400" /></div>
+      <h3 className="text-2xl font-black uppercase italic text-white">Prueba Limitada</h3>
+      <p className="text-indigo-200 text-sm leading-relaxed px-4">Solo puedes registrar hasta <strong>{MAX_TRIAL_PATIENTS} pacientes</strong>. Adquiere PRO para continuar ilimitadamente.</p>
+      <button onClick={() => { onClose(); onUpgrade(); }} className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 flex justify-center items-center gap-2"><Sparkles className="w-5 h-5" /> Obtener PRO</button>
+    </div>
+  </Modal>
+);
+
+const CalendarModal = ({ appointments, patients, onClose }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+  return (
+    <Modal title="Calendario" onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
+        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
+          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const NewPatientModal = ({ onClose, onSave }) => {
+  const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '', relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '', redFlags: [], chiropracticDiagnosis: '', subluxations: '', observations: '', treatmentPlan: '', treatmentGoals: '', sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '', chiropracticTechniques: [], additionalRecommendations: '', posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '', histories: [] });
+  const handleNext = () => { if(form.name) setStep(step + 1); };
+  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
+
+  return (
+    <Modal title={`Crear Expediente (${step}/7)`} onClose={onClose}>
+      <div className="space-y-4">
+        {step === 1 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">1. Identidad</label>
+          <input type="text" placeholder="Nombre completo *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="tel" placeholder="Teléfono" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            <select className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none text-sm appearance-none" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Sexo...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select>
+            <input type="date" placeholder="Fecha Nac." className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} />
+            <input type="number" placeholder="Edad" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.age} onChange={e => setForm({...form, age: e.target.value})} />
+          </div>
+        </div>)}
+        {step === 2 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">2. Historial Clínico</label>
+          <textarea placeholder="Motivo de Consulta *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} />
+          <div className="grid grid-cols-2 gap-3">
+            <textarea placeholder="Ant. Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
+            <textarea placeholder="Ant. No Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
+          </div>
+        </div>)}
+        {step === 3 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-rose-400 ml-4 mb-1 block">3. Alertas Rojas</label>
+          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5">
+            <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-3">Precauciones</p>
+            <div className="flex flex-wrap gap-2">{RED_FLAGS.map(flag => (<button key={flag} onClick={() => toggleArrayItem('redFlags', flag)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{flag}</button>))}</div>
+          </div>
+          <input type="text" placeholder="Diagnóstico" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm mb-3" value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} />
+        </div>)}
+        {step === 4 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">4. Plan de Tratamiento</label>
+          <textarea placeholder="Plan propuesto" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} />
+        </div>)}
+        {step === 5 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">5. Examen Físico</label>
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <input type="number" placeholder="Peso (kg)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} />
+            <input type="number" placeholder="Altura (cm)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.height} onChange={e => setForm({...form, height: e.target.value})} />
+          </div>
+        </div>)}
+        {step === 6 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">6. Postura</label>
+          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
+            <div className="flex flex-wrap gap-2">{POSTURAL_DEVIATIONS.map(dev => (<button key={dev} onClick={() => toggleArrayItem('posturalDeviations', dev)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.posturalDeviations.includes(dev) ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{dev}</button>))}</div>
+          </div>
+        </div>)}
+        {step === 7 && (<div className="space-y-4 animate-fade-in text-left">
+          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">7. Técnicas</label>
+          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
+            <div className="flex flex-wrap gap-2">{CHIRO_TECHNIQUES.map(tech => (<button key={tech} onClick={() => toggleArrayItem('chiropracticTechniques', tech)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.chiropracticTechniques.includes(tech) ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{tech}</button>))}</div>
+          </div>
+        </div>)}
+        <div className="flex gap-4 pt-6">
+          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-white/5 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition">Atrás</button>}
+          {step < 7 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition shadow-lg border-b-4 border-cyan-700 disabled:opacity-50">Siguiente</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs border-b-4 border-cyan-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar'}</button>)}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const NewHistoryModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 5, areas: [], notes: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const areas = ['Cervical', 'Dorsal', 'Lumbar', 'Sacro', 'Hombros', 'Caderas', 'Rodillas'];
+  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  return (
+    <Modal title="Nuevo Ajuste" onClose={onClose}>
+      <div className="space-y-6">
+        <input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+        <div className="bg-slate-900 p-5 rounded-3xl text-left border border-white/5">
+          <div className="flex justify-between mb-4"><span className="text-[10px] font-black uppercase text-indigo-400">Escala de Dolor</span><span className="text-rose-500 font-black">{form.painLevel}/10</span></div>
+          <input type="range" min="0" max="10" className="w-full accent-cyan-400 h-2 bg-slate-800 rounded-full appearance-none outline-none" value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+        </div>
+        <div className="flex flex-wrap gap-2">{areas.map(a => (<button key={a} onClick={() => setForm({...form, areas: form.areas.includes(a) ? form.areas.filter(x => x !== a) : [...form.areas, a]})} className={`px-4 py-2 rounded-2xl text-[10px] font-black border transition-all ${form.areas.includes(a) ? 'bg-cyan-400 border-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-900 border-white/10 text-indigo-400 hover:bg-slate-800'}`}>{String(a)}</button>))}</div>
+        <textarea placeholder="Notas clínicas..." className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 min-h-[120px] text-white outline-none focus:border-cyan-500" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar Ajuste'}</button>
+      </div>
+    </Modal>
+  );
+};
+
+const NewAppointmentModal = ({ onClose, onSave }) => {
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
+  return (
+    <Modal title="Agendar Cita" onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
+      </div>
+    </Modal>
+  );
+};
+
+const SubscriptionBlockedScreen = ({ onLogout }) => (
+  <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
+  </div>
+);
+
+const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginView, setIsLoginView] = useState(true);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
+      <SpineWatermark />
+      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
+        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
+        
+        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+        
+        {inProcess ? (
+          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
+        ) : (
+          <div className="space-y-4 animate-slide-up">
+            {step === 'initial' && (
+              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
+                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
+                <div className="grid grid-cols-1 gap-3">
+                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
+                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
+                </div></>
+            )}
+            {step === 'email' && (
+              <div className="text-left">
+                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
+                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -389,6 +577,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [authStep, setAuthStep] = useState('initial');
 
+  // 🌟 MEMORIA DEL MODO CLARO/OSCURO
   const [visualMode, setVisualMode] = useState(localStorage.getItem('quiroTheme') || 'oscuro');
 
   useEffect(() => {
