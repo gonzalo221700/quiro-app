@@ -118,7 +118,11 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
     <div className="space-y-6 animate-fade-in text-left">
       <div className={`p-8 rounded-[40px] border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-500 ${!doctorInfo.bannerImage ? 'bg-gradient-to-br from-indigo-700 to-black' : ''}`} style={bannerStyle}>
         {doctorInfo.bannerImage && <div className="absolute inset-0 bg-black/60" />}
-        <div className="relative z-10"><p className="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md">{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p><h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">Dr. {String(doctorInfo.name || "Especialista")}</h2></div>
+        <div className="relative z-10">
+          <p className="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md">{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p>
+          {/* TÍTULO PROFESIONAL INTEGRADO EN EL INICIO */}
+          <h2 className="text-4xl font-black italic text-white leading-none tracking-tighter drop-shadow-lg">{String(doctorInfo.title || "Dr.")} {String(doctorInfo.name || "Especialista")}</h2>
+        </div>
         <div className="absolute -bottom-10 -right-10 opacity-10 z-0">{doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-48 h-48 object-contain grayscale" /> : <SpineLogo className="w-48 h-48" />}</div>
       </div>
       {!doctorInfo.isPremium && (<div className="bg-gradient-to-r from-amber-500/10 to-orange-600/10 border border-amber-500/30 p-5 rounded-[30px] flex items-center justify-between shadow-lg"><div><h4 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1"><Sparkles className="w-4 h-4"/> Prueba Activa</h4><p className="text-[9px] text-amber-200/70 mt-1 uppercase tracking-widest">Activa PRO</p></div><button onClick={onUpgrade} className="bg-amber-500 text-black px-4 py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 transition shadow-lg border-b-4 border-amber-700">Obtener PRO</button></div>)}
@@ -161,20 +165,25 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 };
 
 const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin, visualMode, setVisualMode }) => {
+  const [title, setTitle] = useState(doctorInfo.title || '');
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [tapCount, setTapCount] = useState(0);
+  
+  // Estados para el mini-widget PRO del lado derecho
+  const [showProDetails, setShowProDetails] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailLink, setEmailLink] = useState('');
   const [passLink, setPassLink] = useState('');
+
   const isLocked = !doctorInfo.isPremium;
 
   const handleSave = async () => {
     if (isLocked) return;
     setIsSaving(true);
-    await onUpdateInfo({ name, clinic });
+    await onUpdateInfo({ title, name, clinic });
     setIsSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500); 
@@ -183,6 +192,13 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   const handleAdminTap = () => {
     if (tapCount >= 6) { onOpenAdminLogin(); setTapCount(0); } 
     else setTapCount(prev => prev + 1);
+  };
+
+  const getProRemainingDays = () => {
+    if (!doctorInfo.premiumExpiresAt) return null;
+    const diffMs = doctorInfo.premiumExpiresAt - Date.now();
+    if (diffMs <= 0) return 0;
+    return Math.ceil(diffMs / 86400000);
   };
 
   const handleImageUpload = (e, fieldName, isBanner = false) => {
@@ -226,75 +242,65 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
 
   return (
     <div className="animate-fade-in space-y-6 text-left">
-      <h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
       
-      {/* 🌟 SELECTOR DE APARIENCIA CONECTADO */}
+      {/* 🌟 ENCABEZADO CON WIDGET PRO REDUCIDO LADO DERECHO */}
+      <div className="flex justify-between items-start mb-6">
+        <h2 className="text-3xl font-black uppercase italic underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
+        
+        <div className="relative">
+          <button 
+            onClick={() => isLocked ? onUpgrade() : setShowProDetails(!showProDetails)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all ${isLocked ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' : 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 hover:bg-cyan-500/20'}`}
+          >
+            {isLocked ? <Lock className="w-3 h-3"/> : <ShieldCheck className="w-3 h-3"/>}
+            {isLocked ? 'Activar PRO' : 'Sincronización PRO'}
+          </button>
+
+          {/* Menú Desplegable con el tiempo restante */}
+          {showProDetails && !isLocked && (
+            <div className="absolute right-0 top-full mt-3 w-64 bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl shadow-2xl z-50 animate-slide-up">
+              <div className="flex items-center gap-2 mb-3">
+                <Cloud className="w-5 h-5 text-cyan-400"/>
+                <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Licencia en Nube</p>
+              </div>
+              <p className="text-xs text-slate-400 mb-4 uppercase font-bold">Tiempo restante: <br/><span className="text-xl text-emerald-400 font-black">{getProRemainingDays()} días</span></p>
+              
+              <div className="border-t border-white/10 pt-4">
+                <p className="text-[9px] text-slate-400 uppercase mb-3 font-bold tracking-widest">Sincronización de Cuenta</p>
+                {user.isAnonymous ? (
+                  <div className="space-y-2">
+                    <button onClick={onLinkGoogle} className="w-full bg-white text-black text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Globe className="w-4 h-4"/> Google</button>
+                    <button onClick={() => setShowEmailForm(!showEmailForm)} className="w-full bg-indigo-500 text-white text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Mail className="w-4 h-4"/> Correo</button>
+                    {showEmailForm && (
+                      <div className="mt-2 space-y-2">
+                        <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
+                        <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
+                        <button onClick={() => onLinkEmail(emailLink, passLink)} className="w-full bg-cyan-400 text-black py-2 rounded-lg text-[9px] font-black uppercase shadow-lg">Guardar</button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 py-3 rounded-xl flex justify-center items-center gap-2 font-black text-[10px] uppercase"><CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SELECTOR DE APARIENCIA */}
       <div className="flex gap-3 mb-6">
-        <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
+        <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] border-b-4 border-cyan-600 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
           ☀️ Modo Claro
         </button>
-        <button onClick={() => setVisualMode('oscuro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all ${visualMode === 'oscuro' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
+        <button onClick={() => setVisualMode('oscuro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'oscuro' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] border-b-4 border-indigo-800 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
           🌙 Modo Oscuro
         </button>
       </div>
 
-      <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 p-6 rounded-[30px] border border-white/10 text-center mb-6 shadow-xl">
-        {!isLocked ? (
-          <>
-            <Cloud className="w-10 h-10 mx-auto mb-3 text-cyan-400" />
-            <h4 className="text-cyan-400 font-black uppercase text-sm mb-2">Sincronización PRO</h4>
-            <p className="text-[10px] text-indigo-200/70 mb-4 leading-relaxed">Protege tu cuenta y ábrela en tu PC vinculándola.</p>
-            {user.isAnonymous ? (
-              !showEmailForm ? (
-                <div className="flex flex-col gap-3">
-                  <button onClick={onLinkGoogle} className="bg-white text-black font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-3 w-full shadow-xl">
-                    <Globe className="w-4 h-4"/> Vincular Google
-                  </button>
-                  <button onClick={() => setShowEmailForm(true)} className="bg-indigo-500 text-white font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-3 w-full shadow-xl">
-                    <Mail className="w-4 h-4"/> Crear Usuario
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-slate-950 p-4 rounded-2xl border border-white/10 space-y-3 mt-4 text-left">
-                  <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-900 p-4 rounded-xl text-white text-xs"/>
-                  <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-900 p-4 rounded-xl text-white text-xs"/>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={() => setShowEmailForm(false)} className="flex-1 bg-white/5 text-white py-3 rounded-xl text-[10px]">Cancelar</button>
-                    <button onClick={() => onLinkEmail(emailLink, passLink)} className="flex-[2] bg-cyan-400 text-black py-3 rounded-xl text-[10px] font-black uppercase">Guardar</button>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="bg-emerald-500/10 text-emerald-400 py-3 rounded-2xl flex justify-center gap-2 font-black text-[10px]">
-                <CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <Lock className="w-10 h-10 mx-auto mb-3 text-amber-400" />
-            <h4 className="text-amber-400 font-black uppercase text-sm mb-2">Respaldo Bloqueado</h4>
-            <button onClick={onUpgrade} className="bg-amber-500 text-black font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-2 mx-auto shadow-xl">
-              <Sparkles className="w-4 h-4"/> Desbloquear PRO
-            </button>
-          </>
-        )}
-      </div>
-
       <div className="bg-indigo-900/20 p-8 rounded-[40px] border border-cyan-400/20 space-y-6 shadow-xl relative">
-        {isLocked ? (
-          <div className="bg-amber-500/10 p-4 rounded-2xl flex justify-between shadow-lg mb-4">
-            <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400"/><span className="text-[10px] font-black uppercase text-amber-400">Bloqueada</span></div>
-            <button onClick={onUpgrade} className="bg-amber-500 text-black px-3 py-1.5 rounded-xl text-[9px] font-black">Desbloquear</button>
-          </div>
-        ) : (
-          <div className="bg-emerald-500/10 p-4 rounded-2xl flex justify-between shadow-lg mb-4">
-            <div className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-400"/><span className="text-[10px] font-black uppercase text-emerald-400">PRO Activa</span></div>
-          </div>
-        )}
-
         <div className="border-b border-white/10 pb-6 mb-6">
-          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
+          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImagePlus className="w-3 h-3" /> Logo de Clínica
           </label>
           <div className="flex items-center gap-4">
@@ -307,16 +313,15 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
             </div>
             <div className="flex-1">
               <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo', false)} disabled={isLocked} />
-              <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}>
+              <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}>
                 <Upload className="w-4 h-4" /> Subir Logo
               </label>
             </div>
           </div>
         </div>
 
-        {/* 🌟 BOTÓN DE SUBIR FONDO ARREGLADO */}
         <div className="border-b border-white/10 pb-6 mb-6">
-          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
+          <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImageIcon className="w-3 h-3" /> Imagen de Fondo
           </label>
           <div className="flex flex-col gap-4">
@@ -339,25 +344,30 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
           </div>
         </div>
 
+        {/* 🌟 TÍTULO PROFESIONAL AGREGADO */}
         <div>
-          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400"><User className="w-3 h-3"/> Especialista</label>
-          <input type="text" placeholder="Tu Nombre" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
+          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Título Profesional</label>
+          <input type="text" placeholder="Ej. Dr., LFT., Especialista" className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isLocked} />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400"><Building className="w-3 h-3"/> Clínica</label>
-          <input type="text" placeholder="Nombre Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} />
+          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Tu Nombre</label>
+          <input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><Building className="w-3 h-3"/> Clínica</label>
+          <input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} />
         </div>
 
-        <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 ${isLocked ? 'opacity-30' : ''}`}>
+        <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 border-b-8 border-cyan-700 active:scale-95 transition-all ${isLocked ? 'opacity-30' : ''}`}>
           {isSaving ? 'Guardando...' : 'Guardar Cambios'}
         </button>
       </div>
 
-      <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center">
+      <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center shadow-xl">
         <UserCircle onClick={handleAdminTap} className="w-12 h-12 mx-auto mb-4 text-indigo-500 cursor-pointer"/>
-        <p className="text-[9px] font-black uppercase text-indigo-400 mb-1">Estado de Cuenta</p>
-        <p className="text-xs font-bold text-white mb-6 break-all">{user.isAnonymous ? "Perfil Temporal" : String(user.email || user.phoneNumber)}</p>
-        <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg">
+        <p className="text-[9px] font-black uppercase text-indigo-400 mb-1 tracking-widest">Cuenta Activa</p>
+        <p className="text-xs font-bold text-white mb-6 break-all">{user.isAnonymous ? "Perfil Temporal (No Guardado)" : String(user.email || user.phoneNumber)}</p>
+        <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-rose-500/20">
           <LogOut className="w-5 h-5"/> Cerrar Sesión
         </button>
       </div>
@@ -568,7 +578,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [doctorInfo, setDoctorInfo] = useState({ name: '', clinic: '', trialStartedAt: null, isPremium: false, isAdmin: false });
+  const [doctorInfo, setDoctorInfo] = useState({ title: '', name: '', clinic: '', trialStartedAt: null, isPremium: false, isAdmin: false });
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
   const [adminCodes, setAdminCodes] = useState([]);
@@ -577,7 +587,6 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [authStep, setAuthStep] = useState('initial');
 
-  // 🌟 MEMORIA DEL MODO CLARO/OSCURO
   const [visualMode, setVisualMode] = useState(localStorage.getItem('quiroTheme') || 'oscuro');
 
   useEffect(() => {
@@ -599,7 +608,7 @@ export default function App() {
       try {
         const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
         const snap = await getDocFromServer(docRef); 
-        let profileData = snap.exists() ? snap.data() : { name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
+        let profileData = snap.exists() ? snap.data() : { title: '', name: '', clinic: '', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
         if (!snap.exists()) await setDoc(docRef, profileData);
         else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
         
