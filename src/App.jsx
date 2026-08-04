@@ -164,8 +164,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
-// 🌟 INICIO DEL CÓDIGO (COPIAR DESDE AQUÍ)
-const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin }) => {
+const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin, visualMode, setVisualMode }) => {
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -174,9 +173,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailLink, setEmailLink] = useState('');
   const [passLink, setPassLink] = useState('');
-  
-  // Nuevo estado para la apariencia visual
-  const [visualMode, setVisualMode] = useState('oscuro'); 
   const isLocked = !doctorInfo.isPremium;
 
   const handleSave = async () => {
@@ -236,7 +232,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     <div className="animate-fade-in space-y-6 text-left">
       <h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
       
-      {/* 🌟 1. SELECTOR DE APARIENCIA (NUEVO) */}
+      {/* 🌟 SELECTOR DE APARIENCIA CONECTADO */}
       <div className="flex gap-3 mb-6">
         <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
           ☀️ Modo Claro
@@ -246,50 +242,61 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         </button>
       </div>
 
-      {/* 🌟 2. BANNER COMPACTO DE SINCRONIZACIÓN PRO (REDUCIDO) */}
-      <div className={`p-4 rounded-[20px] border flex flex-col gap-3 shadow-md transition-all ${isLocked ? 'bg-amber-500/10 border-amber-500/20' : 'bg-indigo-900/40 border-cyan-500/20'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className={`p-2 rounded-full ${isLocked ? 'bg-amber-500/20' : 'bg-cyan-500/20'}`}>
-               {isLocked ? <Lock className="w-5 h-5 text-amber-400" /> : <Cloud className="w-5 h-5 text-cyan-400" />}
-             </div>
-             <div>
-               <h4 className={`font-black uppercase text-[10px] ${isLocked ? 'text-amber-400' : 'text-cyan-400'}`}>
-                 {isLocked ? 'Respaldo Pausado' : 'Sync PRO Activa'}
-               </h4>
-               <p className="text-[8px] text-indigo-200/70 leading-tight">
-                 {isLocked ? 'Adquiere PRO para la nube.' : 'Sincronización en PC lista.'}
-               </p>
-             </div>
-          </div>
-          
-          {isLocked ? (
-             <button onClick={onUpgrade} className="bg-amber-500 text-black font-black uppercase text-[8px] py-2 px-3 rounded-xl flex items-center gap-1 shadow-sm"><Sparkles className="w-3 h-3"/> Activar</button>
-          ) : (
-             user.isAnonymous ? (
-               <button onClick={() => setShowEmailForm(!showEmailForm)} className="bg-cyan-400 text-black font-black uppercase text-[8px] py-2 px-3 rounded-xl flex items-center gap-1 shadow-sm">Vincular</button>
-             ) : (
-               <div className="bg-emerald-500/10 text-emerald-400 py-1.5 px-3 rounded-xl flex items-center gap-1 font-black text-[8px]"><CheckCircle2 className="w-3 h-3"/> Ok</div>
-             )
-          )}
-        </div>
-        
-        {/* Formulario de vinculación compacto desplegable */}
-        {(!isLocked && user.isAnonymous && showEmailForm) && (
-          <div className="bg-slate-950 p-3 rounded-xl border border-white/5 flex flex-col gap-2 mt-2 animate-slide-up">
-            <div className="flex gap-2">
-              <button onClick={onLinkGoogle} className="flex-1 bg-white text-black text-[8px] font-black uppercase py-2 rounded-lg flex justify-center items-center gap-1"><Globe className="w-3 h-3"/> Google</button>
-              <div className="flex-1 bg-slate-900 flex rounded-lg overflow-hidden border border-white/5">
-                <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-transparent p-2 text-white text-[8px] outline-none" />
-                <button onClick={() => onLinkEmail(emailLink, 'password123')} className="bg-indigo-500 text-white px-3 font-black text-[8px]">Ok</button>
+      <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 p-6 rounded-[30px] border border-white/10 text-center mb-6 shadow-xl">
+        {!isLocked ? (
+          <>
+            <Cloud className="w-10 h-10 mx-auto mb-3 text-cyan-400" />
+            <h4 className="text-cyan-400 font-black uppercase text-sm mb-2">Sincronización PRO</h4>
+            <p className="text-[10px] text-indigo-200/70 mb-4 leading-relaxed">Protege tu cuenta y ábrela en tu PC vinculándola.</p>
+            {user.isAnonymous ? (
+              !showEmailForm ? (
+                <div className="flex flex-col gap-3">
+                  <button onClick={onLinkGoogle} className="bg-white text-black font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-3 w-full shadow-xl">
+                    <Globe className="w-4 h-4"/> Vincular Google
+                  </button>
+                  <button onClick={() => setShowEmailForm(true)} className="bg-indigo-500 text-white font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-3 w-full shadow-xl">
+                    <Mail className="w-4 h-4"/> Crear Usuario
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-slate-950 p-4 rounded-2xl border border-white/10 space-y-3 mt-4 text-left">
+                  <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-900 p-4 rounded-xl text-white text-xs"/>
+                  <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-900 p-4 rounded-xl text-white text-xs"/>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={() => setShowEmailForm(false)} className="flex-1 bg-white/5 text-white py-3 rounded-xl text-[10px]">Cancelar</button>
+                    <button onClick={() => onLinkEmail(emailLink, passLink)} className="flex-[2] bg-cyan-400 text-black py-3 rounded-xl text-[10px] font-black uppercase">Guardar</button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="bg-emerald-500/10 text-emerald-400 py-3 rounded-2xl flex justify-center gap-2 font-black text-[10px]">
+                <CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada
               </div>
-            </div>
-          </div>
+            )}
+          </>
+        ) : (
+          <>
+            <Lock className="w-10 h-10 mx-auto mb-3 text-amber-400" />
+            <h4 className="text-amber-400 font-black uppercase text-sm mb-2">Respaldo Bloqueado</h4>
+            <button onClick={onUpgrade} className="bg-amber-500 text-black font-black uppercase text-[10px] py-4 px-6 rounded-2xl flex justify-center gap-2 mx-auto shadow-xl">
+              <Sparkles className="w-4 h-4"/> Desbloquear PRO
+            </button>
+          </>
         )}
       </div>
 
-      {/* 🌟 3. PERSONALIZACIÓN DE MARCA BLANCA */}
       <div className="bg-indigo-900/20 p-8 rounded-[40px] border border-cyan-400/20 space-y-6 shadow-xl relative">
+        {isLocked ? (
+          <div className="bg-amber-500/10 p-4 rounded-2xl flex justify-between shadow-lg mb-4">
+            <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400"/><span className="text-[10px] font-black uppercase text-amber-400">Bloqueada</span></div>
+            <button onClick={onUpgrade} className="bg-amber-500 text-black px-3 py-1.5 rounded-xl text-[9px] font-black">Desbloquear</button>
+          </div>
+        ) : (
+          <div className="bg-emerald-500/10 p-4 rounded-2xl flex justify-between shadow-lg mb-4">
+            <div className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-400"/><span className="text-[10px] font-black uppercase text-emerald-400">PRO Activa</span></div>
+          </div>
+        )}
+
         <div className="border-b border-white/10 pb-6 mb-6">
           <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
             <ImagePlus className="w-3 h-3" /> Logo de Clínica
@@ -324,7 +331,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
                   <ImageIcon className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <input type="file" id="banner-up" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage', true)} disabled={isLocked} />
-                    <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex justify-center gap-2 ${isLocked ? 'hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95'}`}>
+                    <label htmlFor="banner-up" className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase flex justify-center gap-2 ${isLocked ? 'hidden' : 'bg-black/50 text-cyan-400 border border-cyan-500/50 cursor-pointer active:scale-95 hover:bg-black/70'}`}>
                       <Upload className="w-4 h-4" /> Subir Fondo
                     </label>
                   </div>
@@ -355,202 +362,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg">
           <LogOut className="w-5 h-5"/> Cerrar Sesión
         </button>
-      </div>
-    </div>
-  );
-};
-
-const AdminLoginModal = ({ onClose, onSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
-  return (
-    <Modal title="Acceso Clasificado" onClose={onClose}>
-      <div className="space-y-4 text-left pb-4">
-        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
-        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
-        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
-      </div>
-    </Modal>
-  );
-};
-
-const UpsellModal = ({ onClose, onUpgrade }) => (
-  <Modal title="Límite Alcanzado" onClose={onClose}>
-    <div className="text-center space-y-6 pb-4">
-      <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto border border-amber-500/30"><Lock className="w-12 h-12 text-amber-400" /></div>
-      <h3 className="text-2xl font-black uppercase italic text-white">Prueba Limitada</h3>
-      <p className="text-indigo-200 text-sm leading-relaxed px-4">Solo puedes registrar hasta <strong>{MAX_TRIAL_PATIENTS} pacientes</strong>. Adquiere PRO para continuar ilimitadamente.</p>
-      <button onClick={() => { onClose(); onUpgrade(); }} className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 flex justify-center items-center gap-2"><Sparkles className="w-5 h-5" /> Obtener PRO</button>
-    </div>
-  </Modal>
-);
-
-const CalendarModal = ({ appointments, patients, onClose }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-  return (
-    <Modal title="Calendario" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
-        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
-          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const NewPatientModal = ({ onClose, onSave }) => {
-  const [step, setStep] = useState(1);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', occupation: '', maritalStatus: '', location: '', birthPlace: '', birthDate: '', relevantMedicalHistory: '', consultationReason: '', complementaryExams: '', currentIllness: '', pathological: '', nonPathological: '', medications: '', redFlags: [], chiropracticDiagnosis: '', subluxations: '', observations: '', treatmentPlan: '', treatmentGoals: '', sleepQuality: '', personalCare: '', mobility: '', recreation: '', generalDiagnosis: '', weight: '', height: '', bloodType: '', pressure: '', chiropracticTechniques: [], additionalRecommendations: '', posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', anatomicalPlaneNotes: '', histories: [] });
-  const handleNext = () => { if(form.name) setStep(step + 1); };
-  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
-  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
-
-  return (
-    <Modal title={`Crear Expediente (${step}/7)`} onClose={onClose}>
-      <div className="space-y-4">
-        {step === 1 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">1. Identidad</label>
-          <input type="text" placeholder="Nombre completo *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-          <div className="grid grid-cols-2 gap-3">
-            <input type="tel" placeholder="Teléfono" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-            <select className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none text-sm appearance-none" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Sexo...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select>
-            <input type="date" placeholder="Fecha Nac." className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} />
-            <input type="number" placeholder="Edad" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.age} onChange={e => setForm({...form, age: e.target.value})} />
-          </div>
-        </div>)}
-        {step === 2 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">2. Historial Clínico</label>
-          <textarea placeholder="Motivo de Consulta *" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[60px] outline-none focus:border-cyan-500 text-sm" value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} />
-          <div className="grid grid-cols-2 gap-3">
-            <textarea placeholder="Ant. Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} />
-            <textarea placeholder="Ant. No Patológicos" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} />
-          </div>
-        </div>)}
-        {step === 3 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-rose-400 ml-4 mb-1 block">3. Alertas Rojas</label>
-          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5">
-            <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-3">Precauciones</p>
-            <div className="flex flex-wrap gap-2">{RED_FLAGS.map(flag => (<button key={flag} onClick={() => toggleArrayItem('redFlags', flag)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{flag}</button>))}</div>
-          </div>
-          <input type="text" placeholder="Diagnóstico" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm mb-3" value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} />
-        </div>)}
-        {step === 4 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">4. Plan de Tratamiento</label>
-          <textarea placeholder="Plan propuesto" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white min-h-[80px] outline-none focus:border-cyan-500 text-sm" value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} />
-        </div>)}
-        {step === 5 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">5. Examen Físico</label>
-          <div className="grid grid-cols-2 gap-3 mb-2">
-            <input type="number" placeholder="Peso (kg)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} />
-            <input type="number" placeholder="Altura (cm)" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.height} onChange={e => setForm({...form, height: e.target.value})} />
-          </div>
-        </div>)}
-        {step === 6 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">6. Postura</label>
-          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
-            <div className="flex flex-wrap gap-2">{POSTURAL_DEVIATIONS.map(dev => (<button key={dev} onClick={() => toggleArrayItem('posturalDeviations', dev)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.posturalDeviations.includes(dev) ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{dev}</button>))}</div>
-          </div>
-        </div>)}
-        {step === 7 && (<div className="space-y-4 animate-fade-in text-left">
-          <label className="text-[10px] font-black uppercase text-cyan-400 ml-4 mb-1 block">7. Técnicas</label>
-          <div className="bg-slate-900 p-4 rounded-[25px] border border-white/5 mb-3">
-            <div className="flex flex-wrap gap-2">{CHIRO_TECHNIQUES.map(tech => (<button key={tech} onClick={() => toggleArrayItem('chiropracticTechniques', tech)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${form.chiropracticTechniques.includes(tech) ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-950 text-slate-400 border-white/5'}`}>{tech}</button>))}</div>
-          </div>
-        </div>)}
-        <div className="flex gap-4 pt-6">
-          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-white/5 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition">Atrás</button>}
-          {step < 7 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition shadow-lg border-b-4 border-cyan-700 disabled:opacity-50">Siguiente</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-cyan-400 text-black py-4 rounded-3xl font-black uppercase text-xs border-b-4 border-cyan-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar'}</button>)}
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const NewHistoryModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 5, areas: [], notes: '' });
-  const [isSaving, setIsSaving] = useState(false);
-  const areas = ['Cervical', 'Dorsal', 'Lumbar', 'Sacro', 'Hombros', 'Caderas', 'Rodillas'];
-  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
-  return (
-    <Modal title="Nuevo Ajuste" onClose={onClose}>
-      <div className="space-y-6">
-        <input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
-        <div className="bg-slate-900 p-5 rounded-3xl text-left border border-white/5">
-          <div className="flex justify-between mb-4"><span className="text-[10px] font-black uppercase text-indigo-400">Escala de Dolor</span><span className="text-rose-500 font-black">{form.painLevel}/10</span></div>
-          <input type="range" min="0" max="10" className="w-full accent-cyan-400 h-2 bg-slate-800 rounded-full appearance-none outline-none" value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-        </div>
-        <div className="flex flex-wrap gap-2">{areas.map(a => (<button key={a} onClick={() => setForm({...form, areas: form.areas.includes(a) ? form.areas.filter(x => x !== a) : [...form.areas, a]})} className={`px-4 py-2 rounded-2xl text-[10px] font-black border transition-all ${form.areas.includes(a) ? 'bg-cyan-400 border-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-900 border-white/10 text-indigo-400 hover:bg-slate-800'}`}>{String(a)}</button>))}</div>
-        <textarea placeholder="Notas clínicas..." className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 min-h-[120px] text-white outline-none focus:border-cyan-500" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar Ajuste'}</button>
-      </div>
-    </Modal>
-  );
-};
-
-const NewAppointmentModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
-  const [isSaving, setIsSaving] = useState(false);
-  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
-  return (
-    <Modal title="Agendar Cita" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
-      </div>
-    </Modal>
-  );
-};
-
-const SubscriptionBlockedScreen = ({ onLogout }) => (
-  <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
-    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
-  </div>
-);
-
-const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoginView, setIsLoginView] = useState(true);
-
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
-      <SpineWatermark />
-      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
-        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
-        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
-        
-        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
-        
-        {inProcess ? (
-          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
-        ) : (
-          <div className="space-y-4 animate-slide-up">
-            {step === 'initial' && (
-              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
-                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
-                <div className="grid grid-cols-1 gap-3">
-                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
-                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
-                </div></>
-            )}
-            {step === 'email' && (
-              <div className="text-left">
-                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
-                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
-                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
