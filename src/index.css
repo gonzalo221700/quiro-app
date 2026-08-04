@@ -68,112 +68,75 @@ body {
     animation: fadeIn 0.5s ease-out forwards;
 }
 
-.theme-light {
-    background-color: #fafcff !important;
-    color: #0f172a !important;
-}
-
-/* Fondos Principales */
-.theme-light .bg-\[\#020617\],
-.theme-light .bg-slate-950 {
-    background-color: #fafcff !important;
-}
-
-/* Tarjetas, Contenedores y Ventanas Principales (Blanco Puro Elevado) */
-.theme-light .bg-slate-900 {
-    background-color: #ffffff !important;
-    box-shadow: 0 20px 30px -10px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03) !important;
-    border: 1px solid rgba(2, 132, 199, 0.15) !important;
-}
-
-/* Contenedores Internos y Secciones Secundarias */
-.theme-light .bg-slate-900\/50, 
-.theme-light .bg-slate-900\/80,
-.theme-light .bg-slate-950\/90 {
-    background-color: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(2, 132, 199, 0.15) !important;
-    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05) !important;
-}
-
-/* Cajas de Información y Tarjetas Destacadas (Azul Helado) */
-.theme-light .bg-indigo-900\/20,
-.theme-light .bg-indigo-950\/20,
-.theme-light .bg-indigo-900\/40 {
-    background-color: #f0f7ff !important;
-    border: 1px solid rgba(2, 132, 199, 0.25) !important;
-}
-
-/* Modales y Ventanas Emergentes */
-.theme-light .bg-slate-950.w-full {
-    background-color: #ffffff !important;
-    border-top: 4px solid #0284c7 !important;
-    box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.15) !important;
-}
-
-/* TIPOGRAFÍA Y LEGIBILIDAD EXTREMA */
-.theme-light .text-white {
-    color: #0f172a !important; /* Azul Medianoche Oscuro para legibilidad 100% */
-}
-
-.theme-light .text-indigo-100, 
-.theme-light .text-indigo-200 {
-    color: #1e293b !important; /* Cobalto Profundo */
-}
-
-.theme-light .text-slate-400, 
-.theme-light .text-slate-500 {
-    color: #475569 !important; /* Pizarra de Alto Contraste */
-}
-
-/* Acentos Cyan adaptados a fondo claro para lectura perfecta */
-.theme-light .text-cyan-400 {
-    color: #0284c7 !important; /* Cyan Cobalto Profesional */
-}
-
-.theme-light .text-cyan-300 {
-    color: #0369a1 !important;
-}
-
-/* Bordes y Líneas Divisorias */
-.theme-light .border-white\/5, 
-.theme-light .border-white\/10, 
-.theme-light .border-white\/20 {
-    border-color: rgba(2, 132, 199, 0.15) !important;
-}
-
-.theme-light .bg-white\/5, 
-.theme-light .bg-white\/10 {
-    background-color: #f1f5f9 !important;
-}
-
-/* Inputs y Campos de Formulario */
-.theme-light input,
-.theme-light select,
-.theme-light textarea {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid rgba(2, 132, 199, 0.25) !important;
-}
-
-.theme-light input::placeholder,
-.theme-light textarea::placeholder {
-    color: #94a3b8 !important;
-}
-/* Corrección de la lista de pacientes en Modo Claro */
-.theme-light .bg-slate-900\/50,
-.theme-light .hover\:bg-slate-900:hover {
-    background-color: #ffffff !important;
+.theme-light .from-indigo-700.to-black,
+.theme-light .bg-gradient-to-br.from-indigo-700.to-black {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
     border: 1px solid rgba(2, 132, 199, 0.2) !important;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+    box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25) !important;
 }
 
-/* Asegurar que el nombre del paciente destaque con fuerza */
+/* Si tienes foto de fondo en Inicio, suavizamos la capa oscura a un tono transparente claro */
+.theme-light .bg-black\/60,
+.theme-light .bg-black\/50,
+.theme-light .bg-black\/40 {
+    background-color: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(2px) !important;
+}
+
+/* Resalta el nombre del Dr. en blanco nítido con sombra de lectura */
+.theme-light .from-indigo-700.to-black h2,
+.theme-light .from-indigo-700.to-black p {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 2. VENTANA Y LISTA DE PACIENTES */
+/* Elimina la caja negra de las tarjetas de pacientes y las vuelve Blanco Puro con borde fino */
+.theme-light .bg-slate-900\/50 {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(2, 132, 199, 0.18) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05) !important;
+}
+
+.theme-light .bg-slate-900\/50:hover {
+    background-color: #f0f7ff !important;
+    border-color: rgba(2, 132, 199, 0.35) !important;
+}
+
+/* Encabezado fijo (Sticky) del perfil del paciente */
+.theme-light .bg-slate-950\/80 {
+    background-color: rgba(250, 252, 255, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(2, 132, 199, 0.15) !important;
+}
+
+/* Contenedores generales dentro de expedientes */
+.theme-light .bg-slate-900,
+.theme-light .bg-slate-950 {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(2, 132, 199, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* 3. NOMBRES Y LETRAS RESALTADAS CON MÁXIMO CONTRASTE */
+/* Fuerza a que los nombres de los pacientes sean Azul Medianoche Profundo */
 .theme-light .text-white {
     color: #0f172a !important;
 }
 
-/* El teléfono secundario en un tono más limpio */
-.theme-light .text-indigo-400 {
+/* Teléfonos, etiquetas y subtítulos */
+.theme-light .text-indigo-400,
+.theme-light .text-cyan-400 {
     color: #0284c7 !important;
+}
+
+.theme-light .text-indigo-100,
+.theme-light .text-indigo-200 {
+    color: #334155 !important;
+}
+
+/* Reemplazar sombras negras pesadas por sombras luminosas clínicas */
+.theme-light .shadow-2xl,
+.theme-light .shadow-xl {
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
 }
