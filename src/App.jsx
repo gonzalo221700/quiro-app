@@ -3,7 +3,7 @@ import './index.css';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, RecaptchaVerifier, signInWithPhoneNumber, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Download, AlertOctagon, FileText, Stethoscope, Palette } from 'lucide-react';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
@@ -35,7 +35,6 @@ const safeFormatDate = (dateStr) => {
   } catch (e) { return String(dateStr); }
 };
 
-// 🌟 NUEVOS TEMAS VISUALES ELEGANTES
 const CLINIC_THEMES = {
   azul: { bg: 'bg-gradient-to-br from-cyan-600 to-blue-900', text: 'text-white', name: 'Azul Clínico' },
   esmeralda: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-900', text: 'text-white', name: 'Esmeralda' },
@@ -122,8 +121,6 @@ const AdminTab = ({ codes, onGenerateCode }) => {
 const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenCalendar, onUpgrade }) => {
   const today = new Date().toISOString().split('T')[0];
   const todays = appointments.filter(a => String(a.date) === today).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-  
-  // 🌟 APLICANDO EL TEMA Y MARCO ELEGANTE
   const currentTheme = CLINIC_THEMES[doctorInfo.theme] || CLINIC_THEMES['azul'];
   
   return (
@@ -166,12 +163,58 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
       <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20"><button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90"><ChevronRight className="rotate-180"/></button><div className="flex-1 min-w-0"><h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2><p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p></div><button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90"><Trash2 className="w-5 h-5"/></button></div>
       <div className="flex gap-3 mb-6"><button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><MessageSquare className="w-4 h-4"/> WhatsApp</button><button onClick={onSchedule} className="flex-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button></div>
       <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
+      
       {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
       {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div></div></div>)}
       {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in"><div className="grid grid-cols-4 gap-2 mb-2"><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div><div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div></div></div>)}
       {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura</h4><p className="text-sm text-indigo-100">{patient.postureAnterior || "--"}</p></div>)}
       {activeSection === 'tratamiento' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div></div>)}
-      {activeSection === 'sesiones' && (<div className="animate-fade-in"><div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner"><div className="flex justify-between items-center mb-4 text-left"><h3 className="text-xs font-black uppercase text-white flex items-center gap-2"><Stethoscope className="w-4 h-4 text-cyan-400"/> Asistente</h3>{!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full">{loadingIA ? "..." : "Analizar"}</button>}</div>{sum ? <div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2"><p className="text-xs text-indigo-100 whitespace-pre-wrap">{sum}</p></div> : <p className="text-xs italic text-indigo-200">Presiona para recomendaciones.</p>}</div><div className="flex justify-between items-center mb-4 px-2"><h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500"/> Ajustes</h3><button onClick={onAddHistory} className="bg-white text-black p-3 rounded-2xl active:scale-90 transition shadow-2xl"><Plus className="w-5 h-5"/></button></div><div className="space-y-4">{(!patient.histories || patient.histories.length === 0) ? (<div className="py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-[40px]"><p className="text-xs font-black uppercase">Sin ajustes</p></div>) : patient.histories.map((h, i) => (<div key={i} className="bg-slate-900/50 p-5 rounded-3xl border-l-4 border-cyan-500 shadow-md"><div className="flex justify-between mb-2"><span className="text-[10px] font-black text-indigo-400 uppercase">{safeFormatDate(h.date)}</span><span className="text-[10px] font-black text-rose-500 uppercase">Dolor {String(h.painLevel)}/10</span></div><p className="text-sm italic mb-2 text-indigo-50">"{String(h.notes)}"</p><div className="flex flex-wrap gap-1">{h.areas?.map(a => <span key={a} className="text-[8px] bg-slate-950 px-2 py-1 rounded-lg border border-white/5 text-cyan-400 font-black uppercase tracking-widest">{String(a)}</span>)}</div></div>))}</div></div>)}
+      
+      {activeSection === 'sesiones' && (
+        <div className="animate-fade-in">
+          <div className="bg-indigo-900/20 p-6 rounded-[40px] border border-cyan-400/20 mb-6 shadow-inner"><div className="flex justify-between items-center mb-4 text-left"><h3 className="text-xs font-black uppercase text-white flex items-center gap-2"><Stethoscope className="w-4 h-4 text-cyan-400"/> Asistente</h3>{!sum && <button onClick={generateLocalAssistant} disabled={loadingIA} className="text-[8px] font-black uppercase bg-cyan-400 text-black px-4 py-1.5 rounded-full">{loadingIA ? "..." : "Analizar"}</button>}</div>{sum ? <div className="bg-slate-950 p-4 rounded-3xl border border-white/5 mt-2"><p className="text-xs text-indigo-100 whitespace-pre-wrap">{sum}</p></div> : <p className="text-xs italic text-indigo-200">Presiona para recomendaciones.</p>}</div>
+          
+          <div className="flex justify-between items-center mb-4 px-2">
+            <h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500"/> Ajustes</h3>
+            <button onClick={onAddHistory} className="bg-white text-black p-3 rounded-2xl active:scale-90 transition shadow-2xl"><Plus className="w-5 h-5"/></button>
+          </div>
+          
+          <div className="space-y-4">
+            {(!patient.histories || patient.histories.length === 0) ? (
+              <div className="py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-[40px]"><p className="text-xs font-black uppercase">Sin ajustes</p></div>
+            ) : patient.histories.map((h, i) => {
+              // 🌟 COLOR DINÁMICO PARA EL HISTORIAL
+              const getPainColor = (lvl) => {
+                if(lvl <= 3) return 'text-emerald-400';
+                if(lvl <= 6) return 'text-amber-400';
+                return 'text-rose-500';
+              };
+              const hasRedFlags = h.redFlags && h.redFlags.length > 0;
+
+              return (
+                <div key={i} className={`bg-slate-900/50 p-5 rounded-3xl border-l-4 ${hasRedFlags ? 'border-rose-500' : 'border-cyan-500'} shadow-md transition-all`}>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{safeFormatDate(h.date)}</span>
+                    <span className={`text-[10px] font-black uppercase ${getPainColor(h.painLevel)}`}>Dolor {String(h.painLevel)}/10</span>
+                  </div>
+                  
+                  {hasRedFlags && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {h.redFlags.map(f => <span key={f} className="text-[8px] bg-rose-500/20 border border-rose-500/30 text-rose-400 px-2 py-0.5 rounded-lg font-black uppercase flex items-center gap-1"><ShieldAlert className="w-2 h-2"/> {f}</span>)}
+                    </div>
+                  )}
+
+                  <p className="text-sm italic mb-3 text-indigo-50">"{String(h.notes)}"</p>
+                  
+                  <div className="flex flex-wrap gap-1">
+                    {h.areas?.map(a => <span key={a} className="text-[8px] bg-slate-950 px-2 py-1 rounded-lg border border-white/5 text-cyan-400 font-black uppercase tracking-widest">{String(a)}</span>)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -218,7 +261,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     return Math.ceil(diffMs / 86400000);
   };
 
-  // 🌟 FUNCIÓN DE SUBIDA CORREGIDA (Solo Logo, ya no hay Banner)
   const handleImageUpload = (e, fieldName) => {
     if (isLocked) return;
     const file = e.target.files[0];
@@ -326,7 +368,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
                <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-full flex items-center gap-1 transition-all"><X className="w-3 h-3"/> Cancelar</button>
              </div>
              
-             {/* 🌟 OPCIÓN ÚNICA: COLOR DE FONDO DE VENTANA */}
              <div className="border-b border-white/10 pb-6 mb-6">
                <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
                  <Palette className="w-3 h-3" /> Color de Fondo de Ventana
@@ -504,22 +545,91 @@ const NewPatientModal = ({ onClose, onSave }) => {
   );
 };
 
+// 🌟 NUEVO MOTOR DE HISTORIAL CLÍNICO (NIVEL EXPERTO)
 const NewHistoryModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 5, areas: [], notes: '' });
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '' });
   const [isSaving, setIsSaving] = useState(false);
-  const areas = ['Cervical', 'Dorsal', 'Lumbar', 'Sacro', 'Hombros', 'Caderas', 'Rodillas'];
+  const areas = ['Cervical Sup.', 'Cervical Inf.', 'Dorsal', 'Lumbar', 'Pelvis', 'Sacro', 'Extremidades'];
+  const quickFlags = ['Fractura', 'Marcapasos', 'Tumor', 'Osteoporosis', 'Embarazo', 'Cirugía Reciente'];
+
   const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+
+  const getPainColor = (level) => {
+    if (level <= 3) return 'accent-emerald-400 text-emerald-400 shadow-emerald-500/50';
+    if (level <= 6) return 'accent-amber-400 text-amber-400 shadow-amber-500/50';
+    return 'accent-rose-500 text-rose-500 shadow-rose-500/50';
+  };
+
+  const getPainLabel = (level) => {
+    if (level === 0) return 'Sin Dolor';
+    if (level <= 3) return 'Leve';
+    if (level <= 6) return 'Moderado';
+    if (level <= 9) return 'Severo';
+    return 'Insoportable';
+  };
+
   return (
-    <Modal title="Nuevo Ajuste" onClose={onClose}>
-      <div className="space-y-6">
-        <input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
-        <div className="bg-slate-900 p-5 rounded-3xl text-left border border-white/5">
-          <div className="flex justify-between mb-4"><span className="text-[10px] font-black uppercase text-indigo-400">Escala de Dolor</span><span className="text-rose-500 font-black">{form.painLevel}/10</span></div>
-          <input type="range" min="0" max="10" className="w-full accent-cyan-400 h-2 bg-slate-800 rounded-full appearance-none outline-none" value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+    <Modal title="Nuevo Registro Clínico" onClose={onClose}>
+      <div className="space-y-6 text-left pb-4">
+        
+        <div>
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Fecha del Ajuste</label>
+          <input type="date" className="w-full bg-slate-900 p-4 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 text-sm" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
         </div>
-        <div className="flex flex-wrap gap-2">{areas.map(a => (<button key={a} onClick={() => setForm({...form, areas: form.areas.includes(a) ? form.areas.filter(x => x !== a) : [...form.areas, a]})} className={`px-4 py-2 rounded-2xl text-[10px] font-black border transition-all ${form.areas.includes(a) ? 'bg-cyan-400 border-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-900 border-white/10 text-indigo-400 hover:bg-slate-800'}`}>{String(a)}</button>))}</div>
-        <textarea placeholder="Notas clínicas..." className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 min-h-[120px] text-white outline-none focus:border-cyan-500" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70">{isSaving ? 'Guardando...' : 'Guardar Ajuste'}</button>
+
+        <div className="bg-rose-950/20 p-5 rounded-[30px] border border-rose-500/20">
+          <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Banderas Rojas (Precauciones)</h4>
+          <div className="flex flex-wrap gap-2">
+            {quickFlags.map(flag => (
+              <button 
+                key={flag} 
+                onClick={() => setForm(prev => ({...prev, redFlags: prev.redFlags.includes(flag) ? prev.redFlags.filter(f => f !== flag) : [...prev.redFlags, flag]}))} 
+                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all duration-300 ${form.redFlags.includes(flag) ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-105 border-rose-400' : 'bg-slate-950 text-slate-400 border border-white/5 hover:bg-slate-900'}`}
+              >
+                {flag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5">
+          <div className="flex justify-between items-end mb-4">
+            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Escala Visual de Dolor (EVA)</h4>
+            <div className="text-right">
+              <span className={`text-2xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
+              <p className={`text-[9px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
+            </div>
+          </div>
+          <input type="range" min="0" max="10" className={`w-full h-2 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+          <div className="flex justify-between text-[8px] font-black uppercase text-slate-500 mt-2">
+            <span>0 (Sin Dolor)</span>
+            <span>10 (Insoportable)</span>
+          </div>
+        </div>
+
+        <div>
+           <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 ml-4 flex items-center gap-2"><Activity className="w-4 h-4"/> Zonas Ajustadas</h4>
+           <div className="flex flex-wrap gap-2">
+             {areas.map(a => (
+               <button 
+                 key={a} 
+                 onClick={() => setForm({...form, areas: form.areas.includes(a) ? form.areas.filter(x => x !== a) : [...form.areas, a]})} 
+                 className={`px-4 py-2.5 rounded-2xl text-[10px] font-black border transition-all ${form.areas.includes(a) ? 'bg-cyan-400 border-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-105' : 'bg-slate-900 border-white/10 text-indigo-300 hover:bg-slate-800'}`}
+               >
+                 {String(a)}
+               </button>
+             ))}
+           </div>
+        </div>
+
+        <div>
+          <label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 flex items-center gap-2"><FileText className="w-3 h-3"/> Notas de Evolución</label>
+          <textarea placeholder="Ej. Hubo cavitación en C2. El paciente reporta mejoría..." className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 min-h-[100px] text-white outline-none focus:border-cyan-500 text-sm" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+        </div>
+
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-4">
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste</>}
+        </button>
       </div>
     </Modal>
   );
