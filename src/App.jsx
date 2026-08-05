@@ -35,6 +35,20 @@ const safeFormatDate = (dateStr) => {
   } catch (e) { return String(dateStr); }
 };
 
+// 🌟 MOTOR MATEMÁTICO DE EDAD EXACTA
+const calculateAge = (dobStr) => {
+  if (!dobStr) return '';
+  const [year, month, day] = dobStr.split('-');
+  const dob = new Date(year, month - 1, day);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age >= 0 ? age : 0;
+};
+
 const CLINIC_THEMES = {
   azul: { bg: 'bg-gradient-to-br from-cyan-600 to-blue-900', text: 'text-white', name: 'Azul Clínico' },
   esmeralda: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-900', text: 'text-white', name: 'Esmeralda' },
@@ -181,6 +195,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
                <path d="M 160 500 L 200 500 L 205 525 L 155 525 Z" fill={getFill('Pie Izq.')} stroke={getStroke('Pie Izq.')} strokeWidth="4" strokeLinejoin="round" />
                <text x="180" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Izq.')} fontWeight="bold">PIE</text>
              </g>
+
 
              {/* ===================== VISTA 2: LATERAL x=450 ===================== */}
              <text x="450" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
@@ -646,31 +661,26 @@ const NewPatientModal = ({ onClose, onSave }) => {
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
           <div><label className={labelClass}>Nombre completo *</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
           
-          <div className="space-y-6">
-            <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-            <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
-          </div>
+          <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+          <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
           
-          <div className="space-y-6">
-            <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
-            <div>
-              <label className={labelClass}>Edad</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.age} onChange={e => setForm({...form, age: e.target.value})}>
-                <option value="">Selecciona la Edad...</option>
-                {Array.from({length: 100}, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} años</option>)}
-              </select>
-            </div>
+          <div>
+             <label className={labelClass}>Fecha de Nacimiento</label>
+             <input type="date" className={inputClass} value={form.birthDate} onChange={e => { const newDob = e.target.value; setForm({...form, birthDate: newDob, age: calculateAge(newDob)}); }} />
           </div>
+          <div>
+             <label className={labelClass}>Edad</label>
+             <input type="text" className={`${inputClass} opacity-50 cursor-not-allowed`} value={form.age !== '' ? `${form.age} años` : ''} readOnly placeholder="Se calcula automáticamente" />
+          </div>
+
           <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
         </div>)}
 
         {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
           <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
-          <div className="space-y-6">
-            <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
-            <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
-          </div>
+          <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
+          <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
         </div>)}
 
         {step === 3 && (<div className="space-y-6 animate-fade-in text-left">
@@ -681,21 +691,19 @@ const NewPatientModal = ({ onClose, onSave }) => {
 
         {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Físico y Plan</h4>
-          <div className="space-y-6">
-            <div>
-              <label className={labelClass}>Peso Físico</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
-                <option value="">Selecciona...</option>
-                {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Altura Total</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
-                <option value="">Selecciona...</option>
-                {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
-              </select>
-            </div>
+          <div>
+            <label className={labelClass}>Peso Físico</label>
+            <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
+              <option value="">Selecciona...</option>
+              {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Altura Total</label>
+            <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
+              <option value="">Selecciona...</option>
+              {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
+            </select>
           </div>
           <div><label className={labelClass}>Plan de Tratamiento</label><textarea placeholder="Ej. 2 sesiones por semana..." className={`${inputClass} min-h-[140px]`} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
         </div>)}
@@ -798,7 +806,7 @@ const NewHistoryModal = ({ onClose, onSave }) => {
         <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
 
         <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Gardando...</> : <><CheckCircle2 className="w-5 h-5"/> Gardar Ajuste Clínico</>}
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
         </button>
       </div>
     </Modal>
@@ -814,7 +822,7 @@ const NewAppointmentModal = ({ onClose, onSave }) => {
       <div className="space-y-6 text-left">
         <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
         <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Gardando...' : 'Confirmar Cita'}</button>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
       </div>
     </Modal>
   );
