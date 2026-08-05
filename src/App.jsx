@@ -120,6 +120,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
          <div className="min-w-[650px] mx-auto">
            <svg viewBox="0 0 900 600" className="w-full h-[400px]">
              
+             {/* ===================== VISTA 1: ANTERIOR (FRONTAL) x=150 ===================== */}
              <text x="150" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">ANTERIOR</text>
              <circle cx="150" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
              <path d="M 135 115 L 165 115 L 165 140 L 135 140 Z" fill="none" stroke="#64748b" strokeWidth="4" />
@@ -181,7 +182,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
                <text x="180" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Izq.')} fontWeight="bold">PIE</text>
              </g>
 
-
+             {/* ===================== VISTA 2: LATERAL x=450 ===================== */}
              <text x="450" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
              <ellipse cx="460" cy="80" rx="30" ry="35" fill="none" stroke="#64748b" strokeWidth="4" />
              
@@ -207,7 +208,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
              <rect x="440" y="150" width="30" height="110" rx="15" fill="none" stroke="#64748b" strokeWidth="4" />
              <circle cx="455" cy="275" r="15" fill="none" stroke="#64748b" strokeWidth="4" />
 
-
+             {/* ===================== VISTA 3: POSTERIOR (ESPALDA) x=750 ===================== */}
              <text x="750" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">POSTERIOR</text>
              <circle cx="750" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
 
@@ -645,14 +646,14 @@ const NewPatientModal = ({ onClose, onSave }) => {
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
           <div><label className={labelClass}>Nombre completo *</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
           
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
+          <div className="space-y-6">
+            <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+            <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
-            <div className="w-full sm:w-1/2">
+          <div className="space-y-6">
+            <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
+            <div>
               <label className={labelClass}>Edad</label>
               <select className={`${inputClass} appearance-none cursor-pointer`} value={form.age} onChange={e => setForm({...form, age: e.target.value})}>
                 <option value="">Selecciona la Edad...</option>
@@ -666,9 +667,9 @@ const NewPatientModal = ({ onClose, onSave }) => {
         {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
           <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
-            <div className="w-full sm:w-1/2"><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
+          <div className="space-y-6">
+            <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
+            <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
           </div>
         </div>)}
 
@@ -680,15 +681,15 @@ const NewPatientModal = ({ onClose, onSave }) => {
 
         {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
           <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Físico y Plan</h4>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2">
+          <div className="space-y-6">
+            <div>
               <label className={labelClass}>Peso Físico</label>
               <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
                 <option value="">Selecciona...</option>
                 {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
               </select>
             </div>
-            <div className="w-full sm:w-1/2">
+            <div>
               <label className={labelClass}>Altura Total</label>
               <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
                 <option value="">Selecciona...</option>
@@ -723,7 +724,7 @@ const NewPatientModal = ({ onClose, onSave }) => {
 
           <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-6">
             <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos frontales..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
             <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos de perfil..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
             <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos de espalda..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
@@ -788,7 +789,7 @@ const NewHistoryModal = ({ onClose, onSave }) => {
 
         <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="space-y-6">
           <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
           <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
           <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
