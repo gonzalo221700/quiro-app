@@ -35,7 +35,6 @@ const safeFormatDate = (dateStr) => {
   } catch (e) { return String(dateStr); }
 };
 
-// 🌟 MOTOR MATEMÁTICO DE EDAD EXACTA
 const calculateAge = (dobStr) => {
   if (!dobStr) return '';
   const [year, month, day] = dobStr.split('-');
@@ -47,6 +46,100 @@ const calculateAge = (dobStr) => {
     age--;
   }
   return age >= 0 ? age : 0;
+};
+
+// 🌟 NUEVO MOTOR DE GENERACIÓN DE EXPEDIENTES CLÍNICOS (HTML/PDF/WORD)
+const generateClinicalHTML = (patient, doctorInfo) => {
+  const logoHtml = doctorInfo.logo ? `<img src="${doctorInfo.logo}" style="max-height: 90px; border-radius: 8px; margin-bottom: 10px; object-fit: contain;" />` : '';
+  const historiesHtml = (patient.histories || []).map(h => `
+    <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
+      <p style="margin: 0 0 5px 0;"><strong>Fecha:</strong> ${safeFormatDate(h.date)} &nbsp;|&nbsp; <strong style="color: #e11d48;">Dolor: ${h.painLevel}/10</strong></p>
+      <p style="margin: 0 0 5px 0;"><strong>Zonas Ajustadas:</strong> ${h.areas?.join(', ') || 'Ninguna especificada'}</p>
+      ${h.redFlags && h.redFlags.length > 0 ? `<p style="margin: 0 0 5px 0; color: #e11d48;"><strong>Banderas Rojas:</strong> ${h.redFlags.join(', ')}</p>` : ''}
+      <p style="margin: 0; font-style: italic; color: #475569;">" ${h.notes || 'Sin notas de evolución'} "</p>
+    </div>
+  `).join('');
+
+  return `
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Expediente - ${patient.name}</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6; padding: 40px; max-width: 800px; margin: auto; }
+          h1 { color: #0f172a; margin: 0 0 5px 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
+          h2 { color: #0f172a; margin: 0 0 15px 0; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;}
+          h3 { color: #64748b; margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;}
+          .header { text-align: center; border-bottom: 4px solid #06b6d4; padding-bottom: 30px; margin-bottom: 40px; }
+          .section { margin-bottom: 30px; padding: 25px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; page-break-inside: avoid; }
+          .label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 900; letter-spacing: 1px; display: block; margin-bottom: 2px;}
+          .value { font-size: 14px; font-weight: 600; color: #0f172a; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 15px;}
+          td { padding: 8px 15px 8px 0; vertical-align: top; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          ${logoHtml}
+          <h1>${doctorInfo.clinic || 'Clínica Quiropráctica'}</h1>
+          <h3>${doctorInfo.name || 'Especialista'} - ${doctorInfo.title || 'Doctor'}</h3>
+        </div>
+        
+        <div class="section">
+          <h2>Ficha de Identificación</h2>
+          <table>
+            <tr>
+              <td><span class="label">Nombre del Paciente</span><span class="value">${patient.name}</span></td>
+              <td><span class="label">Teléfono</span><span class="value">${patient.phone || '--'}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Edad y Fecha Nac.</span><span class="value">${patient.age ? patient.age + ' años' : '--'} (${patient.birthDate || '--'})</span></td>
+              <td><span class="label">Sexo</span><span class="value">${patient.gender || '--'}</span></td>
+            </tr>
+            <tr>
+              <td colspan="2"><span class="label">Dirección Completa</span><span class="value">${patient.address || '--'}</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="section">
+          <h2>Evaluación Clínica Inicial</h2>
+          <table>
+            <tr>
+              <td colspan="2"><span class="label">Motivo de Consulta</span><span class="value">${patient.consultationReason || '--'}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Ant. Patológicos</span><span class="value">${patient.pathological || '--'}</span></td>
+              <td><span class="label">Ant. No Patológicos</span><span class="value">${patient.nonPathological || '--'}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Diagnóstico Quiropráctico</span><span class="value" style="color: #0284c7;">${patient.chiropracticDiagnosis || '--'}</span></td>
+              <td><span class="label">Morfología</span><span class="value">Peso: ${patient.weight ? patient.weight + ' kg' : '--'} | Altura: ${patient.height ? patient.height + ' cm' : '--'}</span></td>
+            </tr>
+            <tr>
+              <td colspan="2"><span class="label">Plan de Tratamiento</span><span class="value">${patient.treatmentPlan || '--'}</span></td>
+            </tr>
+          </table>
+          <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 15px 0;" />
+          <span class="label">Análisis Postural</span>
+          <span class="value" style="font-size: 13px; font-weight: normal;">
+            <b>Anterior:</b> ${patient.postureAnterior || '--'} <br/>
+            <b>Lateral:</b> ${patient.postureLateral || '--'} <br/>
+            <b>Posterior:</b> ${patient.posturePosterior || '--'}
+          </span>
+        </div>
+
+        <div class="section">
+          <h2>Historial de Sesiones y Ajustes</h2>
+          ${patient.histories && patient.histories.length > 0 ? historiesHtml : '<p style="color: #64748b; font-style: italic;">Sin registros clínicos documentados aún.</p>'}
+        </div>
+        
+        <div style="text-align: center; margin-top: 50px; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">
+          Expediente Clínico Digital Generado por QuiroApp
+        </div>
+      </body>
+    </html>
+  `;
 };
 
 const CLINIC_THEMES = {
@@ -134,7 +227,6 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
          <div className="min-w-[650px] mx-auto">
            <svg viewBox="0 0 900 600" className="w-full h-[400px]">
              
-             {/* ===================== VISTA 1: ANTERIOR (FRONTAL) x=150 ===================== */}
              <text x="150" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">ANTERIOR</text>
              <circle cx="150" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
              <path d="M 135 115 L 165 115 L 165 140 L 135 140 Z" fill="none" stroke="#64748b" strokeWidth="4" />
@@ -196,8 +288,6 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
                <text x="180" y="518" textAnchor="middle" fontSize="10" fill={getTextColor('Pie Izq.')} fontWeight="bold">PIE</text>
              </g>
 
-
-             {/* ===================== VISTA 2: LATERAL x=450 ===================== */}
              <text x="450" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">LATERAL</text>
              <ellipse cx="460" cy="80" rx="30" ry="35" fill="none" stroke="#64748b" strokeWidth="4" />
              
@@ -223,7 +313,6 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
              <rect x="440" y="150" width="30" height="110" rx="15" fill="none" stroke="#64748b" strokeWidth="4" />
              <circle cx="455" cy="275" r="15" fill="none" stroke="#64748b" strokeWidth="4" />
 
-             {/* ===================== VISTA 3: POSTERIOR (ESPALDA) x=750 ===================== */}
              <text x="750" y="580" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="900" letterSpacing="2">POSTERIOR</text>
              <circle cx="750" cy="80" r="35" fill="none" stroke="#64748b" strokeWidth="4" />
 
@@ -328,7 +417,28 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
       </div>
       <div className="bg-indigo-950/20 p-6 rounded-[40px] border border-indigo-500/20 shadow-xl">
         <div className="flex justify-between items-center mb-6 px-2"><h3 className="text-xl font-black uppercase italic text-white">Agenda del Día</h3><div className="flex gap-3"><button onClick={onOpenCalendar} className="p-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-2xl active:scale-90 shadow-lg"><CalendarIcon className="w-5 h-5" /></button><button onClick={onAddAppointment} className="p-3 bg-cyan-400 text-black rounded-2xl active:scale-90 shadow-lg"><Plus className="w-5 h-5" /></button></div></div>
-        {todays.length === 0 ? (<div className="py-12 text-center opacity-40"><ClipboardList className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (todays.map(app => (<div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between"><div><p className="text-white font-black uppercase italic">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div><ChevronRight className="w-5 h-5 text-indigo-800" /></div>)))}
+        {todays.length === 0 ? (<div className="py-12 text-center opacity-40"><ClipboardList className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (todays.map(app => {
+          const pInfo = patients.find(p => p.id === app.patientId);
+          const pName = pInfo?.name || 'Desconocido';
+          const pPhone = pInfo?.phone;
+          
+          return (
+            <div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg">
+              <div>
+                <p className="text-white font-black uppercase italic text-sm">{pName}</p>
+                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {pPhone && (
+                  <button onClick={(e) => { e.stopPropagation(); openWhatsApp(pPhone, `Hola ${pName}, te escribimos de ${doctorInfo.clinic || 'la clínica'} para recordarte tu ajuste quiropráctico programado para hoy a las ${app.time}. ¡Te esperamos!`); }} className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500/20 active:scale-90 transition border border-emerald-500/20">
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+                )}
+                <ChevronRight className="w-5 h-5 text-indigo-800" />
+              </div>
+            </div>
+          );
+        }))}
       </div>
     </div>
   );
@@ -338,10 +448,37 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const [activeSection, setActiveSection] = useState('historial'); 
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
 
+  const handleExportPDF = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(generateClinicalHTML(patient, doctorInfo));
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+  };
+
+  const handleExportWord = () => {
+    const html = generateClinicalHTML(patient, doctorInfo);
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Expediente_${patient.name.replace(/\s+/g, '_')}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="animate-fade-in text-left pb-10">
       <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20"><button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90"><ChevronRight className="rotate-180"/></button><div className="flex-1 min-w-0"><h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2><p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p></div><button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90"><Trash2 className="w-5 h-5"/></button></div>
-      <div className="flex gap-3 mb-6"><button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><MessageSquare className="w-4 h-4"/> WhatsApp</button><button onClick={onSchedule} className="flex-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button></div>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><MessageSquare className="w-4 h-4"/> WhatsApp</button>
+        <button onClick={onSchedule} className="bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button>
+        <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/30 text-rose-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><FileText className="w-4 h-4"/> PDF</button>
+        <button onClick={handleExportWord} className="bg-blue-500/10 border border-blue-500/30 text-blue-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><Download className="w-4 h-4"/> Word</button>
+      </div>
+
       <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
       
       {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
@@ -610,497 +747,3 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     </div>
   );
 };
-
-const NewPatientModal = ({ onClose, onSave }) => {
-  const [step, setStep] = useState(1);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', consultationReason: '', pathological: '', nonPathological: '', redFlags: [], chiropracticDiagnosis: '', treatmentPlan: '', weight: '', height: '', chiropracticTechniques: [], posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', histories: [], painLevel: 0, areas: [], notes: '' });
-  
-  const handleNext = () => { if(form.name) setStep(step + 1); };
-  
-  const handleSaveClick = () => { 
-    if (isSaving) return; 
-    setIsSaving(true); 
-    const finalPatient = { ...form };
-    if (form.painLevel > 0 || form.areas.length > 0 || form.notes || form.redFlags.length > 0) {
-      finalPatient.histories = [{
-        date: new Date().toISOString().split('T')[0],
-        painLevel: form.painLevel,
-        areas: form.areas,
-        redFlags: form.redFlags,
-        notes: form.notes
-      }];
-    }
-    onSave(finalPatient); 
-  };
-  
-  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
-  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
-  
-  const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-400 text-emerald-400';
-    if (level <= 6) return 'accent-amber-400 text-amber-400';
-    return 'accent-rose-500 text-rose-500';
-  };
-  const getPainLabel = (level) => {
-    if (level === 0) return 'Sin Dolor';
-    if (level <= 3) return 'Leve';
-    if (level <= 6) return 'Moderado';
-    if (level <= 9) return 'Severo';
-    return 'Insoportable';
-  };
-
-  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
-  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
-
-  return (
-    <Modal title={`Crear Expediente (${step}/6)`} onClose={onClose}>
-      <div className="space-y-6">
-        
-        {step === 1 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
-          <div><label className={labelClass}>Nombre completo *</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-          
-          <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-          <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
-          
-          <div>
-             <label className={labelClass}>Fecha de Nacimiento</label>
-             <input type="date" className={inputClass} value={form.birthDate} onChange={e => { const newDob = e.target.value; setForm({...form, birthDate: newDob, age: calculateAge(newDob)}); }} />
-          </div>
-          <div>
-             <label className={labelClass}>Edad</label>
-             <input type="text" className={`${inputClass} opacity-50 cursor-not-allowed`} value={form.age !== '' ? `${form.age} años` : ''} readOnly placeholder="Se calcula automáticamente" />
-          </div>
-
-          <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
-        </div>)}
-
-        {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
-          <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
-          <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
-          <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
-        </div>)}
-
-        {step === 3 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">3. Precauciones y Diagnóstico</h4>
-          <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
-          <div><label className={labelClass}>Diagnóstico Quiropráctico</label><input type="text" placeholder="Ej. Subluxación L4-L5" className={inputClass} value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} /></div>
-        </div>)}
-
-        {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Físico y Plan</h4>
-          <div>
-            <label className={labelClass}>Peso Físico</label>
-            <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
-              <option value="">Selecciona...</option>
-              {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Altura Total</label>
-            <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
-              <option value="">Selecciona...</option>
-              {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
-            </select>
-          </div>
-          <div><label className={labelClass}>Plan de Tratamiento</label><textarea placeholder="Ej. 2 sesiones por semana..." className={`${inputClass} min-h-[140px]`} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
-        </div>)}
-
-        {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Técnicas Clínicas</h4>
-          <MultiSelectDropdown title="Técnicas Sugeridas" icon={BookOpen} items={CHIRO_TECHNIQUES} selectedItems={form.chiropracticTechniques} toggleItem={(i) => toggleArrayItem('chiropracticTechniques', i)} />
-        </div>)}
-
-        {step === 6 && (<div className="space-y-8 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-cyan-400 mb-4 border-b border-white/10 pb-4 flex items-center gap-2"><Target className="w-4 h-4"/> 6. Evaluación Inicial (Primer Ajuste)</h4>
-          
-          <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
-            <div className="flex justify-between items-end mb-6">
-              <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
-              <div className="text-right">
-                <span className={`text-3xl font-black ${getPainColor(form.painLevel)}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
-                <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel)}`}>{getPainLabel(form.painLevel)}</p>
-              </div>
-            </div>
-            <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel)}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-            <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
-          </div>
-
-          <MultiSelectDropdown title="Desviaciones Posturales" icon={Activity} items={POSTURAL_DEVIATIONS} selectedItems={form.posturalDeviations} toggleItem={(i) => toggleArrayItem('posturalDeviations', i)} />
-
-          <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
-
-          <div className="space-y-6">
-            <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos frontales..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
-            <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos de perfil..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
-            <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos de espalda..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
-          </div>
-
-          <div><label className={labelClass}>Notas de la Sesión Inicial</label><textarea placeholder="Ej. Ajuste exitoso..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
-        </div>)}
-
-        <div className="flex gap-4 pt-8">
-          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-slate-900 py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition tracking-widest hover:bg-slate-800 border border-white/10">Atrás</button>}
-          {step < 6 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition shadow-[0_10px_20px_rgba(34,211,238,0.2)] border-b-8 border-cyan-700 disabled:opacity-50 tracking-widest">Siguiente Paso</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-emerald-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] border-b-8 border-emerald-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70 shadow-[0_10px_20px_rgba(52,211,153,0.3)] tracking-widest">{isSaving ? 'Guardando...' : 'Crear Expediente'}</button>)}
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const NewHistoryModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '', postureAnterior: '', postureLateral: '', posturePosterior: '' });
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
-  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
-  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
-
-  const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-400 text-emerald-400 shadow-emerald-500/50';
-    if (level <= 6) return 'accent-amber-400 text-amber-400 shadow-amber-500/50';
-    return 'accent-rose-500 text-rose-500 shadow-rose-500/50';
-  };
-
-  const getPainLabel = (level) => {
-    if (level === 0) return 'Sin Dolor';
-    if (level <= 3) return 'Leve';
-    if (level <= 6) return 'Moderado';
-    if (level <= 9) return 'Severo';
-    return 'Insoportable';
-  };
-
-  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
-  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
-
-  return (
-    <Modal title="Nuevo Registro Clínico" onClose={onClose}>
-      <div className="space-y-8 text-left pb-4">
-        
-        <div><label className={labelClass}>Fecha del Ajuste</label><input type="date" className={inputClass} value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
-
-        <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
-
-        <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
-          <div className="flex justify-between items-end mb-6">
-            <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
-            <div className="text-right">
-              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
-              <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
-            </div>
-          </div>
-          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-          <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
-        </div>
-
-        <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
-
-        <div className="space-y-6">
-          <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
-          <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
-          <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
-        </div>
-
-        <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
-
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
-        </button>
-      </div>
-    </Modal>
-  );
-};
-
-const NewAppointmentModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
-  const [isSaving, setIsSaving] = useState(false);
-  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
-  return (
-    <Modal title="Agendar Cita" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
-      </div>
-    </Modal>
-  );
-};
-
-const AdminLoginModal = ({ onClose, onSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
-  return (
-    <Modal title="Acceso Clasificado" onClose={onClose}>
-      <div className="space-y-4 text-left pb-4">
-        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
-        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
-        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
-      </div>
-    </Modal>
-  );
-};
-
-const UpsellModal = ({ onClose, onUpgrade }) => (
-  <Modal title="Límite Alcanzado" onClose={onClose}>
-    <div className="text-center space-y-6 pb-4">
-      <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto border border-amber-500/30"><Lock className="w-12 h-12 text-amber-400" /></div>
-      <h3 className="text-2xl font-black uppercase italic text-white">Prueba Limitada</h3>
-      <p className="text-indigo-200 text-sm leading-relaxed px-4">Solo puedes registrar hasta <strong>{MAX_TRIAL_PATIENTS} pacientes</strong>. Adquiere PRO para continuar ilimitadamente.</p>
-      <button onClick={() => { onClose(); onUpgrade(); }} className="w-full bg-amber-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-amber-600 shadow-xl active:scale-95 flex justify-center items-center gap-2"><Sparkles className="w-5 h-5" /> Obtener PRO</button>
-    </div>
-  </Modal>
-);
-
-const CalendarModal = ({ appointments, patients, onClose }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-  return (
-    <Modal title="Calendario" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
-        <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
-          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const SubscriptionBlockedScreen = ({ onLogout }) => (
-  <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
-    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
-  </div>
-);
-
-const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoginView, setIsLoginView] = useState(true);
-
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
-      <SpineWatermark />
-      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
-        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
-        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
-        
-        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
-        
-        {inProcess ? (
-          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
-        ) : (
-          <div className="space-y-4 animate-slide-up">
-            {step === 'initial' && (
-              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
-                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
-                <div className="grid grid-cols-1 gap-3">
-                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
-                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
-                </div></>
-            )}
-            {step === 'email' && (
-              <div className="text-left">
-                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
-                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
-                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [activeTab, setActiveTab] = useState('home');
-  const [patients, setPatients] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [doctorInfo, setDoctorInfo] = useState({ title: '', name: '', clinic: '', theme: 'azul', trialStartedAt: null, isPremium: false, isAdmin: false });
-  const [selectedPatientId, setSelectedPatientId] = useState(null);
-  const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
-  const [adminCodes, setAdminCodes] = useState([]);
-  const [modals, setModals] = useState({});
-  const [authInProcess, setAuthInProcess] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [authStep, setAuthStep] = useState('initial');
-
-  const [visualMode, setVisualMode] = useState(localStorage.getItem('quiroTheme') || 'oscuro');
-
-  useEffect(() => {
-    localStorage.setItem('quiroTheme', visualMode);
-  }, [visualMode]);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); if (!currentUser) { setLoading(false); setAuthInProcess(false); } });
-    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); unsubscribe(); };
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    const checkTrialAndSync = async () => {
-      try {
-        const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
-        const snap = await getDocFromServer(docRef); 
-        let profileData = snap.exists() ? snap.data() : { title: '', name: '', clinic: '', theme: 'azul', trialStartedAt: Date.now(), isPremium: false, isAdmin: false };
-        if (!snap.exists()) await setDoc(docRef, profileData);
-        else if (!profileData.trialStartedAt) { profileData.trialStartedAt = Date.now(); await updateDoc(docRef, { trialStartedAt: profileData.trialStartedAt }); }
-        
-        if (profileData.isPremium && profileData.premiumExpiresAt && Date.now() > profileData.premiumExpiresAt) {
-          profileData.isPremium = false; await updateDoc(docRef, { isPremium: false });
-        }
-        setDoctorInfo(profileData);
-        if (profileData.isPremium) setTrialTimeLeft({ expired: false, isPremium: true });
-        else {
-          const diffMs = (TRIAL_DAYS * 24 * 60 * 60 * 1000) - (Date.now() - profileData.trialStartedAt);
-          if (diffMs <= 0) setTrialTimeLeft({ days: 0, hours: 0, expired: true });
-          else setTrialTimeLeft({ days: Math.floor(diffMs / 86400000), hours: Math.floor((diffMs % 86400000) / 3600000), expired: false });
-        }
-      } catch (e) {} finally { setLoading(false); }
-    };
-    checkTrialAndSync();
-    const unsubPat = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), (snap) => setPatients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubApp = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), (snap) => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => { unsubPat(); unsubApp(); };
-  }, [user]);
-
-  useEffect(() => {
-    if (user && doctorInfo?.isAdmin) {
-      const unsubCodes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'codes'), (snap) => setAdminCodes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-      return () => unsubCodes();
-    }
-  }, [user, doctorInfo?.isAdmin]);
-
-  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user') setAuthError("Error de Google."); setAuthInProcess(false); } };
-  const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError("Error de conexión."); setAuthInProcess(false); } };
-  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError("Error de credenciales."); setAuthInProcess(false); } };
-  const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
-  const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
-
-  const handleActivateCode = async (codeStr) => {
-    if (!codeStr) return alert("Ingresa un código.");
-    try {
-      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr.trim().toUpperCase());
-      const codeSnap = await getDoc(codeRef); 
-      if (codeSnap.exists() && !codeSnap.data().used) {
-         const codeData = codeSnap.data();
-         const newExpiresAt = (doctorInfo.premiumExpiresAt || Date.now()) + ((codeData.durationDays || 30) * 86400000);
-         await updateDoc(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
-         await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
-         setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: newExpiresAt}));
-         alert(`¡PRO activado por ${codeData.durationDays} días!`);
-         setActiveTab('settings');
-      } else alert("Código inválido o usado.");
-    } catch (e) { alert("Error de servidor."); }
-  };
-
-  const handleGenerateAdminCode = async (type, durationDays) => {
-    try {
-      const newCode = (type === 'Mensual' ? 'MES-' : 'ANU-') + Math.random().toString(36).substring(2, 8).toUpperCase();
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), { used: false, type, durationDays, createdAt: new Date().toISOString(), createdBy: user?.uid });
-      alert(`Código generado: ${newCode}`);
-    } catch (e) { alert("Error."); }
-  };
-
-  const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
-  const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
-  const handleAddPatient = (data) => { setModals(prev => ({ ...prev, patient: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() }); };
-  const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
-  const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
-  const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
-
-  const handleOpenNewPatient = () => { if (!doctorInfo.isPremium && patients.length >= MAX_TRIAL_PATIENTS) setModals(m => ({ ...m, upsell: true })); else setModals(m => ({ ...m, patient: true })); };
-
-  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
-  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} inProcess={authInProcess} error={authError} step={authStep} setStep={setAuthStep} />;
-  if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
-
-  return (
-    <div className={`h-screen flex flex-col italic overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-[#020617] text-white'}`}>
-      <SpineWatermark />
-      <header className="p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
-            {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
-          </div>
-          <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
-        </div>
-        <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
-        {selectedPatientId ? (
-          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} />
-        ) : (
-          <>
-            {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} />}
-            {activeTab === 'patients' && (
-              <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
-                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
-                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : patients.map(p => (
-                  <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
-                    <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
-                  </div>
-                ))}
-                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
-              </div>
-            )}
-            {activeTab === 'techniques' && (
-              <div className="animate-fade-in space-y-6 text-left pb-10">
-                <h2 className="text-3xl font-black uppercase italic mb-2 underline decoration-cyan-500 decoration-4 underline-offset-8">Guía de Ajustes</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {techniquesData.map((tech, idx) => (
-                    <div key={idx} className="bg-slate-900/80 rounded-[35px] border border-white/5 overflow-hidden shadow-2xl transition hover:border-cyan-500/30 flex flex-col">
-                      <div className="p-6 space-y-5 flex-1">
-                        <h3 className="text-xl font-black uppercase text-cyan-400">{tech.title}</h3>
-                        <div><p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1 flex items-center gap-1"><BookOpen className="w-3 h-3"/> Fundamento</p><p className="text-xs text-indigo-100/90 leading-relaxed">{tech.description}</p></div>
-                        <div className="bg-slate-950 p-4 rounded-2xl border border-white/5 shadow-inner"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest mb-2 flex items-center gap-1"><Target className="w-3 h-3"/> Ejecución</p><p className="text-xs text-white leading-relaxed whitespace-pre-line">{tech.execution}</p></div>
-                        <div className="bg-emerald-950/20 p-4 rounded-2xl border border-emerald-500/20 mt-auto"><p className="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Casa</p><p className="text-xs text-emerald-100/80 leading-relaxed">{tech.help}</p></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onOpenAdminLogin={() => setModals(m => ({...m, adminLogin: true}))} visualMode={visualMode} setVisualMode={setVisualMode} />}
-            {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
-            {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
-          </>
-        )}
-      </main>
-
-      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
-
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
-        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
-        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
-        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
-        {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
-        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
-      </nav>
-
-      {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
-      {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
-      {modals.appointment && <NewAppointmentModal onClose={() => setModals(m => ({...m, appointment: false}))} onSave={handleAddAppointment} />}
-      {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} />}
-      {modals.upsell && <UpsellModal onClose={() => setModals(m => ({...m, upsell: false}))} onUpgrade={() => { setModals(m => ({...m, upsell: false})); handleUpgradeRequest(); }} />}
-      {modals.adminLogin && <AdminLoginModal onClose={() => setModals(m => ({...m, adminLogin: false}))} onSuccess={() => { handleUpdateProfile({ isAdmin: true, isPremium: true }); setModals(m => ({...m, adminLogin: false})); alert("¡ADMIN ACTIVADO!"); setActiveTab('admin'); }} />}
-      
-      <style dangerouslySetInnerHTML={{__html: `@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-up { animation: slideUp 0.4s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; } .scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}} />
-    </div>
-  );
-}
