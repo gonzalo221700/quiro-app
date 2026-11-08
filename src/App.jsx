@@ -261,7 +261,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   const monday = new Date(); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
   const weekCount = appointments.filter(a => String(a.date) >= isoLocal(monday) && String(a.date) <= isoLocal(sunday)).length;
-  const totalSessions = patients.reduce((n, p) => n + (Array.isArray(p.history) ? p.history.length : 0), 0);
+  const totalSessions = patients.reduce((n, p) => n + (Array.isArray(p.histories) ? p.histories.length : 0), 0);
   const upcoming = appointments.filter(a => String(a.date) > today).sort((a, b) => (String(a.date) + String(a.time || '')).localeCompare(String(b.date) + String(b.time || ''))).slice(0, 3);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -367,10 +367,31 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   );
 };
 
-const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule, onEdit }) => {
+const PainChart = ({ histories }) => {
+  const chrono = [...histories].reverse().filter(h => typeof h.painLevel === 'number');
+  if (chrono.length < 2) return null;
+  const W = 320, H = 96, PL = 10, PR = 22, PT = 14, PB = 10;
+  const xs = (i) => PL + (i * (W - PL - PR)) / (chrono.length - 1);
+  const ys = (v) => PT + (10 - v) * ((H - PT - PB) / 10);
+  const pts = chrono.map((h, i) => `${xs(i)},${ys(h.painLevel)}`).join(' ');
+  const band = (v) => v <= 3 ? '#059669' : v <= 6 ? '#d97706' : '#e11d48';
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24">
+      {[0, 5, 10].map(g => (<g key={g}><line x1={PL} x2={W - PR} y1={ys(g)} y2={ys(g)} stroke="#e2e8f0" strokeDasharray="3 4" strokeWidth="1" /><text x={W - 2} y={ys(g) + 2.5} fontSize="7.5" fill="#94a3b8" fontWeight="700">{g}</text></g>))}
+      <polyline points={pts} fill="none" stroke="#0b5563" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      {chrono.map((h, i) => (<circle key={i} cx={xs(i)} cy={ys(h.painLevel)} r="4" fill={band(h.painLevel)} stroke="#ffffff" strokeWidth="1.5" />))}
+    </svg>
+  );
+};
+
+const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule, onEdit, onEditHistory, onDeleteHistory }) => {
   const [activeSection, setActiveSection] = useState('historial');
   const edadMostrar = patient.birthDate ? calculateAge(patient.birthDate) : patient.age;
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
+  const historyEntries = patient.histories || [];
+  const chronoHist = [...historyEntries].reverse();
+  const painDelta = chronoHist.length >= 2 ? (chronoHist[chronoHist.length - 1].painLevel ?? 0) - (chronoHist[0].painLevel ?? 0) : 0;
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
@@ -414,46 +435,80 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
       
       {activeSection === 'sesiones' && (
         <div className="animate-fade-in">
-          <div className="flex justify-between items-center mb-6 px-2 mt-4">
-            <h3 className="text-xl font-black uppercase italic text-white flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500"/> Ajustes Clínicos</h3>
-            <button onClick={onAddHistory} className="bg-cyan-400 text-black px-4 py-3 rounded-2xl active:scale-90 transition shadow-2xl font-black uppercase text-[10px] flex items-center gap-2"><Plus className="w-4 h-4"/> Nuevo Ajuste</button>
+          <div className="flex justify-between items-center mb-5 mt-2 gap-3 flex-wrap">
+            <h3 className="text-lg font-extrabold text-[#0b2b31] flex items-center gap-2"><ClipboardList className="w-5 h-5 text-[#0b5563]" /> Historial de Sesiones <span className="text-xs font-bold text-slate-400">({historyEntries.length})</span></h3>
+            <button onClick={onAddHistory} className="bg-[#0b3b42] text-[#fff] px-4 py-2.5 rounded-xl active:scale-95 transition shadow font-extrabold uppercase text-[10px] flex items-center gap-2"><Plus className="w-4 h-4" /> Nuevo Ajuste</button>
           </div>
-          
-          <div className="space-y-4">
-            {(!patient.histories || patient.histories.length === 0) ? (
-              <div className="py-16 text-center opacity-30 border-2 border-dashed border-white/10 rounded-[40px]">
-                 <Stethoscope className="w-12 h-12 mx-auto mb-4 text-indigo-400"/>
-                 <p className="text-xs font-black uppercase tracking-widest">Sin registros clínicos</p>
-              </div>
-            ) : patient.histories.map((h, i) => {
-              const getPainColor = (lvl) => {
-                if(lvl <= 3) return 'text-emerald-400 border-emerald-500/30';
-                if(lvl <= 6) return 'text-amber-400 border-amber-500/30';
-                return 'text-rose-500 border-rose-500/30';
-              };
-              const hasRedFlags = h.redFlags && h.redFlags.length > 0;
-              return (
-                <div key={i} className={`bg-slate-900/50 p-6 rounded-3xl border-l-4 ${hasRedFlags ? 'border-rose-500' : 'border-cyan-500'} shadow-md transition-all`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{safeFormatDate(h.date)}</span>
-                    <span className={`text-[11px] font-black uppercase bg-slate-950 px-3 py-1.5 rounded-xl border ${getPainColor(h.painLevel)}`}>Dolor {String(h.painLevel)}/10</span>
-                  </div>
-                  
-                  {hasRedFlags && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {h.redFlags.map(f => <span key={f} className="text-[9px] bg-rose-500/20 border border-rose-500/30 text-rose-400 px-3 py-1 rounded-lg font-black uppercase flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> {f}</span>)}
-                    </div>
-                  )}
 
-                  {h.notes && <p className="text-sm italic mb-4 text-indigo-50 bg-slate-950/50 p-4 rounded-2xl border border-white/5">"{String(h.notes)}"</p>}
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {h.areas?.map(a => <span key={a} className="text-[9px] bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest flex items-center gap-1"><Target className="w-3 h-3"/> {String(a)}</span>)}
+          {historyEntries.length >= 2 && (
+            <div className="bg-white p-5 rounded-3xl border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.09)] mb-5">
+              <div className="flex justify-between items-center mb-2 gap-2 flex-wrap">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em]">Evolución del dolor (EVA)</p>
+                {painDelta < 0 ? <span className="text-[10px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full">▼ {Math.abs(painDelta)} · Mejorando</span> : painDelta > 0 ? <span className="text-[10px] font-black uppercase bg-rose-50 text-rose-600 border border-rose-200 px-2.5 py-1 rounded-full">▲ {painDelta} · A vigilar</span> : <span className="text-[10px] font-black uppercase bg-slate-50 text-slate-500 border border-slate-200 px-2.5 py-1 rounded-full">Sin cambio</span>}
+              </div>
+              <PainChart histories={historyEntries} />
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-1"><span>Inicio: {String(chronoHist[0]?.painLevel ?? 0)}/10 · {safeFormatDate(chronoHist[0]?.date)}</span><span>Última: {String(chronoHist[chronoHist.length - 1]?.painLevel ?? 0)}/10 · {safeFormatDate(chronoHist[chronoHist.length - 1]?.date)}</span></div>
+            </div>
+          )}
+
+          {historyEntries.length === 0 ? (
+            <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-3xl bg-white/60">
+              <Stethoscope className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Sin registros clínicos</p>
+              <p className="text-[11px] text-slate-400 mt-2">Registra el primer ajuste con el botón «Nuevo Ajuste».</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {historyEntries.map((h, i) => {
+                const hasRedFlags = h.redFlags && h.redFlags.length > 0;
+                const hasPosture = h.postureAnterior || h.postureLateral || h.posturePosterior;
+                return (
+                  <div key={h.id || i} className="bg-white p-5 rounded-3xl border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.07)] text-left">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="mr-auto">
+                        <p className="font-extrabold text-[#0b2b31] text-sm">Sesión {historyEntries.length - i}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{safeFormatDate(h.date)}</p>
+                      </div>
+                      <span className={`text-[11px] font-black uppercase px-3 py-1.5 rounded-xl border ${h.painLevel <= 3 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : h.painLevel <= 6 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>Dolor {String(h.painLevel ?? 0)}/10</span>
+                      <button onClick={() => onEditHistory(h, i)} className="p-2 text-slate-400 hover:text-[#0b3b42] bg-slate-50 border border-slate-200 rounded-lg active:scale-90 transition" title="Editar sesión"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={() => setConfirmDelete(confirmDelete === i ? null : i)} className="p-2 text-rose-400 hover:text-rose-600 bg-rose-50 border border-rose-100 rounded-lg active:scale-90 transition" title="Borrar sesión"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+
+                    {confirmDelete === i && (
+                      <div className="mt-3.5 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5 flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold text-rose-600">¿Borrar esta sesión? No se puede deshacer.</span>
+                        <button onClick={() => { onDeleteHistory(i); setConfirmDelete(null); }} className="ml-auto bg-rose-500 text-[#fff] text-[10px] font-black uppercase px-3 py-1.5 rounded-lg active:scale-95 transition">Sí, borrar</button>
+                        <button onClick={() => setConfirmDelete(null)} className="bg-white border border-slate-300 text-slate-500 text-[10px] font-black uppercase px-3 py-1.5 rounded-lg active:scale-95 transition">Cancelar</button>
+                      </div>
+                    )}
+
+                    {hasRedFlags && (
+                      <div className="flex flex-wrap gap-1.5 mt-3.5">
+                        {h.redFlags.map(f => <span key={f} className="text-[9px] bg-rose-50 border border-rose-200 text-rose-500 px-2.5 py-1 rounded-lg font-extrabold uppercase flex items-center gap-1"><ShieldAlert className="w-3 h-3" /> {String(f)}</span>)}
+                      </div>
+                    )}
+
+                    {h.notes && <p className="text-[13px] italic text-slate-600 bg-slate-50 border border-slate-200/70 rounded-2xl p-3.5 mt-3.5 leading-relaxed">“{String(h.notes)}”</p>}
+
+                    {(h.areas?.length > 0 || h.techniques?.length > 0) && (
+                      <div className="flex flex-wrap gap-1.5 mt-3.5">
+                        {h.areas?.map(a => <span key={a} className="text-[9px] bg-[#eef5f2] px-2.5 py-1.5 rounded-lg border border-[#cfe3dc] text-[#0b5563] font-extrabold uppercase tracking-wide flex items-center gap-1"><Target className="w-3 h-3" /> {String(a)}</span>)}
+                        {h.techniques?.map(t => <span key={t} className="text-[9px] bg-[#fdf6e0] px-2.5 py-1.5 rounded-lg border border-[#e8d9ac] text-[#8a6d2f] font-extrabold uppercase tracking-wide flex items-center gap-1"><BookOpen className="w-3 h-3" /> {String(t)}</span>)}
+                      </div>
+                    )}
+
+                    {hasPosture && (
+                      <div className="mt-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl p-3.5 space-y-1.5">
+                        {[['Anterior', h.postureAnterior], ['Lateral', h.postureLateral], ['Posterior', h.posturePosterior]].filter(([, v]) => v).map(([k, v]) => (
+                          <p key={k} className="text-[11px] text-slate-500 leading-relaxed"><span className="font-extrabold text-[#0b3b42] uppercase text-[9px] tracking-wider mr-1.5">{k}:</span>{String(v)}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -813,18 +868,18 @@ const NewPatientModal = ({ onClose, onSave }) => {
   );
 };
 
-const NewHistoryModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '', postureAnterior: '', postureLateral: '', posturePosterior: '' });
+const NewHistoryModal = ({ onClose, onSave, initial }) => {
+  const [form, setForm] = useState(initial ? { date: initial.date || new Date().toISOString().split('T')[0], painLevel: initial.painLevel ?? 0, areas: initial.areas || [], redFlags: initial.redFlags || [], notes: initial.notes || '', postureAnterior: initial.postureAnterior || '', postureLateral: initial.postureLateral || '', posturePosterior: initial.posturePosterior || '', techniques: initial.techniques || [], id: initial.id || null } : { date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '', postureAnterior: '', postureLateral: '', posturePosterior: '', techniques: [], id: null });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave(form); };
+  const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave({ ...form, id: form.id || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'h' + Date.now()) }); };
   const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
-  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
+  const toggleArrayItem = (field, item) => setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; });
 
   const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-400 text-emerald-400 shadow-emerald-500/50';
-    if (level <= 6) return 'accent-amber-400 text-amber-400 shadow-amber-500/50';
-    return 'accent-rose-500 text-rose-500 shadow-rose-500/50';
+    if (level <= 3) return 'accent-emerald-500 text-emerald-600';
+    if (level <= 6) return 'accent-amber-500 text-amber-600';
+    return 'accent-rose-500 text-rose-600';
   };
 
   const getPainLabel = (level) => {
@@ -835,41 +890,51 @@ const NewHistoryModal = ({ onClose, onSave }) => {
     return 'Insoportable';
   };
 
-  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
-  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
+  const inputClass = "w-full bg-white p-4 rounded-2xl border border-slate-300 text-slate-800 outline-none focus:border-[#0b5563] text-sm shadow-sm transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-[#0b5563] ml-1 mb-2 flex items-center gap-1 tracking-widest";
 
   return (
-    <Modal title="Nuevo Registro Clínico" onClose={onClose}>
-      <div className="space-y-8 text-left pb-4">
-        
+    <Modal title={initial ? "Editar Registro Clínico" : "Nuevo Registro Clínico"} onClose={onClose}>
+      <div className="space-y-7 text-left pb-4 bg-[#f7faf8] rounded-[30px] p-5 sm:p-7 border border-slate-200">
+
         <div><label className={labelClass}>Fecha del Ajuste</label><input type="date" className={inputClass} value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
 
         <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
 
-        <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
-          <div className="flex justify-between items-end mb-6">
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-end mb-5">
             <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
             <div className="text-right">
-              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
+              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-400">/ 10</span></span>
               <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
             </div>
           </div>
-          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-          <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
+          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-100 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
+          <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
         </div>
 
         <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
 
-        <div className="space-y-6">
-          <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
-          <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
-          <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
+        <div>
+          <label className={labelClass}><BookOpen className="w-3 h-3" /> Técnicas Aplicadas en la Sesión</label>
+          <div className="flex flex-wrap gap-2">
+            {CHIRO_TECHNIQUES.map(t => {
+              const on = form.techniques.includes(t);
+              return <button key={t} type="button" onClick={() => toggleArrayItem('techniques', t)} className={`px-3 py-2 rounded-xl border text-[10px] font-extrabold uppercase tracking-wide active:scale-95 transition ${on ? 'bg-[#0b3b42] text-[#fff] border-[#0b3b42] shadow' : 'bg-white text-slate-500 border-slate-300 hover:border-[#0b5563]'}`}>{t}</button>;
+            })}
+          </div>
         </div>
 
-        <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
+        <div className="space-y-5">
+          <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[90px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
+          <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[90px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
+          <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[90px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
+        </div>
 
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 mt-6 tracking-widest">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Ajuste Clínico</>}
+        <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[110px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
+
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-[#0b3b42] text-[#fff] py-4 rounded-2xl font-black uppercase border-b-4 border-[#062227] shadow-lg active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest text-sm">
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> {initial ? 'Guardar Cambios' : 'Guardar Ajuste Clínico'}</>}
         </button>
       </div>
     </Modal>
@@ -1068,6 +1133,8 @@ export default function App() {
   const [doctorInfo, setDoctorInfo] = useState({ title: '', name: '', clinic: '', theme: 'azul', trialStartedAt: null, isPremium: false, isAdmin: false });
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [patientSearch, setPatientSearch] = useState('');
+  const [previewPatientId, setPreviewPatientId] = useState(null);
+  const [editingHistory, setEditingHistory] = useState(null);
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
   const [adminCodes, setAdminCodes] = useState([]);
@@ -1201,6 +1268,8 @@ export default function App() {
   const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
   const handleAddPatient = (data) => { setModals(prev => ({ ...prev, patient: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() }); };
   const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
+  const handleEditHistory = (data) => { if (!selectedPatientId || !editingHistory) return; const pat = patients.find(p => p.id === selectedPatientId); const idx = editingHistory.index; setEditingHistory(null); if (pat) { const next = [...(pat.histories || [])]; next[idx] = { ...data, id: data.id || next[idx]?.id || ('h' + Date.now()) }; updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: next }); } };
+  const handleDeleteHistory = (index) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); if (pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: (pat.histories || []).filter((_, i) => i !== index) }); };
   const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
   const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
   const handleEditPatient = (data) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, editPatient: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), data); };
@@ -1233,6 +1302,8 @@ export default function App() {
       || (qDigits && String(p.phone || '').replace(/\D/g, '').includes(qDigits))
       || String(p.consultationReason || '').toLowerCase().includes(q);
   });
+  const previewPatient = patients.find(p => p.id === previewPatientId) || patients[0] || null;
+  const todayStr = new Date().toISOString().split('T')[0];
 
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center text-center px-6" style={{ background: 'linear-gradient(180deg, #fbfdfc 0%, #eef3f0 100%)' }}>
@@ -1247,6 +1318,7 @@ export default function App() {
   if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} onResetPassword={handleResetPassword} inProcess={authInProcess} error={authError} notice={authNotice} step={authStep} setStep={setAuthStep} />;
   if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
 
+  const initialsOf = (name) => (String(name || '?').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
   const premiumDaysLeft = doctorInfo.premiumExpiresAt ? Math.max(0, Math.ceil((doctorInfo.premiumExpiresAt - Date.now()) / 86400000)) : null;
   const sectionTitle = selectedPatientId ? 'Expediente' : ({ home: 'Inicio', patients: 'Pacientes', techniques: 'Técnicas', admin: 'Admin', settings: 'Ajustes', premium: 'QuiroApp PRO' }[activeTab] || 'Inicio');
   const todayLong = (() => { const s = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); })();
@@ -1312,19 +1384,101 @@ export default function App() {
           <div className="max-w-[1180px] mx-auto w-full p-6 lg:px-8 lg:py-7 pb-36 lg:pb-12">
             {showVerifyBanner && (<div className="mb-6 bg-amber-50 border border-amber-300 rounded-3xl p-5 text-left shadow-sm animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Verifica tu correo</p><p className="text-xs text-amber-800/80 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-500 text-[#fff] py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white text-amber-700 py-3 rounded-2xl font-black uppercase text-[10px] border border-amber-300 active:scale-95">Ya lo verifiqué</button></div></div>)}
             {selectedPatientId ? (
-              <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} />
+              <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} onEditHistory={(entry, index) => setEditingHistory({ entry, index })} onDeleteHistory={handleDeleteHistory} />
             ) : (
               <>
                 {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} onNewPatient={handleOpenNewPatient} onBackup={handleBackup} onGoTechniques={() => { setActiveTab('techniques'); setSelectedPatientId(null); }} />}
                 {activeTab === 'patients' && (
-                  <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
-                    <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
-                    {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : filteredPatients.length === 0 ? <div className="py-20 text-center opacity-30"><Search className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin resultados para tu búsqueda</p></div> : filteredPatients.map(p => (
-                      <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
-                        <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
+                  <div className="animate-fade-in">
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="bg-[#fdf6e0] border border-[#e8d9ac] text-[#8a6d2f] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full">{patients.length} {patients.length === 1 ? 'paciente' : 'pacientes'}{!doctorInfo.isPremium && ` · de ${MAX_TRIAL_PATIENTS} en prueba`}</span>
+                      <button onClick={handleOpenNewPatient} className="ml-auto bg-[#0b3b42] text-[#fff] px-4 py-2.5 rounded-xl font-extrabold uppercase text-[10px] flex items-center gap-2 active:scale-95 transition shadow"><Plus className="w-4 h-4" /> Nuevo paciente</button>
+                    </div>
+                    {patients.length === 0 ? (
+                      <div className="bg-white border border-slate-300 rounded-3xl shadow-[0_8px_22px_rgba(8,48,57,0.09)] py-16 text-center px-6">
+                        <ClipboardList className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                        <p className="font-extrabold text-[#0b2b31]">Aún no tienes pacientes</p>
+                        <p className="text-slate-400 text-xs mt-1.5 mb-5">Registra el primero con el botón «Nuevo paciente».</p>
+                        <button onClick={handleOpenNewPatient} className="bg-[#0b3b42] text-[#fff] px-4 py-2.5 rounded-xl font-extrabold uppercase text-[10px] active:scale-95 transition">Registrar paciente</button>
                       </div>
-                    ))}
-                    <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 lg:bottom-10 lg:right-10 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+                    ) : (
+                      <div className="grid lg:grid-cols-[370px_1fr] gap-6 items-start">
+                        <div>
+                          <div className="relative mb-4">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                            <input type="text" placeholder="Buscar por nombre, teléfono o motivo…" value={patientSearch} onChange={e => setPatientSearch(e.target.value)} className="w-full bg-white p-3.5 pl-11 rounded-2xl border border-slate-300 text-slate-800 font-semibold text-sm outline-none focus:border-[#0b5563] transition-all shadow-sm" />
+                          </div>
+                          <div className="space-y-2.5">
+                            {filteredPatients.length === 0 ? (
+                              <div className="bg-white border border-slate-300 rounded-3xl py-12 text-center px-6"><Search className="w-9 h-9 mx-auto mb-3 text-slate-300" /><p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Sin resultados para tu búsqueda</p></div>
+                            ) : filteredPatients.map(p => {
+                              const isSel = previewPatient && previewPatient.id === p.id;
+                              return (
+                                <button key={p.id} onClick={() => { if (window.innerWidth >= 1024) setPreviewPatientId(p.id); else setSelectedPatientId(p.id); }} className={`w-full text-left flex items-center gap-3 p-3.5 rounded-2xl border transition active:scale-[0.99] ${isSel ? 'bg-[#fdf9ec] border-[#e8d9ac] shadow-[0_8px_22px_rgba(8,48,57,0.09)]' : 'bg-white border-slate-300 shadow-sm hover:border-[#0b5563]/50'}`}>
+                                  <span className="w-10 h-10 rounded-full bg-[#dcebe7] text-[#0b3b42] font-extrabold text-xs flex items-center justify-center flex-none">{initialsOf(p.name)}</span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block font-bold text-slate-800 text-sm truncate">{String(p.name)}</span>
+                                    <span className="block text-[11px] text-slate-400 font-semibold mt-0.5 truncate">{p.phone ? String(p.phone) : 'Sin teléfono'} · {(p.histories || []).length} {(p.histories || []).length === 1 ? 'sesión' : 'sesiones'}</span>
+                                  </span>
+                                  <ChevronRight className="w-5 h-5 text-slate-300 flex-none lg:hidden" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="hidden lg:block">
+                          {previewPatient ? (() => {
+                            const p = previewPatient;
+                            const edadP = p.birthDate ? calculateAge(p.birthDate) : p.age;
+                            const nextApp = appointments.filter(a => a.patientId === p.id && String(a.date) >= todayStr).sort((a, b) => (String(a.date) + String(a.time || '')).localeCompare(String(b.date) + String(b.time || '')))[0];
+                            const lastHist = (p.histories || [])[0];
+                            const kvL = "text-[9px] font-black text-slate-400 uppercase tracking-[0.14em]";
+                            const kvV = "text-[13px] font-bold text-[#16323a] mt-1";
+                            return (
+                              <div className="bg-white border border-slate-300 rounded-3xl shadow-[0_8px_22px_rgba(8,48,57,0.09)] p-6">
+                                <div className="flex items-start gap-4">
+                                  <span className="w-14 h-14 rounded-full bg-[#dcebe7] text-[#0b3b42] font-extrabold text-base flex items-center justify-center flex-none shadow-[0_0_0_3px_rgba(216,184,120,0.45)]">{initialsOf(p.name)}</span>
+                                  <div className="min-w-0 flex-1">
+                                    <h3 className="text-xl font-extrabold text-[#0b2b31] leading-tight truncate">{String(p.name)}</h3>
+                                    <p className="text-xs text-slate-400 font-semibold mt-1">{p.phone ? String(p.phone) : 'Sin teléfono'}{edadP ? ` · ${edadP} años` : ''}</p>
+                                  </div>
+                                  {nextApp && <span className="bg-[#fdf6e0] border border-[#e8d9ac] text-[#8a6d2f] text-[10px] font-extrabold px-3 py-1.5 rounded-full flex-none">Próx: {safeFormatDate(nextApp.date)} · {String(nextApp.time)}</span>}
+                                </div>
+                                <div className="grid grid-cols-3 gap-x-4 gap-y-5 mt-6">
+                                  <div><p className={kvL}>Motivo principal</p><p className={kvV}>{p.consultationReason ? String(p.consultationReason) : '—'}</p></div>
+                                  <div><p className={kvL}>Diagnóstico</p><p className={kvV}>{p.chiropracticDiagnosis ? String(p.chiropracticDiagnosis) : '—'}</p></div>
+                                  <div><p className={kvL}>Sesiones</p><p className={kvV}>{(p.histories || []).length} registradas</p></div>
+                                  <div><p className={kvL}>Última sesión</p><p className={kvV}>{lastHist ? safeFormatDate(lastHist.date) : '—'}</p></div>
+                                  <div><p className={kvL}>Paciente desde</p><p className={kvV}>{p.createdAt ? safeFormatDate(String(p.createdAt).split('T')[0]) : '—'}</p></div>
+                                  <div><p className={kvL}>Teléfono</p><p className={kvV}>{p.phone ? String(p.phone) : '—'}</p></div>
+                                </div>
+                                {(p.histories || []).length > 0 && (
+                                  <div className="mt-6">
+                                    <p className={kvL}>Últimas sesiones</p>
+                                    <div className="mt-2 space-y-2">
+                                      {(p.histories || []).slice(0, 2).map((h, i) => (
+                                        <div key={h.id || i} className="flex items-center gap-3 bg-slate-50 border border-slate-200/70 rounded-2xl px-3.5 py-2.5">
+                                          <span className="text-[11px] font-extrabold text-[#0b3b42] flex-none">{safeFormatDate(h.date)}</span>
+                                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border flex-none ${h.painLevel <= 3 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : h.painLevel <= 6 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>Dolor {String(h.painLevel ?? 0)}/10</span>
+                                          <span className="text-[11px] text-slate-500 truncate">{h.notes ? String(h.notes) : 'Sin notas'}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="flex gap-2.5 mt-6">
+                                  <button onClick={() => setSelectedPatientId(p.id)} className="flex-1 bg-[#0b3b42] text-[#fff] py-3 rounded-xl font-extrabold uppercase text-[11px] active:scale-95 transition shadow">Abrir expediente</button>
+                                  <button onClick={() => { setSelectedPatientId(p.id); setModals(m => ({...m, appointment: true})); }} className="flex-1 bg-white border border-slate-300 text-[#16323a] py-3 rounded-xl font-extrabold uppercase text-[11px] active:scale-95 transition">Agendar cita</button>
+                                  {p.phone && <button onClick={() => openWhatsApp(p.phone, `Hola ${String(p.name).split(' ')[0]}, te escribimos de ${doctorInfo.clinic || 'la clínica'}.`)} className="w-11 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl flex items-center justify-center active:scale-95 transition" title="WhatsApp"><MessageSquare className="w-4 h-4" /></button>}
+                                </div>
+                              </div>
+                            );
+                          })() : (
+                            <div className="bg-white border border-slate-300 rounded-3xl py-16 text-center text-slate-400 text-sm font-semibold">Selecciona un paciente de la lista</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {activeTab === 'techniques' && (<Suspense fallback={<div className="py-20 text-center text-cyan-400 font-black uppercase tracking-widest text-xs">Cargando guía...</div>}><TechniquesTab /></Suspense>)}
@@ -1350,6 +1504,7 @@ export default function App() {
 
       {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
       {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
+      {editingHistory && <NewHistoryModal initial={editingHistory.entry} onClose={() => setEditingHistory(null)} onSave={handleEditHistory} />}
       {modals.appointment && <NewAppointmentModal onClose={() => setModals(m => ({...m, appointment: false}))} onSave={handleAddAppointment} />}
       {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} onEditAppointment={(app) => setEditingAppointment(app)} onDeleteAppointment={handleDeleteAppointment} />}
       {modals.upsell && <UpsellModal onClose={() => setModals(m => ({...m, upsell: false}))} onUpgrade={() => { setModals(m => ({...m, upsell: false})); handleUpgradeRequest(); }} />}
