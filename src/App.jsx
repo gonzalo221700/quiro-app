@@ -1234,7 +1234,16 @@ export default function App() {
       || String(p.consultationReason || '').toLowerCase().includes(q);
   });
 
-  if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
+  if (loading) return (
+    <div className="h-screen flex flex-col items-center justify-center text-center px-6" style={{ background: 'linear-gradient(180deg, #fbfdfc 0%, #eef3f0 100%)' }}>
+      <img src="/logo-quiroapp.png" alt="QuiroApp" className="w-[104px] h-[104px] rounded-[28px] object-cover bg-white shadow-[0_0_0_3px_rgba(216,184,120,0.55),0_16px_30px_rgba(8,48,57,0.16)] animate-[splashPulse_1.8s_ease-in-out_infinite]" />
+      <h1 className="mt-5 text-2xl font-extrabold text-[#0b2b31]">QuiroApp</h1>
+      <p className="mt-1.5 text-[10px] font-extrabold tracking-[0.24em] text-[#b08d3e] uppercase">Gestión Clínica</p>
+      <div className="mt-7 w-[132px] h-1 rounded-full bg-[#dde7e2] overflow-hidden"><div className="h-full w-[45%] rounded-full animate-[splashSlide_1.3s_ease-in-out_infinite]" style={{ background: 'linear-gradient(90deg, #0b5563, #d8b878)' }}></div></div>
+      <p className="mt-3 text-[11px] font-semibold text-slate-500">Cargando tu consultorio…</p>
+      <style dangerouslySetInnerHTML={{__html: `@keyframes splashPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } } @keyframes splashSlide { 0% { transform: translateX(-110%); } 100% { transform: translateX(300%); } }`}} />
+    </div>
+  );
   if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} onResetPassword={handleResetPassword} inProcess={authInProcess} error={authError} notice={authNotice} step={authStep} setStep={setAuthStep} />;
   if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
 
