@@ -4,7 +4,7 @@ import { signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChan
 import { collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil } from 'lucide-react';
 import { auth, db, appId, TRIAL_DAYS, MAX_TRIAL_PATIENTS } from './lib/firebase.js';
-import { openWhatsApp, generateSecureCode, authErrorMessage, safeFormatDate, calculateAge, generateClinicalHTML, CLINIC_THEMES, RED_FLAGS, CHIRO_TECHNIQUES, POSTURAL_DEVIATIONS } from './lib/utils.js';
+import { openWhatsApp, generateSecureCode, authErrorMessage, safeFormatDate, calculateAge, generateClinicalHTML, CLINIC_THEMES, RED_FLAGS, CHIRO_TECHNIQUES, POSTURAL_DEVIATIONS, MOTIVOS_CONSULTA, LIST_IRRADIACION, LIST_EMPEORA, LIST_MEJORA, LIST_PREVIOS, LIST_PATOLOGICOS, LIST_MEDICAMENTOS, LIST_DIAGNOSTICOS, LIST_OBJETIVOS, LIST_FRECUENCIAS, LIST_RECOMENDACIONES, LIST_PRUEBAS, LIST_PALPACION, BONE_NOTE_SUGGESTIONS, LIST_HALLAZGOS, LIST_VISITA, LIST_RESPUESTA, LIST_PROXIMA } from './lib/utils.js';
 
 const TechniquesTab = lazy(() => import('./components/TechniquesTab.jsx'));
 
@@ -384,7 +384,21 @@ const PainChart = ({ histories }) => {
   );
 };
 
-const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule, onEdit, onEditHistory, onDeleteHistory }) => {
+const PlanesSection = ({ patient, onSavePlanes }) => {
+  const [planes, setPlanes] = useState(patient.planes || null);
+  useEffect(() => { setPlanes(patient.planes || null); }, [patient.id, patient.planes]);
+  const dirty = JSON.stringify(planes || {}) !== JSON.stringify(patient.planes || {});
+  return (
+    <div className="bg-white p-5 rounded-[32px] border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.08)] animate-fade-in">
+      <h4 className="text-[11px] font-black text-[#0b3b42] uppercase tracking-widest mb-1">Planos Anatómicos · Rayos X</h4>
+      <p className="text-[11px] text-slate-400 mb-4">Marca los huesos desde las opciones de abajo; se encienden en dorado en la imagen.</p>
+      <XRayPlanes value={planes} onChange={setPlanes} />
+      {dirty && <button onClick={() => onSavePlanes(planes)} className="w-full mt-4 bg-[#0b3b42] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition shadow">Guardar Planos</button>}
+    </div>
+  );
+};
+
+const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule, onEdit, onEditHistory, onDeleteHistory, onSavePlanes }) => {
   const [activeSection, setActiveSection] = useState('historial');
   const edadMostrar = patient.birthDate ? calculateAge(patient.birthDate) : patient.age;
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
@@ -392,6 +406,11 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const chronoHist = [...historyEntries].reverse();
   const painDelta = chronoHist.length >= 2 ? (chronoHist[chronoHist.length - 1].painLevel ?? 0) - (chronoHist[0].painLevel ?? 0) : 0;
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const ci = patient.currentIllness || {};
+  const life = patient.lifestyle || {};
+  const ex = patient.exploration || {};
+  const darkChip = "text-[9px] bg-white/5 border border-white/10 text-indigo-100 px-2.5 py-1 rounded-lg font-extrabold uppercase";
+  const darkLbl = "text-[8px] text-indigo-400 uppercase font-black tracking-widest";
 
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
@@ -427,12 +446,82 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 
       <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
       
-      {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{edadMostrar ? `${edadMostrar} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
-      {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div></div></div>)}
-      {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in"><div className="grid grid-cols-4 gap-2 mb-2"><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div><div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div></div></div>)}
-      {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Anterior</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureAnterior || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Lateral</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureLateral || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Posterior</h4><p className="text-sm text-indigo-100">{patient.posturePosterior || "--"}</p></div>)}
-      {activeSection === 'tratamiento' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div></div>)}
-      
+      {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{edadMostrar ? `${edadMostrar} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div>{patient.occupation && (<div><p className={darkLbl}>Ocupación</p><p className="text-sm font-bold text-white">{patient.occupation}</p></div>)}{(patient.origin && patient.origin.length > 0) && (<div><p className={darkLbl}>¿Cómo nos conoció?</p><p className="text-sm font-bold text-white">{patient.origin.join(', ')}</p></div>)}{patient.emergencyName && (<div className="col-span-2"><p className={darkLbl}>Contacto de emergencia</p><p className="text-sm font-bold text-white">{patient.emergencyName}{patient.emergencyPhone ? ' · ' + patient.emergencyPhone : ''}</p></div>)}{(patient.allergies && patient.allergies.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Alergias</p><p className="text-sm font-bold text-white">{patient.allergies.join(', ')}</p></div>)}</div></div>)}
+      {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in">
+        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
+          <div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div>
+          {(ci.tiempoUnidad || ci.inicio || (ci.irradiacion && ci.irradiacion.length > 0) || (ci.empeora && ci.empeora.length > 0) || (ci.mejora && ci.mejora.length > 0) || (ci.previos && ci.previos.length > 0)) && (
+            <div className="grid grid-cols-2 gap-4">
+              {ci.tiempoUnidad && (<div><p className={darkLbl}>Evolución</p><p className="text-sm font-bold text-white">{[ci.tiempoValor, ci.tiempoUnidad].filter(Boolean).join(' ')}</p></div>)}
+              {ci.inicio && (<div><p className={darkLbl}>Inicio</p><p className="text-sm font-bold text-white">{ci.inicio}</p></div>)}
+              {(ci.irradiacion && ci.irradiacion.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Irradiación</p><p className="text-sm font-bold text-white">{ci.irradiacion.join(', ')}</p></div>)}
+              {(ci.empeora && ci.empeora.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Empeora con</p><p className="text-sm font-bold text-white">{ci.empeora.join(', ')}</p></div>)}
+              {(ci.mejora && ci.mejora.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Mejora con</p><p className="text-sm font-bold text-white">{ci.mejora.join(', ')}</p></div>)}
+              {(ci.previos && ci.previos.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Tratamientos previos</p><p className="text-sm font-bold text-white">{ci.previos.join(', ')}</p></div>)}
+            </div>
+          )}
+        </div>
+        {((patient.pathologicalList && patient.pathologicalList.length > 0) || (patient.medications && patient.medications.length > 0) || patient.pathological) && (
+          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
+            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Antecedentes</h4>
+            {(patient.pathologicalList && patient.pathologicalList.length > 0) && (<div className="flex flex-wrap gap-1.5">{patient.pathologicalList.map(x => <span key={x} className={darkChip}>{x}</span>)}</div>)}
+            {(patient.medications && patient.medications.length > 0) && (<div><p className={darkLbl}>Medicamentos actuales</p><p className="text-sm font-bold text-white">{patient.medications.join(', ')}</p></div>)}
+            {patient.pathological && (<p className="text-sm text-indigo-100">{patient.pathological}</p>)}
+          </div>
+        )}
+        {(life.actividad || life.trabajo || life.tabaco || life.alcohol || life.sueno || life.estres || patient.nonPathological) && (
+          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-3">
+            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Estilo de vida</h4>
+            <div className="grid grid-cols-2 gap-4">
+              {life.actividad && (<div><p className={darkLbl}>Actividad física</p><p className="text-sm font-bold text-white">{life.actividad}</p></div>)}
+              {life.trabajo && (<div><p className={darkLbl}>Trabajo</p><p className="text-sm font-bold text-white">{life.trabajo}</p></div>)}
+              {life.tabaco && (<div><p className={darkLbl}>Tabaco</p><p className="text-sm font-bold text-white">{life.tabaco}</p></div>)}
+              {life.alcohol && (<div><p className={darkLbl}>Alcohol</p><p className="text-sm font-bold text-white">{life.alcohol}</p></div>)}
+              {life.sueno && (<div><p className={darkLbl}>Sueño</p><p className="text-sm font-bold text-white">{life.sueno}</p></div>)}
+              {life.estres && (<div><p className={darkLbl}>Estrés</p><p className="text-sm font-bold text-white">{life.estres}</p></div>)}
+            </div>
+            {patient.nonPathological && (<p className="text-sm text-indigo-100">{patient.nonPathological}</p>)}
+          </div>
+        )}
+        {(patient.redFlags && patient.redFlags.length > 0) && (
+          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-3">
+            <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5" /> Banderas Rojas</h4>
+            <div className="flex flex-wrap gap-1.5">{patient.redFlags.map(f => <span key={f} className="text-[9px] bg-rose-500/15 border border-rose-400/30 text-rose-300 px-2.5 py-1 rounded-lg font-extrabold uppercase">{f}</span>)}</div>
+          </div>
+        )}
+      </div>)}
+      {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in">
+        <div className="grid grid-cols-4 gap-2 mb-2">
+          <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div>
+          <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Altura</p><p className="text-xs font-bold text-white">{patient.height || '-'}cm</p></div>
+          <div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div>
+        </div>
+        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
+          <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div>
+        </div>
+        {((ex.tests && ex.tests.length > 0) || (ex.palpation && ex.palpation.length > 0) || Object.values(ex.rom || {}).some(Boolean) || ex.detail) && (
+          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
+            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Exploración Física</h4>
+            {Object.values(ex.rom || {}).some(Boolean) && (<div className="space-y-1.5">{Object.entries(ex.rom || {}).filter(([, v]) => v).map(([k, v]) => <p key={k} className="text-sm text-indigo-100"><span className="font-bold text-white">{k}:</span> {v}</p>)}</div>)}
+            {(ex.tests && ex.tests.length > 0) && (<div className="flex flex-wrap gap-1.5">{ex.tests.map(t => <span key={t.name} className={`text-[9px] px-2.5 py-1 rounded-lg font-extrabold uppercase border ${t.result === '+' ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300' : 'bg-rose-500/15 border-rose-400/30 text-rose-300'}`}>{t.name} {t.result}</span>)}</div>)}
+            {(ex.palpation && ex.palpation.length > 0) && (<div><p className={darkLbl}>Palpación</p><p className="text-sm font-bold text-white">{ex.palpation.join(', ')}</p></div>)}
+            {ex.detail && (<p className="text-sm italic text-indigo-100">{ex.detail}</p>)}
+          </div>
+        )}
+        {patient.consent && patient.consent.accepted && (<div className="bg-emerald-500/10 border border-emerald-400/25 p-4 rounded-3xl flex items-center gap-2.5"><ShieldCheck className="w-4 h-4 text-emerald-400 flex-none" /><p className="text-[11px] font-bold text-emerald-300">Consentimiento informado aceptado · {safeFormatDate((patient.consent.date || '').split('T')[0])}</p></div>)}
+      </div>)}
+      {activeSection === 'anatomia' && (<div className="space-y-4 animate-fade-in">
+        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Anterior</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureAnterior || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Lateral</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureLateral || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Posterior</h4><p className="text-sm text-indigo-100">{patient.posturePosterior || "--"}</p></div>
+        <PlanesSection patient={patient} onSavePlanes={onSavePlanes} />
+      </div>)}
+      {activeSection === 'tratamiento' && (<div className="space-y-4 animate-fade-in">
+        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in">
+          <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div>
+          {(patient.objectives && patient.objectives.length > 0) && (<div><p className={darkLbl}>Objetivos</p><div className="flex flex-wrap gap-1.5 mt-1">{patient.objectives.map(o => <span key={o} className={darkChip}>{o}</span>)}</div></div>)}
+          {(patient.frequency || patient.estimatedSessions) && (<div className="grid grid-cols-2 gap-4">{patient.frequency && (<div><p className={darkLbl}>Frecuencia</p><p className="text-sm font-bold text-white">{patient.frequency}</p></div>)}{patient.estimatedSessions && (<div><p className={darkLbl}>Sesiones estimadas</p><p className="text-sm font-bold text-white">{patient.estimatedSessions}</p></div>)}</div>)}
+          {(patient.homeRecommendations && patient.homeRecommendations.length > 0) && (<div><p className={darkLbl}>Recomendaciones en casa</p><div className="flex flex-wrap gap-1.5 mt-1">{patient.homeRecommendations.map(r => <span key={r} className={darkChip}>{r}</span>)}</div></div>)}
+        </div>
+      </div>)}
       {activeSection === 'sesiones' && (
         <div className="animate-fade-in">
           <div className="flex justify-between items-center mb-5 mt-2 gap-3 flex-wrap">
@@ -470,6 +559,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{safeFormatDate(h.date)}</p>
                       </div>
                       <span className={`text-[11px] font-black uppercase px-3 py-1.5 rounded-xl border ${h.painLevel <= 3 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : h.painLevel <= 6 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>Dolor {String(h.painLevel ?? 0)}/10</span>
+                      {h.painOut !== null && h.painOut !== undefined && (<span className={`text-[11px] font-black uppercase px-3 py-1.5 rounded-xl border ${h.painOut <= 3 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : h.painOut <= 6 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>Sale {String(h.painOut)}/10</span>)}
                       <button onClick={() => onEditHistory(h, i)} className="p-2 text-slate-400 hover:text-[#0b3b42] bg-slate-50 border border-slate-200 rounded-lg active:scale-90 transition" title="Editar sesión"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => setConfirmDelete(confirmDelete === i ? null : i)} className="p-2 text-rose-400 hover:text-rose-600 bg-rose-50 border border-rose-100 rounded-lg active:scale-90 transition" title="Borrar sesión"><Trash2 className="w-4 h-4" /></button>
                     </div>
@@ -494,6 +584,15 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
                       <div className="flex flex-wrap gap-1.5 mt-3.5">
                         {h.areas?.map(a => <span key={a} className="text-[9px] bg-[#eef5f2] px-2.5 py-1.5 rounded-lg border border-[#cfe3dc] text-[#0b5563] font-extrabold uppercase tracking-wide flex items-center gap-1"><Target className="w-3 h-3" /> {String(a)}</span>)}
                         {h.techniques?.map(t => <span key={t} className="text-[9px] bg-[#fdf6e0] px-2.5 py-1.5 rounded-lg border border-[#e8d9ac] text-[#8a6d2f] font-extrabold uppercase tracking-wide flex items-center gap-1"><BookOpen className="w-3 h-3" /> {String(t)}</span>)}
+                      </div>
+                    )}
+
+                    {(h.visitReason || h.response || h.nextVisit || (h.recommendations && h.recommendations.length > 0)) && (
+                      <div className="flex flex-wrap gap-1.5 mt-3.5">
+                        {h.visitReason && <span className="text-[9px] bg-[#eef5f2] px-2.5 py-1.5 rounded-lg border border-[#cfe3dc] text-[#0b5563] font-extrabold uppercase tracking-wide">{String(h.visitReason)}</span>}
+                        {h.response && <span className="text-[9px] bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 font-extrabold uppercase tracking-wide">{String(h.response)}</span>}
+                        {h.recommendations?.map(r => <span key={r} className="text-[9px] bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 font-extrabold uppercase tracking-wide">{String(r)}</span>)}
+                        {h.nextVisit && <span className="text-[9px] bg-[#fdf6e0] px-2.5 py-1.5 rounded-lg border border-[#e8d9ac] text-[#8a6d2f] font-extrabold uppercase tracking-wide">Próx: {String(h.nextVisit)}</span>}
                       </div>
                     )}
 
@@ -725,171 +824,440 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   );
 };
 
+// ===== Parte 6: campos con sugerencias + escritura manual =====
+const evaZone = (v) => {
+  if (v <= 0) return { bg: '#f1f5f9', tx: '#64748b', bd: '#cbd5e1', name: 'Sin dolor' };
+  if (v <= 3) return { bg: '#dcfce7', tx: '#15803d', bd: '#86efac', name: 'Leve' };
+  if (v <= 6) return { bg: '#ffedd5', tx: '#c2410c', bd: '#fdba74', name: 'Moderado' };
+  if (v <= 9) return { bg: '#fee2e2', tx: '#b91c1c', bd: '#fca5a5', name: 'Severo' };
+  return { bg: '#fee2e2', tx: '#b91c1c', bd: '#fca5a5', name: 'Insoportable' };
+};
+
+const EvaSlider = ({ label, value, onChange }) => {
+  const v = value ?? 0;
+  const z = evaZone(v);
+  return (
+    <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-end mb-4 gap-2">
+        <label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest">{label}</label>
+        <div className="text-right">
+          <span className="inline-block px-3 py-1 rounded-xl text-lg font-black border" style={{ background: z.bg, color: z.tx, borderColor: z.bd }}>{v} <span className="text-[10px]">/ 10</span></span>
+          <p className="text-[9px] font-black uppercase tracking-widest mt-1" style={{ color: z.tx }}>{z.name}</p>
+        </div>
+      </div>
+      <input type="range" min="0" max="10" className="eva-range" value={v} onChange={e => onChange(parseInt(e.target.value))} />
+      <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 mt-2.5"><span>0 · Sin dolor</span><span>10 · Insoportable</span></div>
+    </div>
+  );
+};
+
+const ChipField = ({ label, items, value = [], onChange, danger = false, gold = false, single = false, icon: Icon }) => {
+  const [otro, setOtro] = useState('');
+  const all = [...items, ...value.filter(v => !items.includes(v))];
+  const onCls = danger ? 'bg-rose-500 text-[#fff] border-rose-500 shadow' : gold ? 'bg-[#b08d3e] text-[#fff] border-[#b08d3e] shadow' : 'bg-[#0b3b42] text-[#fff] border-[#0b3b42] shadow';
+  const toggle = (item) => { if (single) onChange(value.includes(item) ? [] : [item]); else onChange(value.includes(item) ? value.filter(i => i !== item) : [...value, item]); };
+  const addOtro = () => { const v = otro.trim(); if (!v) return; if (!value.includes(v)) onChange(single ? [v] : [...value, v]); setOtro(''); };
+  return (
+    <div>
+      {label && <label className="text-[10px] font-black uppercase text-[#0b5563] ml-1 mb-2 flex items-center gap-1 tracking-widest">{Icon && <Icon className="w-3 h-3" />}{label}</label>}
+      <div className="flex flex-wrap gap-2 items-center">
+        {all.map(item => { const on = value.includes(item); return <button key={item} type="button" onClick={() => toggle(item)} className={`px-3 py-2 rounded-xl border text-[10px] font-extrabold uppercase tracking-wide active:scale-95 transition ${on ? onCls : 'bg-white text-slate-500 border-slate-300 hover:border-[#0b5563]'}`}>{item}</button>; })}
+        <span className="inline-flex gap-1.5 items-center">
+          <input type="text" value={otro} onChange={e => setOtro(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOtro(); } }} placeholder="Otro ✎" className="w-24 bg-white px-2.5 py-2 rounded-xl border border-dashed border-[#b08d3e] text-[11px] font-bold text-slate-700 outline-none focus:border-[#b08d3e]" />
+          <button type="button" onClick={addOtro} className="w-8 h-8 rounded-lg bg-[#fdf6e0] border border-[#e8d9ac] text-[#8a6d2f] font-black active:scale-90 transition">+</button>
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const PhraseArea = ({ label, phrases = [], value, onChange, placeholder, minH = 'min-h-[90px]', icon: Icon }) => (
+  <div>
+    {label && <label className="text-[10px] font-black uppercase text-[#0b5563] ml-1 mb-2 flex items-center gap-1 tracking-widest">{Icon && <Icon className="w-3 h-3" />}{label}</label>}
+    {phrases.length > 0 && (
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {phrases.map(p => <button key={p} type="button" onClick={() => onChange((value ? value.replace(/\s+$/, '') + ' ' : '') + p)} className="px-2.5 py-1.5 rounded-full border border-dashed border-[#0b5563]/50 bg-[#eef5f2] text-[#0b5563] text-[9px] font-extrabold uppercase tracking-wide active:scale-95 transition">{p}</button>)}
+      </div>
+    )}
+    <textarea className={`w-full bg-white p-4 rounded-2xl border border-slate-300 text-slate-800 outline-none focus:border-[#0b5563] text-sm shadow-sm transition-all ${minH}`} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} />
+  </div>
+);
+
+const FormSection = ({ n, title, children }) => (
+  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-5 text-left">
+    <div><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#b08d3e]">Sección {n}</p><h4 className="text-[15px] font-black text-[#0b3b42]">{title}</h4></div>
+    {children}
+  </div>
+);
+
+// ===== Parte 6: Planos anatómicos tipo rayos X =====
+const PLANES_VERTS = {"frontal": [["C1", 500, 192], ["C2", 500, 199], ["C3", 500, 205], ["C4", 500, 212], ["C5", 500, 218], ["C6", 500, 225], ["C7", 500, 232], ["T1", 500, 242], ["T2", 500, 252], ["T3", 500, 262], ["T4", 500, 272], ["T5", 500, 282], ["T6", 500, 292], ["T7", 500, 302], ["T8", 500, 312], ["T9", 500, 322], ["T10", 500, 332], ["T11", 500, 342], ["T12", 500, 352], ["L1", 500, 366], ["L2", 500, 380], ["L3", 500, 394], ["L4", 500, 408], ["L5", 500, 421]], "ap": [["C1", 500, 192], ["C2", 500, 199], ["C3", 500, 205], ["C4", 500, 212], ["C5", 500, 218], ["C6", 500, 225], ["C7", 500, 232], ["T1", 500, 242], ["T2", 500, 252], ["T3", 500, 262], ["T4", 500, 272], ["T5", 500, 282], ["T6", 500, 292], ["T7", 500, 302], ["T8", 500, 312], ["T9", 500, 322], ["T10", 500, 332], ["T11", 500, 342], ["T12", 500, 352], ["L1", 500, 366], ["L2", 500, 380], ["L3", 500, 394], ["L4", 500, 408], ["L5", 500, 421]], "lateral": [["C1", 515, 152], ["C2", 516, 158], ["C3", 516, 165], ["C4", 517, 171], ["C5", 517, 177], ["C6", 518, 184], ["C7", 518, 190], ["T1", 519, 202], ["T2", 520, 214], ["T3", 521, 225], ["T4", 522, 237], ["T5", 523, 249], ["T6", 524, 261], ["T7", 525, 273], ["T8", 526, 285], ["T9", 527, 296], ["T10", 528, 308], ["T11", 530, 320], ["T12", 531, 332], ["L1", 532, 348], ["L2", 534, 366], ["L3", 535, 383], ["L4", 536, 400], ["L5", 538, 416]]};
+const PLANES_ZONES = {"frontal": {"Cráneo": [500, 108], "Mandíbula": [500, 168], "Clavícula Der.": [425, 232], "Clavícula Izq.": [575, 232], "Esternón": [500, 300], "Costillas Der.": [415, 320], "Costillas Izq.": [585, 320], "Húmero Der.": [375, 330], "Húmero Izq.": [625, 330], "Radio Der.": [385, 445], "Radio Izq.": [615, 445], "Cúbito Der.": [408, 445], "Cúbito Izq.": [592, 445], "Mano Der.": [332, 520], "Mano Izq.": [668, 520], "Sacro": [500, 452], "Cóccix": [500, 480], "Pelvis Der.": [428, 448], "Pelvis Izq.": [572, 448], "Fémur Der.": [452, 565], "Fémur Izq.": [548, 565], "Rótula Der.": [447, 678], "Rótula Izq.": [553, 678], "Tibia Der.": [450, 772], "Tibia Izq.": [550, 772], "Peroné Der.": [430, 772], "Peroné Izq.": [570, 772], "Pie Der.": [455, 928], "Pie Izq.": [545, 928]}, "ap": {"Cráneo": [500, 108], "Escápula Der.": [415, 275], "Escápula Izq.": [585, 275], "Costillas Der.": [415, 320], "Costillas Izq.": [585, 320], "Húmero Der.": [375, 330], "Húmero Izq.": [625, 330], "Radio Der.": [385, 445], "Radio Izq.": [615, 445], "Cúbito Der.": [408, 445], "Cúbito Izq.": [592, 445], "Mano Der.": [332, 520], "Mano Izq.": [668, 520], "Sacro": [500, 452], "Cóccix": [500, 480], "Pelvis Der.": [428, 448], "Pelvis Izq.": [572, 448], "Fémur Der.": [452, 565], "Fémur Izq.": [548, 565], "Tibia Der.": [450, 772], "Tibia Izq.": [550, 772], "Peroné Der.": [430, 772], "Peroné Izq.": [570, 772], "Pie Der.": [455, 928], "Pie Izq.": [545, 928]}, "lateral": {"Cráneo": [518, 86], "Mandíbula": [492, 122], "Esternón": [478, 300], "Costillas": [508, 332], "Húmero": [476, 332], "Radio": [466, 445], "Cúbito": [486, 445], "Mano": [458, 525], "Sacro": [540, 452], "Pelvis": [556, 458], "Fémur": [530, 565], "Rótula": [510, 678], "Tibia": [528, 772], "Peroné": [546, 772], "Pie": [518, 922]}};
+const PLANES_GROUPS = {"frontal": [["Cráneo y tórax", ["Cráneo", "Mandíbula", "Clavícula Der.", "Clavícula Izq.", "Esternón", "Costillas Der.", "Costillas Izq."]], ["Brazos", ["Húmero Der.", "Húmero Izq.", "Radio Der.", "Radio Izq.", "Cúbito Der.", "Cúbito Izq.", "Mano Der.", "Mano Izq."]], ["Pelvis y piernas", ["Sacro", "Cóccix", "Pelvis Der.", "Pelvis Izq.", "Fémur Der.", "Fémur Izq.", "Rótula Der.", "Rótula Izq.", "Tibia Der.", "Tibia Izq.", "Peroné Der.", "Peroné Izq.", "Pie Der.", "Pie Izq."]]], "ap": [["Cráneo y tórax", ["Cráneo", "Escápula Der.", "Escápula Izq.", "Costillas Der.", "Costillas Izq."]], ["Brazos", ["Húmero Der.", "Húmero Izq.", "Radio Der.", "Radio Izq.", "Cúbito Der.", "Cúbito Izq.", "Mano Der.", "Mano Izq."]], ["Pelvis y piernas", ["Sacro", "Cóccix", "Pelvis Der.", "Pelvis Izq.", "Fémur Der.", "Fémur Izq.", "Tibia Der.", "Tibia Izq.", "Peroné Der.", "Peroné Izq.", "Pie Der.", "Pie Izq."]]], "lateral": [["Cráneo y tórax", ["Cráneo", "Mandíbula", "Esternón", "Costillas"]], ["Brazo", ["Húmero", "Radio", "Cúbito", "Mano"]], ["Pelvis y pierna", ["Sacro", "Pelvis", "Fémur", "Rótula", "Tibia", "Peroné", "Pie"]]]};
+const SAGITAL_OPTS = ['Rectificación cervical','Rectificación lumbar','Hiperlordosis lumbar','Hipercifosis dorsal'];
+
+const PLANES_IMGS = { frontal: '/planos/frontal.jpg', ap: '/planos/posterior.jpg', lateral: '/planos/lateral.jpg' };
+const VERTEBRA_NAMES = [...Array(7)].map((_, i) => 'C' + (i + 1)).concat([...Array(12)].map((_, i) => 'T' + (i + 1)), [...Array(5)].map((_, i) => 'L' + (i + 1)));
+const emptyPlanes = () => ({ marks: {}, curve: { type: 'none', conv: 1, from: 'T6', to: 'L3', cobb: '' }, sagittal: [] });
+
+const XRayPlanes = ({ value, onChange }) => {
+  const planes = value && value.marks ? value : emptyPlanes();
+  const [view, setView] = useState('frontal');
+  const [activeBone, setActiveBone] = useState(null);
+  const marks = planes.marks || {};
+  const curve = planes.curve || { type: 'none', conv: 1, from: 'T6', to: 'L3', cobb: '' };
+  const sagittal = planes.sagittal || [];
+  const setPlanes = (patch) => onChange({ ...planes, ...patch });
+  const toggleBone = (bone) => {
+    const next = { ...marks };
+    if (next[bone]) { delete next[bone]; if (activeBone === bone) setActiveBone(null); }
+    else { next[bone] = { s: [], t: '' }; setActiveBone(bone); }
+    setPlanes({ marks: next });
+  };
+  const toggleSegAll = (names) => {
+    const all = names.every(n => marks[n]);
+    const next = { ...marks };
+    names.forEach(n => { if (all) delete next[n]; else if (!next[n]) next[n] = { s: [], t: '' }; });
+    setPlanes({ marks: next });
+  };
+  const coff = (y) => {
+    if (curve.type === 'none' || view === 'lateral') return 0;
+    const t = (y - 192) / (421 - 192);
+    return curve.type === 'C' ? curve.conv * 60 * Math.sin(Math.PI * t) : curve.conv * 52 * Math.sin(2 * Math.PI * t);
+  };
+  const curvePath = (curve.type !== 'none' && view !== 'lateral') ? 'M' + PLANES_VERTS[view].map(p => `${(p[1] + coff(p[2])).toFixed(0)} ${p[2]}`).join(' L') : '';
+  const noteOf = (b) => { const n = marks[b]; if (!n) return ''; return [...(n.s || []), n.t || ''].filter(Boolean).join(' · '); };
+  const setNote = (bone, patch) => setPlanes({ marks: { ...marks, [bone]: { ...(marks[bone] || { s: [], t: '' }), ...patch } } });
+  const segGroups = [['Cervical', [...Array(7)].map((_, i) => 'C' + (i + 1))], ['Dorsal', [...Array(12)].map((_, i) => 'T' + (i + 1))], ['Lumbar', [...Array(5)].map((_, i) => 'L' + (i + 1))]];
+  const dotCls = (on, zone) => `absolute -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer z-[3] p-0 ${zone ? 'w-[17px] h-[17px]' : 'w-[10px] h-[10px]'} ${on ? '!bg-[#d8b878] border-2 !border-[#ffe9b0] shadow-[0_0_11px_rgba(216,184,120,0.95)]' : zone ? 'bg-sky-200/15 border border-dashed border-sky-100/60' : 'bg-sky-200/30 border border-sky-100/80'}`;
+  return (
+    <div className="text-left">
+      <div className="flex gap-2 mb-3">
+        {[['frontal', 'Frontal'], ['ap', 'AP · Posterior'], ['lateral', 'Lateral']].map(([v, lbl]) => (
+          <button key={v} type="button" onClick={() => setView(v)} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border active:scale-95 transition ${view === v ? 'bg-[#0b3b42] text-[#fff] border-[#0b3b42]' : 'bg-[#eef4f2] text-[#0b3b42] border-slate-300'}`}>{lbl}</button>
+        ))}
+      </div>
+      <div className="relative w-full max-w-[330px] mx-auto leading-none">
+        <img src={PLANES_IMGS[view]} alt={`Plano ${view}`} className="w-full block rounded-2xl shadow-[0_14px_32px_rgba(4,30,44,0.35)]" />
+        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none"><path d={curvePath} fill="none" stroke="#d8b878" strokeWidth="3.4" strokeDasharray="9 6" strokeLinecap="round" /></svg>
+        {PLANES_VERTS[view].map(p => <button key={p[0]} type="button" title={p[0]} onClick={() => toggleBone(p[0])} className={dotCls(!!marks[p[0]], false)} style={{ left: ((p[1] + coff(p[2])) / 10) + '%', top: (p[2] / 10) + '%' }} />)}
+        {Object.entries(PLANES_ZONES[view]).map(([name, pos]) => <button key={name} type="button" title={name} onClick={() => toggleBone(name)} className={dotCls(!!marks[name], true)} style={{ left: (pos[0] / 10) + '%', top: (pos[1] / 10) + '%' }} />)}
+      </div>
+      <p className="text-center text-[9px] font-black uppercase tracking-[0.3em] text-[#0b3b42] mt-2">Vista {view === 'ap' ? 'AP · Posterior' : view}</p>
+
+      <div className="mt-4 border-t border-dashed border-slate-300 pt-3.5">
+        <p className="text-[9.5px] font-black uppercase tracking-[0.14em] text-slate-400 mb-2">Columna vertebral</p>
+        {segGroups.map(([segName, names]) => (
+          <div key={segName} className="flex items-center gap-2 mb-2">
+            <span className="text-[10.5px] font-black text-[#0b3b42] w-[58px] flex-none">{segName}</span>
+            <div className="flex flex-wrap gap-1 flex-1">
+              {names.map(n => <button key={n} type="button" onClick={() => toggleBone(n)} className={`min-w-[31px] py-1.5 rounded-lg border text-[10.5px] font-extrabold active:scale-95 transition ${marks[n] ? 'bg-[#b08d3e] border-[#b08d3e] text-[#fff]' : 'bg-white border-slate-300 text-slate-600'}`}>{n}</button>)}
+            </div>
+            <button type="button" onClick={() => toggleSegAll(names)} className="flex-none text-[9.5px] font-extrabold px-2.5 py-1.5 rounded-full border border-[#0b3b42] text-[#0b3b42] bg-white active:scale-95 transition">Toda</button>
+          </div>
+        ))}
+        {PLANES_GROUPS[view].map(([gname, bones]) => (
+          <div key={gname}>
+            <p className="text-[9.5px] font-black uppercase tracking-[0.14em] text-slate-400 mt-3.5 mb-2">{gname}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {bones.map(b => <button key={b} type="button" onClick={() => toggleBone(b)} className={`px-3 py-2 rounded-xl border text-[10px] font-extrabold uppercase tracking-wide active:scale-95 transition ${marks[b] ? 'bg-[#b08d3e] text-[#fff] border-[#b08d3e] shadow' : 'bg-white text-slate-500 border-slate-300'}`}>{b}</button>)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {view !== 'lateral' ? (
+        <div className="bg-[#f4f8f7] border border-[#d7e2df] rounded-2xl p-3.5 mt-4">
+          <p className="text-[9.5px] font-black uppercase tracking-[0.14em] text-slate-400 mb-2">Escoliosis (plano frontal / AP)</p>
+          <div className="flex flex-wrap gap-1.5 items-center mb-2.5">
+            {[['none', 'Sin curva'], ['C', 'Curva en C'], ['S', 'Curva en S']].map(([t, lbl]) => <button key={t} type="button" onClick={() => setPlanes({ curve: { ...curve, type: t } })} className={`px-3 py-2 rounded-full border text-[10.5px] font-extrabold active:scale-95 transition ${curve.type === t ? 'bg-[#b08d3e] border-[#b08d3e] text-[#fff]' : 'bg-white border-slate-300 text-slate-600'}`}>{lbl}</button>)}
+            <span className="text-[10.5px] font-bold text-slate-400 ml-1">Convexidad:</span>
+            {[[1, 'Derecha'], [-1, 'Izquierda']].map(([c, lbl]) => <button key={lbl} type="button" onClick={() => setPlanes({ curve: { ...curve, conv: c } })} className={`px-3 py-2 rounded-full border text-[10.5px] font-extrabold active:scale-95 transition ${curve.conv === c ? 'bg-[#0b3b42] border-[#0b3b42] text-[#fff]' : 'bg-white border-slate-300 text-slate-600'}`}>{lbl}</button>)}
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-[10.5px] font-bold text-slate-400">Desde</span>
+            <select value={curve.from} onChange={e => setPlanes({ curve: { ...curve, from: e.target.value } })} className="bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-[11.5px] font-bold outline-none">{VERTEBRA_NAMES.map(n => <option key={n} value={n}>{n}</option>)}</select>
+            <span className="text-[10.5px] font-bold text-slate-400">Hasta</span>
+            <select value={curve.to} onChange={e => setPlanes({ curve: { ...curve, to: e.target.value } })} className="bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-[11.5px] font-bold outline-none">{VERTEBRA_NAMES.map(n => <option key={n} value={n}>{n}</option>)}</select>
+            <span className="text-[10.5px] font-bold text-slate-400">Cobb</span>
+            <input type="number" min="0" max="90" value={curve.cobb} onChange={e => setPlanes({ curve: { ...curve, cobb: e.target.value } })} className="w-16 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-[11.5px] font-bold outline-none" />
+            <span className="text-[11px] font-bold text-slate-400">°</span>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#f4f8f7] border border-[#d7e2df] rounded-2xl p-3.5 mt-4">
+          <p className="text-[9.5px] font-black uppercase tracking-[0.14em] text-slate-400 mb-2">Curvas sagitales (lateral)</p>
+          <div className="flex flex-wrap gap-1.5">
+            {SAGITAL_OPTS.map(s => { const on = sagittal.includes(s); return <button key={s} type="button" onClick={() => setPlanes({ sagittal: on ? sagittal.filter(x => x !== s) : [...sagittal, s] })} className={`px-3 py-2 rounded-xl border text-[10px] font-extrabold uppercase tracking-wide active:scale-95 transition ${on ? 'bg-[#0b3b42] text-[#fff] border-[#0b3b42]' : 'bg-white text-slate-500 border-slate-300'}`}>{s}</button>; })}
+          </div>
+        </div>
+      )}
+
+      <p className="text-[9.5px] font-black uppercase tracking-[0.14em] text-slate-400 mt-4 mb-2">Resumen de marcas</p>
+      <div className="flex flex-wrap gap-1.5">
+        {Object.keys(marks).length === 0 && sagittal.length === 0 && <span className="text-[11.5px] text-slate-400">Sin marcas todavía — elige huesos en las opciones.</span>}
+        {Object.keys(marks).map(b => <button key={b} type="button" onClick={() => setActiveBone(activeBone === b ? null : b)} className={`px-2.5 py-1.5 rounded-full border text-[10px] font-extrabold bg-[#fdf6e0] border-[#e8d9ac] text-[#8a6d2f] ${activeBone === b ? 'ring-2 ring-[#b08d3e]' : ''}`}>{b}{noteOf(b) ? ' — ' + noteOf(b) : ''}</button>)}
+        {sagittal.map(s => <span key={s} className="px-2.5 py-1.5 rounded-full border text-[10px] font-extrabold bg-[#eef5f2] border-[#cfe3dc] text-[#0b5563]">{s}</span>)}
+        {curve.type !== 'none' && <span className="px-2.5 py-1.5 rounded-full border text-[10px] font-extrabold bg-[#0b3b42] border-[#0b3b42] text-[#fff]">Escoliosis en {curve.type} · {curve.from}–{curve.to}{curve.cobb ? ' · Cobb ' + curve.cobb + '°' : ''}</span>}
+      </div>
+
+      {activeBone && marks[activeBone] && (
+        <div className="mt-3 bg-[#fdfbf5] border border-[#e8d9ac] rounded-2xl p-3.5">
+          <p className="text-[12.5px] font-black text-[#0b3b42] mb-2">Nota para: {activeBone}</p>
+          <div className="flex flex-wrap gap-1.5 mb-2.5">
+            {BONE_NOTE_SUGGESTIONS.map(s => { const on = (marks[activeBone].s || []).includes(s); return <button key={s} type="button" onClick={() => setNote(activeBone, { s: on ? marks[activeBone].s.filter(x => x !== s) : [...(marks[activeBone].s || []), s] })} className={`px-2.5 py-1.5 rounded-full border text-[10px] font-extrabold active:scale-95 transition ${on ? 'bg-[#b08d3e] border-[#b08d3e] text-[#fff]' : 'bg-white border-[#d8c690] text-[#8a6d2f]'}`}>{s}</button>; })}
+          </div>
+          <input type="text" value={marks[activeBone].t || ''} onChange={e => setNote(activeBone, { t: e.target.value })} placeholder="O escríbelo manualmente…" className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-300 text-[12px] font-semibold text-slate-700 outline-none focus:border-[#b08d3e]" />
+        </div>
+      )}
+    </div>
+  );
+};
+
 const NewPatientModal = ({ onClose, onSave }) => {
-  const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', age: '', gender: '', address: '', consultationReason: '', pathological: '', nonPathological: '', redFlags: [], chiropracticDiagnosis: '', treatmentPlan: '', weight: '', height: '', chiropracticTechniques: [], posturalDeviations: [], postureAnterior: '', posturePosterior: '', postureLateral: '', histories: [], painLevel: 0, areas: [], notes: '' });
-  
-  const handleNext = () => { if(form.name) setStep(step + 1); };
-  
-  const handleSaveClick = () => { 
-    if (isSaving) return; 
-    setIsSaving(true); 
-    const finalPatient = { ...form };
-    if (form.painLevel > 0 || form.areas.length > 0 || form.notes || form.redFlags.length > 0) {
+  const [form, setForm] = useState({
+    name: '', phone: '', gender: '', birthDate: '', address: '',
+    occupation: '', emergencyName: '', emergencyPhone: '', origin: [], allergies: [],
+    motivos: [], tiempoValor: '', tiempoUnidad: '', inicio: '', irradiacion: [], empeora: [], mejora: [], previos: [], descripcion: '',
+    patologicos: [], medicamentos: [], antecedentesDetalle: '',
+    actividad: '', trabajo: '', tabaco: '', alcohol: '', sueno: '', estres: '',
+    redFlags: [],
+    rom: {}, pruebas: [], palpacion: [], exploracionDetalle: '',
+    diagnosticos: [], objetivos: [], frecuencia: '', sesiones: '', recomendaciones: [], planTexto: '',
+    weight: '', height: '', tecnicas: [],
+    painLevel: 0, painOut: '', desviaciones: [], posturaAnt: '', posturaLat: '', posturaPos: '',
+    planes: null, notas: '', recomSesion: [], proxima: '', consent: false
+  });
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+  const togglePrueba = (name) => {
+    setForm(prev => {
+      const cur = prev.pruebas.find(p => p.name === name);
+      let next;
+      if (!cur) next = [...prev.pruebas, { name, result: '+' }];
+      else if (cur.result === '+') next = prev.pruebas.map(p => p.name === name ? { ...p, result: '−' } : p);
+      else next = prev.pruebas.filter(p => p.name !== name);
+      return { ...prev, pruebas: next };
+    });
+  };
+  const inputClass = "w-full bg-white p-4 rounded-2xl border border-slate-300 text-slate-800 outline-none focus:border-[#0b5563] text-sm shadow-sm transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-[#0b5563] ml-1 mb-2 flex items-center gap-1 tracking-widest";
+  const romOpts = ['Normal', 'Disminuido', 'Doloroso', 'Muy limitado'];
+
+  const handleSaveClick = () => {
+    if (isSaving || !form.name.trim()) return;
+    setIsSaving(true);
+    const joinClean = (arr) => arr.filter(Boolean).join(' · ');
+    const lifestyle = { actividad: form.actividad, trabajo: form.trabajo, tabaco: form.tabaco, alcohol: form.alcohol, sueno: form.sueno, estres: form.estres };
+    const lifeStr = joinClean([
+      form.actividad && 'Actividad física: ' + form.actividad,
+      form.trabajo && 'Trabajo: ' + form.trabajo,
+      form.tabaco && 'Tabaco: ' + form.tabaco,
+      form.alcohol && 'Alcohol: ' + form.alcohol,
+      form.sueno && 'Sueño: ' + form.sueno,
+      form.estres && 'Estrés: ' + form.estres
+    ]);
+    const currentIllness = { motivos: form.motivos, tiempoValor: form.tiempoValor, tiempoUnidad: form.tiempoUnidad, inicio: form.inicio, irradiacion: form.irradiacion, empeora: form.empeora, mejora: form.mejora, previos: form.previos, descripcion: form.descripcion };
+    const finalPatient = {
+      name: form.name, phone: form.phone, gender: form.gender, birthDate: form.birthDate,
+      age: form.birthDate ? calculateAge(form.birthDate) : '',
+      address: form.address, occupation: form.occupation,
+      emergencyName: form.emergencyName, emergencyPhone: form.emergencyPhone,
+      origin: form.origin, allergies: form.allergies,
+      consultationReason: form.descripcion || form.motivos.join(', '),
+      currentIllness,
+      pathological: joinClean([form.patologicos.join(', '), form.medicamentos.length ? 'Medicamentos: ' + form.medicamentos.join(', ') : '', form.antecedentesDetalle]),
+      pathologicalList: form.patologicos, medications: form.medicamentos, antecedentesDetalle: form.antecedentesDetalle,
+      nonPathological: lifeStr, lifestyle,
+      redFlags: form.redFlags,
+      exploration: { rom: form.rom, tests: form.pruebas, palpation: form.palpacion, detail: form.exploracionDetalle },
+      chiropracticDiagnosis: form.diagnosticos.join(', '), diagnosisList: form.diagnosticos,
+      treatmentPlan: joinClean([form.planTexto, form.frecuencia && 'Frecuencia: ' + form.frecuencia, form.sesiones && 'Sesiones estimadas: ' + form.sesiones, form.objetivos.length ? 'Objetivos: ' + form.objetivos.join(', ') : '', form.recomendaciones.length ? 'En casa: ' + form.recomendaciones.join(', ') : '']),
+      objectives: form.objetivos, frequency: form.frecuencia, estimatedSessions: form.sesiones, homeRecommendations: form.recomendaciones,
+      weight: form.weight, height: form.height,
+      chiropracticTechniques: form.tecnicas,
+      posturalDeviations: form.desviaciones,
+      postureAnterior: form.posturaAnt, postureLateral: form.posturaLat, posturePosterior: form.posturaPos,
+      planes: form.planes,
+      consent: form.consent ? { accepted: true, date: new Date().toISOString() } : null,
+      histories: []
+    };
+    if (form.painLevel > 0 || form.painOut !== '' || form.notas || form.redFlags.length > 0) {
       finalPatient.histories = [{
+        id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'h' + Date.now(),
         date: new Date().toISOString().split('T')[0],
         painLevel: form.painLevel,
-        areas: form.areas,
-        redFlags: form.redFlags,
-        notes: form.notes
+        painOut: form.painOut === '' ? null : form.painOut,
+        visitReason: 'Primera vez', response: '',
+        areas: [], redFlags: form.redFlags, techniques: form.tecnicas,
+        notes: form.notas, recommendations: form.recomSesion, nextVisit: form.proxima,
+        postureAnterior: form.posturaAnt, postureLateral: form.posturaLat, posturePosterior: form.posturaPos
       }];
     }
-    onSave(finalPatient); 
+    onSave(finalPatient);
   };
-  
-  const toggleArrayItem = (field, item) => { setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; }); };
-  const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
-  
-  const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-400 text-emerald-400';
-    if (level <= 6) return 'accent-amber-400 text-amber-400';
-    return 'accent-rose-500 text-rose-500';
-  };
-  const getPainLabel = (level) => {
-    if (level === 0) return 'Sin Dolor';
-    if (level <= 3) return 'Leve';
-    if (level <= 6) return 'Moderado';
-    if (level <= 9) return 'Severo';
-    return 'Insoportable';
-  };
-
-  const inputClass = "w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 text-sm shadow-inner transition-all";
-  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest";
 
   return (
-    <Modal title={`Crear Expediente (${step}/6)`} onClose={onClose}>
-      <div className="space-y-6">
-        
-        {step === 1 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">1. Identidad del Paciente</h4>
-          <div><label className={labelClass}>Nombre completo *</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-          
-          <div className="space-y-6">
-            <div><label className={labelClass}>Teléfono</label><input type="tel" placeholder="Ej. 555 123 4567" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-            <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
+    <Modal title="Crear Expediente · Historia Clínica" onClose={onClose}>
+      <div className="space-y-5 text-left pb-4 bg-[#f7faf8] rounded-[30px] p-4 sm:p-6 border border-slate-200">
+
+        <FormSection n="1" title="Identificación ampliada">
+          <div><label className={labelClass}>Nombre completo *</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={form.name} onChange={e => set('name', e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={labelClass}>Teléfono / WhatsApp</label><input type="tel" placeholder="10 dígitos" className={inputClass} value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
+            <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => set('gender', e.target.value)}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
           </div>
-          
-          <div className="space-y-6">
-            <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => { const newDob = e.target.value; setForm({...form, birthDate: newDob, age: calculateAge(newDob)}); }} /></div>
-            <div>
-              <label className={labelClass}>Edad</label>
-              <input type="text" className={`${inputClass} opacity-50 cursor-not-allowed`} value={form.age !== '' ? `${form.age} años` : ''} readOnly placeholder="Se calcula automáticamente" />
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={labelClass}>Fecha de nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => set('birthDate', e.target.value)} /></div>
+            <div><label className={labelClass}>Edad</label><input type="text" className={`${inputClass} opacity-60`} readOnly value={form.birthDate ? calculateAge(form.birthDate) + ' años' : ''} placeholder="Automática" /></div>
+          </div>
+          <div><label className={labelClass}>Dirección completa</label><input type="text" placeholder="Calle, colonia, ciudad" className={inputClass} value={form.address} onChange={e => set('address', e.target.value)} /></div>
+          <ChipField label="Ocupación" items={['Oficina', 'Conducción', 'Comercio', 'Salud', 'Construcción', 'Hogar', 'Estudiante', 'Deportista']} value={form.occupation ? [form.occupation] : []} onChange={v => set('occupation', v[0] || '')} single />
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={labelClass}>Contacto de emergencia</label><input type="text" placeholder="Nombre" className={inputClass} value={form.emergencyName} onChange={e => set('emergencyName', e.target.value)} /></div>
+            <div><label className={labelClass}>Tel. de emergencia</label><input type="tel" placeholder="Teléfono" className={inputClass} value={form.emergencyPhone} onChange={e => set('emergencyPhone', e.target.value)} /></div>
+          </div>
+          <ChipField label="¿Cómo nos conoció?" items={['Recomendación', 'Facebook', 'Instagram', 'Google', 'Pasaba por la zona']} value={form.origin} onChange={v => set('origin', v)} />
+          <ChipField label="Alergias" items={['Ninguna conocida', 'Medicamentos', 'Látex', 'Alimentos']} value={form.allergies} onChange={v => set('allergies', v)} />
+        </FormSection>
+
+        <FormSection n="2" title="Motivo y padecimiento actual">
+          <ChipField label="Motivo(s) de consulta" items={MOTIVOS_CONSULTA} value={form.motivos} onChange={v => set('motivos', v)} />
+          <div className="grid grid-cols-2 gap-3">
+            <ChipField label="Tiempo de evolución" items={['Hoy', 'Días', 'Semanas', 'Meses', 'Años']} value={form.tiempoUnidad ? [form.tiempoUnidad] : []} onChange={v => set('tiempoUnidad', v[0] || '')} single />
+            <div><label className={labelClass}>¿Cuánto? (número)</label><input type="number" placeholder="Ej. 3" className={inputClass} value={form.tiempoValor} onChange={e => set('tiempoValor', e.target.value)} /></div>
+          </div>
+          <ChipField label="Inicio" items={['Brusco / Traumatismo', 'Gradual', 'Sin causa aparente', 'Después de un esfuerzo', 'Accidente']} value={form.inicio ? [form.inicio] : []} onChange={v => set('inicio', v[0] || '')} single />
+          <ChipField label="Irradiación" items={LIST_IRRADIACION} value={form.irradiacion} onChange={v => set('irradiacion', v)} />
+          <ChipField label="Empeora con" items={LIST_EMPEORA} value={form.empeora} onChange={v => set('empeora', v)} />
+          <ChipField label="Mejora con" items={LIST_MEJORA} value={form.mejora} onChange={v => set('mejora', v)} />
+          <ChipField label="Tratamientos previos" items={LIST_PREVIOS} value={form.previos} onChange={v => set('previos', v)} />
+          <PhraseArea label="Descripción libre del padecimiento" phrases={['Inició después de cargar peso', 'Dolor punzante', 'Se acompaña de hormigueo', 'Limita sus actividades diarias']} value={form.descripcion} onChange={v => set('descripcion', v)} placeholder="Escribe con tus palabras…" />
+        </FormSection>
+
+        <FormSection n="3" title="Antecedentes y estilo de vida">
+          <ChipField label="Antecedentes patológicos" items={LIST_PATOLOGICOS} value={form.patologicos} onChange={v => set('patologicos', v)} />
+          <ChipField label="Medicamentos actuales" items={LIST_MEDICAMENTOS} value={form.medicamentos} onChange={v => set('medicamentos', v)} />
+          <PhraseArea label="Detalle de antecedentes (manual)" phrases={[]} value={form.antecedentesDetalle} onChange={v => set('antecedentesDetalle', v)} placeholder="Cirugías, fechas, detalles…" minH="min-h-[70px]" />
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+            <ChipField label="Actividad física" items={['Sedentario', '1–2 veces/semana', '3+ veces/semana', 'Deportista']} value={form.actividad ? [form.actividad] : []} onChange={v => set('actividad', v[0] || '')} single />
+            <ChipField label="Tipo de trabajo" items={['Sentado +6 h', 'De pie', 'Esfuerzo físico', 'Mixto']} value={form.trabajo ? [form.trabajo] : []} onChange={v => set('trabajo', v[0] || '')} single />
+            <ChipField label="Tabaco" items={['No', 'Ocasional', 'Habitual']} value={form.tabaco ? [form.tabaco] : []} onChange={v => set('tabaco', v[0] || '')} single />
+            <ChipField label="Alcohol" items={['No', 'Ocasional', 'Habitual']} value={form.alcohol ? [form.alcohol] : []} onChange={v => set('alcohol', v[0] || '')} single />
+            <ChipField label="Sueño" items={['Bueno', 'Irregular', 'Insomnio']} value={form.sueno ? [form.sueno] : []} onChange={v => set('sueno', v[0] || '')} single />
+            <ChipField label="Estrés percibido" items={['Bajo', 'Medio', 'Alto']} value={form.estres ? [form.estres] : []} onChange={v => set('estres', v[0] || '')} single />
+          </div>
+          <ChipField label="Banderas rojas" icon={ShieldAlert} items={RED_FLAGS} value={form.redFlags} onChange={v => set('redFlags', v)} danger />
+        </FormSection>
+
+        <FormSection n="4 · Nueva" title="Exploración física">
+          <div>
+            <label className={labelClass}>Rangos de movimiento</label>
+            <div className="space-y-2">
+              {['Cervical', 'Dorsal', 'Lumbar', 'Hombros', 'Cadera'].map(seg => (
+                <div key={seg} className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-black text-[#0b3b42] w-16 flex-none">{seg}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {romOpts.map(o => <button key={o} type="button" onClick={() => set('rom', { ...form.rom, [seg]: form.rom[seg] === o ? '' : o })} className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-extrabold active:scale-95 transition ${form.rom[seg] === o ? 'bg-[#0b3b42] border-[#0b3b42] text-[#fff]' : 'bg-white border-slate-300 text-slate-500'}`}>{o}</button>)}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div><label className={labelClass}>Dirección Completa</label><input type="text" placeholder="Ej. Av. Reforma 123" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
-        </div>)}
-
-        {step === 2 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">2. Motivo y Antecedentes</h4>
-          <div><label className={labelClass}>Motivo de Consulta *</label><textarea placeholder="Ej. Dolor lumbar irradiado a pierna derecha..." className={`${inputClass} min-h-[100px]`} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
-          <div className="space-y-6">
-            <div><label className={labelClass}>Ant. Patológicos</label><textarea placeholder="Enfermedades previas" className={`${inputClass} min-h-[120px]`} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
-            <div><label className={labelClass}>Ant. No Patológicos</label><textarea placeholder="Hábitos, ejercicio, tabaco" className={`${inputClass} min-h-[120px]`} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
-          </div>
-        </div>)}
-
-        {step === 3 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">3. Precauciones y Diagnóstico</h4>
-          <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
-          <div><label className={labelClass}>Diagnóstico Quiropráctico</label><input type="text" placeholder="Ej. Subluxación L4-L5" className={inputClass} value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} /></div>
-        </div>)}
-
-        {step === 4 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">4. Físico y Plan</h4>
-          <div className="space-y-6">
-            <div>
-              <label className={labelClass}>Peso Físico</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})}>
-                <option value="">Selecciona...</option>
-                {Array.from({length: 161}, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Altura Total</label>
-              <select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => setForm({...form, height: e.target.value})}>
-                <option value="">Selecciona...</option>
-                {Array.from({length: 121}, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}
-              </select>
+          <div>
+            <label className={labelClass}>Pruebas especiales (toca: + , otra vez: −)</label>
+            <div className="flex flex-wrap gap-2">
+              {[...LIST_PRUEBAS, ...form.pruebas.map(p => p.name).filter(n => !LIST_PRUEBAS.includes(n))].map(name => {
+                const cur = form.pruebas.find(p => p.name === name);
+                const cls = cur ? (cur.result === '+' ? 'bg-emerald-600 border-emerald-600 text-[#fff]' : 'bg-rose-500 border-rose-500 text-[#fff]') : 'bg-white text-slate-500 border-slate-300';
+                return <button key={name} type="button" onClick={() => togglePrueba(name)} className={`px-3 py-2 rounded-xl border text-[10px] font-extrabold uppercase tracking-wide active:scale-95 transition ${cls}`}>{name}{cur ? ' ' + cur.result : ''}</button>;
+              })}
             </div>
           </div>
-          <div><label className={labelClass}>Plan de Tratamiento</label><textarea placeholder="Ej. 2 sesiones por semana..." className={`${inputClass} min-h-[140px]`} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
-        </div>)}
+          <ChipField label="Palpación" items={LIST_PALPACION} value={form.palpacion} onChange={v => set('palpacion', v)} />
+          <PhraseArea label="Detalle de la exploración (manual)" phrases={[]} value={form.exploracionDetalle} onChange={v => set('exploracionDetalle', v)} placeholder="Hallazgos propios…" minH="min-h-[70px]" />
+        </FormSection>
 
-        {step === 5 && (<div className="space-y-6 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-white mb-4 border-b border-white/10 pb-4">5. Técnicas Clínicas</h4>
-          <MultiSelectDropdown title="Técnicas Sugeridas" icon={BookOpen} items={CHIRO_TECHNIQUES} selectedItems={form.chiropracticTechniques} toggleItem={(i) => toggleArrayItem('chiropracticTechniques', i)} />
-        </div>)}
+        <FormSection n="5" title="Diagnóstico y plan">
+          <ChipField label="Diagnóstico(s)" items={LIST_DIAGNOSTICOS} value={form.diagnosticos} onChange={v => set('diagnosticos', v)} gold />
+          <ChipField label="Objetivos" items={LIST_OBJETIVOS} value={form.objetivos} onChange={v => set('objetivos', v)} />
+          <div className="grid grid-cols-1 gap-5">
+            <ChipField label="Frecuencia sugerida" items={LIST_FRECUENCIAS} value={form.frecuencia ? [form.frecuencia] : []} onChange={v => set('frecuencia', v[0] || '')} single />
+            <ChipField label="Sesiones estimadas" items={['4', '6', '8', '10', '12', 'Indefinido']} value={form.sesiones ? [form.sesiones] : []} onChange={v => set('sesiones', v[0] || '')} single />
+          </div>
+          <ChipField label="Recomendaciones en casa" items={LIST_RECOMENDACIONES} value={form.recomendaciones} onChange={v => set('recomendaciones', v)} />
+          <PhraseArea label="Plan de tratamiento (manual)" phrases={['Ajuste + terapia miofascial', 'Revalorar en 4 sesiones', 'Iniciar con movilización suave']} value={form.planTexto} onChange={v => set('planTexto', v)} placeholder="El plan con tus palabras…" />
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={labelClass}>Peso</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.weight} onChange={e => set('weight', e.target.value)}><option value="">Selecciona...</option>{Array.from({ length: 161 }, (_, i) => i + 30).map(n => <option key={n} value={n}>{n} kg</option>)}</select></div>
+            <div><label className={labelClass}>Altura</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.height} onChange={e => set('height', e.target.value)}><option value="">Selecciona...</option>{Array.from({ length: 121 }, (_, i) => i + 100).map(n => <option key={n} value={n}>{n} cm</option>)}</select></div>
+          </div>
+          <ChipField label="Técnicas sugeridas" icon={BookOpen} items={CHIRO_TECHNIQUES} value={form.tecnicas} onChange={v => set('tecnicas', v)} />
+        </FormSection>
 
-        {step === 6 && (<div className="space-y-8 animate-fade-in text-left">
-          <h4 className="text-[12px] font-black uppercase text-cyan-400 mb-4 border-b border-white/10 pb-4 flex items-center gap-2"><Target className="w-4 h-4"/> 6. Evaluación Inicial (Primer Ajuste)</h4>
-          
-          <div className="bg-slate-900/50 p-8 rounded-[35px] border border-white/5 shadow-inner">
-            <div className="flex justify-between items-end mb-6">
-              <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
-              <div className="text-right">
-                <span className={`text-3xl font-black ${getPainColor(form.painLevel)}`}>{form.painLevel} <span className="text-sm text-slate-500">/ 10</span></span>
-                <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel)}`}>{getPainLabel(form.painLevel)}</p>
+        <FormSection n="6" title="Evaluación inicial">
+          <EvaSlider label="Dolor inicial (EVA)" value={form.painLevel} onChange={v => set('painLevel', v)} />
+          <ChipField label="Desviaciones posturales" icon={Activity} items={POSTURAL_DEVIATIONS} value={form.desviaciones} onChange={v => set('desviaciones', v)} />
+          <PhraseArea label="Postura — Vista anterior" phrases={['Hombros nivelados', 'Sin hallazgos', 'Cabeza centrada']} value={form.posturaAnt} onChange={v => set('posturaAnt', v)} placeholder="Escribe la vista anterior…" minH="min-h-[70px]" />
+          <PhraseArea label="Postura — Vista lateral" phrases={['Cabeza adelantada', 'Pelvis en anteversión', 'Sin hallazgos']} value={form.posturaLat} onChange={v => set('posturaLat', v)} placeholder="Escribe la vista lateral…" minH="min-h-[70px]" />
+          <PhraseArea label="Postura — Vista posterior" phrases={['Escápulas niveladas', 'Sin hallazgos', 'Desviación pélvica']} value={form.posturaPos} onChange={v => set('posturaPos', v)} placeholder="Escribe la vista posterior…" minH="min-h-[70px]" />
+          <div>
+            <label className={labelClass}><Target className="w-3 h-3" /> Planos anatómicos (rayos X)</label>
+            <div className="bg-[#f4f8f7] border border-[#d7e2df] rounded-3xl p-4">
+              <XRayPlanes value={form.planes} onChange={v => set('planes', v)} />
+            </div>
+          </div>
+          <label className="flex gap-2.5 items-start bg-[#f4f8f7] border border-[#d7e2df] rounded-2xl p-3.5 cursor-pointer">
+            <input type="checkbox" checked={form.consent} onChange={e => set('consent', e.target.checked)} className="w-[17px] h-[17px] mt-0.5 accent-[#0b3b42]" />
+            <span className="text-[12px] leading-relaxed text-slate-600">El paciente fue informado sobre el tratamiento y <b>acepta su aplicación</b>. Queda registrado con fecha en el expediente.</span>
+          </label>
+        </FormSection>
+
+        <FormSection n="7" title="Primera sesión">
+          <div>
+            <label className={labelClass}>Dolor al salir (EVA)</label>
+            {form.painOut === '' ? (
+              <button type="button" onClick={() => set('painOut', form.painLevel)} className="w-full py-3.5 rounded-2xl border-2 border-dashed border-[#b08d3e]/60 text-[#8a6d2f] text-[11px] font-black uppercase tracking-widest active:scale-95 transition">+ Registrar dolor al salir</button>
+            ) : (
+              <div className="space-y-2">
+                <EvaSlider label="Dolor al salir (EVA)" value={form.painOut} onChange={v => set('painOut', v)} />
+                <button type="button" onClick={() => set('painOut', '')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 underline">Quitar EVA al salir</button>
               </div>
-            </div>
-            <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-950 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel)}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-            <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
+            )}
           </div>
+          <PhraseArea label="Hallazgos de hoy / Notas" icon={FileText} phrases={LIST_HALLAZGOS} value={form.notas} onChange={v => set('notas', v)} placeholder="La evolución con tus palabras…" />
+          <ChipField label="Recomendaciones dadas" items={LIST_RECOMENDACIONES} value={form.recomSesion} onChange={v => set('recomSesion', v)} />
+          <ChipField label="Próxima cita sugerida" items={LIST_PROXIMA} value={form.proxima ? [form.proxima] : []} onChange={v => set('proxima', v[0] || '')} single />
+        </FormSection>
 
-          <MultiSelectDropdown title="Desviaciones Posturales" icon={Activity} items={POSTURAL_DEVIATIONS} selectedItems={form.posturalDeviations} toggleItem={(i) => toggleArrayItem('posturalDeviations', i)} />
-
-          <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
-
-          <div className="space-y-6">
-            <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos frontales..." className={`${inputClass} min-h-[100px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
-            <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos de perfil..." className={`${inputClass} min-h-[100px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
-            <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos de espalda..." className={`${inputClass} min-h-[100px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
-          </div>
-
-          <div><label className={labelClass}>Notas de la Sesión Inicial</label><textarea placeholder="Ej. Ajuste exitoso..." className={`${inputClass} min-h-[120px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
-        </div>)}
-
-        <div className="flex gap-4 pt-8">
-          {step > 1 && <button onClick={() => setStep(step - 1)} className="flex-1 bg-slate-900 py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition tracking-widest hover:bg-slate-800 border border-white/10">Atrás</button>}
-          {step < 6 ? (<button onClick={handleNext} disabled={!form.name} className="flex-[2] bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] active:scale-95 transition shadow-[0_10px_20px_rgba(34,211,238,0.2)] border-b-8 border-cyan-700 disabled:opacity-50 tracking-widest">Siguiente Paso</button>) : (<button onClick={handleSaveClick} disabled={isSaving} className="flex-[2] bg-emerald-400 text-black py-5 rounded-3xl font-black uppercase text-[11px] border-b-8 border-emerald-700 flex justify-center items-center gap-2 active:scale-95 transition disabled:opacity-70 shadow-[0_10px_20px_rgba(52,211,153,0.3)] tracking-widest">{isSaving ? 'Guardando...' : 'Crear Expediente'}</button>)}
-        </div>
+        <button onClick={handleSaveClick} disabled={isSaving || !form.name.trim()} className="w-full bg-[#0b3b42] text-[#fff] py-4 rounded-2xl font-black uppercase border-b-4 border-[#062227] shadow-lg active:scale-95 flex justify-center items-center gap-2 disabled:opacity-60 tracking-widest text-sm">
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin" /> Guardando...</> : <><CheckCircle2 className="w-5 h-5" /> Crear Expediente</>}
+        </button>
+        {!form.name.trim() && <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">El nombre es lo único obligatorio — todo lo demás es opcional</p>}
       </div>
     </Modal>
   );
 };
 
 const NewHistoryModal = ({ onClose, onSave, initial }) => {
-  const [form, setForm] = useState(initial ? { date: initial.date || new Date().toISOString().split('T')[0], painLevel: initial.painLevel ?? 0, areas: initial.areas || [], redFlags: initial.redFlags || [], notes: initial.notes || '', postureAnterior: initial.postureAnterior || '', postureLateral: initial.postureLateral || '', posturePosterior: initial.posturePosterior || '', techniques: initial.techniques || [], id: initial.id || null } : { date: new Date().toISOString().split('T')[0], painLevel: 0, areas: [], redFlags: [], notes: '', postureAnterior: '', postureLateral: '', posturePosterior: '', techniques: [], id: null });
+  const [form, setForm] = useState(initial ? {
+    date: initial.date || new Date().toISOString().split('T')[0], painLevel: initial.painLevel ?? 0,
+    painOut: (initial.painOut === undefined ? null : initial.painOut),
+    visitReason: initial.visitReason || '', response: initial.response || '',
+    areas: initial.areas || [], redFlags: initial.redFlags || [], notes: initial.notes || '',
+    postureAnterior: initial.postureAnterior || '', postureLateral: initial.postureLateral || '', posturePosterior: initial.posturePosterior || '',
+    techniques: initial.techniques || [], recommendations: initial.recommendations || [], nextVisit: initial.nextVisit || '',
+    id: initial.id || null
+  } : {
+    date: new Date().toISOString().split('T')[0], painLevel: 0, painOut: null,
+    visitReason: '', response: '', areas: [], redFlags: [], notes: '',
+    postureAnterior: '', postureLateral: '', posturePosterior: '',
+    techniques: [], recommendations: [], nextVisit: '', id: null
+  });
   const [isSaving, setIsSaving] = useState(false);
-
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
   const handleSaveClick = () => { if (isSaving) return; setIsSaving(true); onSave({ ...form, id: form.id || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'h' + Date.now()) }); };
   const toggleArea = (area) => setForm(prev => ({ ...prev, areas: prev.areas.includes(area) ? prev.areas.filter(a => a !== area) : [...prev.areas, area] }));
   const toggleArrayItem = (field, item) => setForm(prev => { const arr = prev[field] || []; return { ...prev, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] }; });
-
-  const getPainColor = (level) => {
-    if (level <= 3) return 'accent-emerald-500 text-emerald-600';
-    if (level <= 6) return 'accent-amber-500 text-amber-600';
-    return 'accent-rose-500 text-rose-600';
-  };
-
-  const getPainLabel = (level) => {
-    if (level === 0) return 'Sin Dolor';
-    if (level <= 3) return 'Leve';
-    if (level <= 6) return 'Moderado';
-    if (level <= 9) return 'Severo';
-    return 'Insoportable';
-  };
-
   const inputClass = "w-full bg-white p-4 rounded-2xl border border-slate-300 text-slate-800 outline-none focus:border-[#0b5563] text-sm shadow-sm transition-all";
   const labelClass = "text-[10px] font-black uppercase text-[#0b5563] ml-1 mb-2 flex items-center gap-1 tracking-widest";
 
@@ -897,20 +1265,23 @@ const NewHistoryModal = ({ onClose, onSave, initial }) => {
     <Modal title={initial ? "Editar Registro Clínico" : "Nuevo Registro Clínico"} onClose={onClose}>
       <div className="space-y-7 text-left pb-4 bg-[#f7faf8] rounded-[30px] p-5 sm:p-7 border border-slate-200">
 
-        <div><label className={labelClass}>Fecha del Ajuste</label><input type="date" className={inputClass} value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+        <div><label className={labelClass}>Fecha del Ajuste</label><input type="date" className={inputClass} value={form.date} onChange={e => set('date', e.target.value)} /></div>
+
+        <ChipField label="Motivo de la visita" items={LIST_VISITA} value={form.visitReason ? [form.visitReason] : []} onChange={v => set('visitReason', v[0] || '')} single />
+        <ChipField label="Respuesta al tratamiento anterior" items={LIST_RESPUESTA} value={form.response ? [form.response] : []} onChange={v => set('response', v[0] || '')} single />
 
         <MultiSelectDropdown title="Banderas Rojas (Precauciones)" icon={ShieldAlert} items={RED_FLAGS} selectedItems={form.redFlags} toggleItem={(i) => toggleArrayItem('redFlags', i)} isDanger={true} />
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-end mb-5">
-            <label className={labelClass} style={{marginLeft: 0}}>Escala de Dolor (EVA)</label>
-            <div className="text-right">
-              <span className={`text-3xl font-black ${getPainColor(form.painLevel).split(' ')[1]}`}>{form.painLevel} <span className="text-sm text-slate-400">/ 10</span></span>
-              <p className={`text-[10px] font-black uppercase tracking-widest ${getPainColor(form.painLevel).split(' ')[1]}`}>{getPainLabel(form.painLevel)}</p>
+        <EvaSlider label="Dolor al llegar (EVA)" value={form.painLevel} onChange={v => set('painLevel', v)} />
+        <div>
+          {form.painOut === null ? (
+            <button type="button" onClick={() => set('painOut', form.painLevel)} className="w-full py-3.5 rounded-2xl border-2 border-dashed border-[#b08d3e]/60 text-[#8a6d2f] text-[11px] font-black uppercase tracking-widest active:scale-95 transition bg-white">+ Registrar dolor al salir (EVA)</button>
+          ) : (
+            <div className="space-y-2">
+              <EvaSlider label="Dolor al salir (EVA)" value={form.painOut} onChange={v => set('painOut', v)} />
+              <button type="button" onClick={() => set('painOut', null)} className="text-[10px] font-black uppercase tracking-widest text-slate-400 underline">Quitar EVA al salir</button>
             </div>
-          </div>
-          <input type="range" min="0" max="10" className={`w-full h-3 bg-slate-100 rounded-full appearance-none outline-none transition-all duration-300 ${getPainColor(form.painLevel).split(' ')[0]}`} value={form.painLevel} onChange={e => setForm({...form, painLevel: parseInt(e.target.value)})} />
-          <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 mt-3"><span>0 (Sin Dolor)</span><span>10 (Insoportable)</span></div>
+          )}
         </div>
 
         <AnatomyMap selectedAreas={form.areas} toggleArea={toggleArea} />
@@ -926,15 +1297,18 @@ const NewHistoryModal = ({ onClose, onSave, initial }) => {
         </div>
 
         <div className="space-y-5">
-          <div><label className={labelClass}>Vista Anterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[90px]`} value={form.postureAnterior} onChange={e => setForm({...form, postureAnterior: e.target.value})} /></div>
-          <div><label className={labelClass}>Vista Lateral</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[90px]`} value={form.postureLateral} onChange={e => setForm({...form, postureLateral: e.target.value})} /></div>
-          <div><label className={labelClass}>Vista Posterior</label><textarea placeholder="Hallazgos..." className={`${inputClass} min-h-[90px]`} value={form.posturePosterior} onChange={e => setForm({...form, posturePosterior: e.target.value})} /></div>
+          <PhraseArea label="Vista Anterior" phrases={['Hombros nivelados', 'Sin hallazgos', 'Cabeza centrada']} value={form.postureAnterior} onChange={v => set('postureAnterior', v)} placeholder="Hallazgos..." minH="min-h-[70px]" />
+          <PhraseArea label="Vista Lateral" phrases={['Cabeza adelantada', 'Pelvis en anteversión', 'Sin hallazgos']} value={form.postureLateral} onChange={v => set('postureLateral', v)} placeholder="Hallazgos..." minH="min-h-[70px]" />
+          <PhraseArea label="Vista Posterior" phrases={['Escápulas niveladas', 'Sin hallazgos', 'Desviación pélvica']} value={form.posturePosterior} onChange={v => set('posturePosterior', v)} placeholder="Hallazgos..." minH="min-h-[70px]" />
         </div>
 
-        <div><label className={labelClass}><FileText className="w-3 h-3"/> Notas de Evolución</label><textarea placeholder="Ej. Hubo cavitación en C2..." className={`${inputClass} min-h-[110px]`} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
+        <PhraseArea label="Hallazgos / Notas de Evolución" icon={FileText} phrases={LIST_HALLAZGOS} value={form.notes} onChange={v => set('notes', v)} placeholder="Ej. Hubo cavitación en C2..." minH="min-h-[110px]" />
+
+        <ChipField label="Recomendaciones dadas" items={LIST_RECOMENDACIONES} value={form.recommendations} onChange={v => set('recommendations', v)} />
+        <ChipField label="Próxima cita sugerida" items={LIST_PROXIMA} value={form.nextVisit ? [form.nextVisit] : []} onChange={v => set('nextVisit', v[0] || '')} single />
 
         <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-[#0b3b42] text-[#fff] py-4 rounded-2xl font-black uppercase border-b-4 border-[#062227] shadow-lg active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest text-sm">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> {initial ? 'Guardar Cambios' : 'Guardar Ajuste Clínico'}</>}
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin" /> Guardando...</> : <><CheckCircle2 className="w-5 h-5" /> {initial ? 'Guardar Cambios' : 'Guardar Ajuste Clínico'}</>}
         </button>
       </div>
     </Modal>
@@ -1273,6 +1647,7 @@ export default function App() {
   const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
   const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
   const handleEditPatient = (data) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, editPatient: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), data); };
+  const handleSavePlanes = (planes) => { if (!selectedPatientId) return; updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { planes }); };
   const handleEditAppointment = (form) => { if (!editingAppointment) return; const id = editingAppointment.id; setEditingAppointment(null); setModals(prev => ({ ...prev, calendar: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', id), { date: form.date, time: form.time }); };
   const handleDeleteAppointment = (app) => { if (window.confirm("¿Eliminar esta cita?")) deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', app.id)); };
   const handleResendVerification = async () => { try { await sendEmailVerification(auth.currentUser); alert(`Correo de verificación enviado a ${user.email}. Revisa tu bandeja y el spam, y abre el enlace para confirmar.`); } catch (e) { alert(authErrorMessage(e)); } };
@@ -1384,7 +1759,7 @@ export default function App() {
           <div className="max-w-[1180px] mx-auto w-full p-6 lg:px-8 lg:py-7 pb-36 lg:pb-12">
             {showVerifyBanner && (<div className="mb-6 bg-amber-50 border border-amber-300 rounded-3xl p-5 text-left shadow-sm animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Verifica tu correo</p><p className="text-xs text-amber-800/80 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-500 text-[#fff] py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white text-amber-700 py-3 rounded-2xl font-black uppercase text-[10px] border border-amber-300 active:scale-95">Ya lo verifiqué</button></div></div>)}
             {selectedPatientId ? (
-              <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} onEditHistory={(entry, index) => setEditingHistory({ entry, index })} onDeleteHistory={handleDeleteHistory} />
+              <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} onEditHistory={(entry, index) => setEditingHistory({ entry, index })} onDeleteHistory={handleDeleteHistory} onSavePlanes={handleSavePlanes} />
             ) : (
               <>
                 {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} onNewPatient={handleOpenNewPatient} onBackup={handleBackup} onGoTechniques={() => { setActiveTab('techniques'); setSelectedPatientId(null); }} />}
