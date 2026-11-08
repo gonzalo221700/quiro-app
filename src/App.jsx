@@ -1,190 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import './index.css';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
-import { initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
+import { collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil } from 'lucide-react';
+import { auth, db, appId, TRIAL_DAYS, MAX_TRIAL_PATIENTS } from './lib/firebase.js';
+import { openWhatsApp, generateSecureCode, authErrorMessage, safeFormatDate, calculateAge, generateClinicalHTML, CLINIC_THEMES, RED_FLAGS, CHIRO_TECHNIQUES, POSTURAL_DEVIATIONS } from './lib/utils.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
-  authDomain: "quiroapp-e9b0a.firebaseapp.com",
-  projectId: "quiroapp-e9b0a",
-  storageBucket: "quiroapp-e9b0a.firebasestorage.app",
-  messagingSenderId: "478863836341",
-  appId: "1:478863836341:web:fa72196635120ba1beaafc",
-  measurementId: "G-YVG4XXKENW"
-};
+const TechniquesTab = lazy(() => import('./components/TechniquesTab.jsx'));
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-auth.languageCode = 'es';
-const db = initializeFirestore(app, { experimentalForceLongPolling: true });
-const appId = firebaseConfig.projectId;
-const TRIAL_DAYS = 3;
-const MAX_TRIAL_PATIENTS = 3;
 
-const openWhatsApp = (phone, message = "") => {
-  if (!phone) return;
-  let cleanPhone = String(phone).replace(/\D/g, '');
-  // Números mexicanos guardados a 10 dígitos: se agrega el código de país (52)
-  if (cleanPhone.length === 10) cleanPhone = '52' + cleanPhone;
-  window.open(`https://wa.me/${cleanPhone}${message ? `?text=${encodeURIComponent(message)}` : ''}`, '_blank');
-};
-
-// Generador de códigos PRO: azar seguro del navegador, 8 caracteres sin confusos (sin O/0 ni I/1)
-const generateSecureCode = (prefix) => {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const arr = new Uint32Array(8);
-  crypto.getRandomValues(arr);
-  let suffix = '';
-  for (const n of arr) suffix += chars[n % chars.length];
-  return prefix + suffix;
-};
-
-// Mensajes de error reales y humanos según el código de Firebase Auth
-const authErrorMessage = (err) => {
-  switch (err?.code) {
-    case 'auth/unauthorized-domain': return 'Este dominio no está autorizado en Firebase. Avísale al administrador.';
-    case 'auth/network-request-failed': return 'Sin conexión a internet. Revisa tu señal e inténtalo de nuevo.';
-    case 'auth/operation-not-allowed': return 'El acceso por correo no está activado para esta app. Entra con Google.';
-    case 'auth/invalid-credential':
-    case 'auth/user-not-found':
-    case 'auth/wrong-password': return 'Correo o contraseña incorrectos.';
-    case 'auth/email-already-in-use': return 'Ese correo ya tiene una cuenta. Mejor inicia sesión.';
-    case 'auth/weak-password': return 'La contraseña debe tener al menos 6 caracteres.';
-    case 'auth/invalid-email': return 'Ese correo no parece válido.';
-    case 'auth/too-many-requests': return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
-    case 'auth/popup-blocked': return 'Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes e inténtalo de nuevo.';
-    default: return `Algo salió mal (${err?.code || 'error desconocido'}). Inténtalo de nuevo.`;
-  }
-};
-
-const safeFormatDate = (dateStr) => {
-  try {
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? String(dateStr) : d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-  } catch (e) { return String(dateStr); }
-};
-
-const calculateAge = (dobStr) => {
-  if (!dobStr) return '';
-  const [year, month, day] = dobStr.split('-');
-  const dob = new Date(year, month - 1, day);
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-    age--;
-  }
-  return age >= 0 ? age : 0;
-};
-
-// 🌟 MOTOR DE GENERACIÓN DE EXPEDIENTES CLÍNICOS (HTML/PDF/WORD)
-const generateClinicalHTML = (patient, doctorInfo) => {
-  const logoHtml = doctorInfo.logo ? `<img src="${doctorInfo.logo}" style="max-height: 90px; border-radius: 8px; margin-bottom: 10px; object-fit: contain;" />` : '';
-  const historiesHtml = (patient.histories || []).map(h => `
-    <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
-      <p style="margin: 0 0 5px 0;"><strong>Fecha:</strong> ${safeFormatDate(h.date)} &nbsp;|&nbsp; <strong style="color: #e11d48;">Dolor: ${h.painLevel}/10</strong></p>
-      <p style="margin: 0 0 5px 0;"><strong>Zonas Ajustadas:</strong> ${h.areas?.join(', ') || 'Ninguna especificada'}</p>
-      ${h.redFlags && h.redFlags.length > 0 ? `<p style="margin: 0 0 5px 0; color: #e11d48;"><strong>Banderas Rojas:</strong> ${h.redFlags.join(', ')}</p>` : ''}
-      <p style="margin: 0; font-style: italic; color: #475569;">" ${h.notes || 'Sin notas de evolución'} "</p>
-    </div>
-  `).join('');
-
-  return `
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Expediente - ${patient.name}</title>
-        <style>
-          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6; padding: 40px; max-width: 800px; margin: auto; }
-          h1 { color: #0f172a; margin: 0 0 5px 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
-          h2 { color: #0f172a; margin: 0 0 15px 0; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;}
-          h3 { color: #64748b; margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;}
-          .header { text-align: center; border-bottom: 4px solid #06b6d4; padding-bottom: 30px; margin-bottom: 40px; }
-          .section { margin-bottom: 30px; padding: 25px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; page-break-inside: avoid; }
-          .label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 900; letter-spacing: 1px; display: block; margin-bottom: 2px;}
-          .value { font-size: 14px; font-weight: 600; color: #0f172a; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 15px;}
-          td { padding: 8px 15px 8px 0; vertical-align: top; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          ${logoHtml}
-          <h1>${doctorInfo.clinic || 'Clínica Quiropráctica'}</h1>
-          <h3>${doctorInfo.name || 'Especialista'} - ${doctorInfo.title || 'Doctor'}</h3>
-        </div>
-        
-        <div class="section">
-          <h2>Ficha de Identificación</h2>
-          <table>
-            <tr>
-              <td><span class="label">Nombre del Paciente</span><span class="value">${patient.name}</span></td>
-              <td><span class="label">Teléfono</span><span class="value">${patient.phone || '--'}</span></td>
-            </tr>
-            <tr>
-              <td><span class="label">Edad y Fecha Nac.</span><span class="value">${patient.age ? patient.age + ' años' : '--'} (${patient.birthDate || '--'})</span></td>
-              <td><span class="label">Sexo</span><span class="value">${patient.gender || '--'}</span></td>
-            </tr>
-            <tr>
-              <td colspan="2"><span class="label">Dirección Completa</span><span class="value">${patient.address || '--'}</span></td>
-            </tr>
-          </table>
-        </div>
-
-        <div class="section">
-          <h2>Evaluación Clínica Inicial</h2>
-          <table>
-            <tr>
-              <td colspan="2"><span class="label">Motivo de Consulta</span><span class="value">${patient.consultationReason || '--'}</span></td>
-            </tr>
-            <tr>
-              <td><span class="label">Ant. Patológicos</span><span class="value">${patient.pathological || '--'}</span></td>
-              <td><span class="label">Ant. No Patológicos</span><span class="value">${patient.nonPathological || '--'}</span></td>
-            </tr>
-            <tr>
-              <td><span class="label">Diagnóstico Quiropráctico</span><span class="value" style="color: #0284c7;">${patient.chiropracticDiagnosis || '--'}</span></td>
-              <td><span class="label">Morfología</span><span class="value">Peso: ${patient.weight ? patient.weight + ' kg' : '--'} | Altura: ${patient.height ? patient.height + ' cm' : '--'}</span></td>
-            </tr>
-            <tr>
-              <td colspan="2"><span class="label">Plan de Tratamiento</span><span class="value">${patient.treatmentPlan || '--'}</span></td>
-            </tr>
-          </table>
-          <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 15px 0;" />
-          <span class="label">Análisis Postural</span>
-          <span class="value" style="font-size: 13px; font-weight: normal;">
-            <b>Anterior:</b> ${patient.postureAnterior || '--'} <br/>
-            <b>Lateral:</b> ${patient.postureLateral || '--'} <br/>
-            <b>Posterior:</b> ${patient.posturePosterior || '--'}
-          </span>
-        </div>
-
-        <div class="section">
-          <h2>Historial de Sesiones y Ajustes</h2>
-          ${patient.histories && patient.histories.length > 0 ? historiesHtml : '<p style="color: #64748b; font-style: italic;">Sin registros clínicos documentados aún.</p>'}
-        </div>
-        
-        <div style="text-align: center; margin-top: 50px; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">
-          Expediente Clínico Digital Generado por QuiroApp
-        </div>
-      </body>
-    </html>
-  `;
-};
-
-const CLINIC_THEMES = {
-  azul: { bg: 'bg-gradient-to-br from-cyan-600 to-blue-900', text: 'text-white', name: 'Azul Clínico' },
-  esmeralda: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-900', text: 'text-white', name: 'Esmeralda' },
-  indigo: { bg: 'bg-gradient-to-br from-indigo-500 to-purple-900', text: 'text-white', name: 'Índigo Premium' },
-  carbon: { bg: 'bg-gradient-to-br from-slate-700 to-black', text: 'text-white', name: 'Carbón Élite' },
-  blanco: { bg: 'bg-gradient-to-br from-slate-50 to-slate-200', text: 'text-slate-800', name: 'Blanco Elegante' }
-};
-
-const techniquesData=[{title:"Ajuste Cervical (Diversified)",image:"",description:"Técnica manual de alta velocidad y baja amplitud (HVLA) para corregir rotaciones y restricciones en la columna cervical (C1-C7).",execution:"1. Posiciona al paciente en decúbito supino.\n2. Contacta el pilar articular o la lámina con la falange lateral del dedo índice.\n3. Lleva la articulación a la tensión máxima (lock-out) con leve flexión lateral y rotación.\n4. Aplica el impulso (thrust) HVLA en un vector rápido y superficial (P-A, I-S).",help:"Aplicar frío por 15 min si hay inflamación post-ajuste. Indicar ejercicios de retracción cervical y corregir la postura de 'Text Neck'."},{title:"Ajuste Torácico Anterior (Abrazado)",image:"",description:"Ideal para la zona dorsal (T1-T12). Se realiza con el paciente boca arriba, utilizando el peso del cuerpo como palanca.",execution:"1. Paciente en decúbito supino con los brazos cruzados sobre el pecho.\n2. El quiropráctico hace un contacto con la mano en forma de 'puño suave' o 'garra' debajo de la vértebra dorsal a ajustar.\n3. Usando el esternón sobre los brazos del paciente, se inhala y se baja el peso corporal.\n4. El impulso (thrust) es de Anterior a Posterior (A-P) directamente a través de los brazos cruzados.",help:"Sugerir ejercicios de expansión torácica y estiramiento de pectorales en el marco de una puerta para abrir el pecho."},{title:"Ajuste Lumbar (Side Posture)",image:"",description:"Técnica en postura lateral (pull/push) fundamental para corregir restricciones rotacionales y subluxaciones en la zona lumbar (L1-L5).",execution:"1. Posiciona al paciente en decúbito lateral con la pierna superior flexionada.\n2. Estabiliza el hombro superior del paciente con el antebrazo cefálico.\n3. Contacta el proceso mamilar o espinoso lumbar con el pisiforme de la mano caudal.\n4. Genera tensión (body drop) rotando la pelvis hacia ti y aplica el impulso rotacional.",help:"Recomendar al paciente evitar levantar objetos pesados doblando la espalda. Enseñar técnica de sentadilla profunda."},{title:"Técnica Gonstead",image:"",description:"Enfoque biomecánico ultra específico. Utiliza análisis de radiografías, nervoscopio e instrumentación para ajustes precisos sobre la vértebra aislada.",execution:"1. Uso riguroso de radiografía completa y palpación estática/dinámica.\n2. Para la zona pélvica, posicionar en mesa Knee-Chest o banco cervical para el cuello.\n3. Estabilizar rigurosamente la vértebra inferior al segmento a ajustar.\n4. El empuje se realiza en un vector extremadamente específico sin rotación excesiva.",help:"Explicar al paciente la importancia de caminar 10 minutos inmediatamente después del ajuste para asimilar el cambio neuro-estructural."},{title:"Ajuste Pélvico (Drop Thompson)",image:"",description:"Sistema basado en la ley de inercia de Newton. Usa piezas segmentadas de la camilla que caen (Drop) para realizar un ajuste seguro de baja fuerza.",execution:"1. Paciente en decúbito prono. Evalúa dismetría pélvica (Test de Derifield o largo de piernas).\n2. Ajusta la tensión de la pieza de caída (Drop) pélvica al peso exacto del paciente.\n3. Coloca el contacto doble con eminencias tenares sobre la EIPS (Espina Ilíaca Postero-Superior).\n4. Aplica el impulso P-A, I-S rápido. La pieza caerá absorbiendo la fuerza pesada.",help:"Sugerir al paciente no cruzar las piernas al sentarse para mantener la simetría pélvica. Recomendar usar cojín lumbar al manejar."},{title:"S.O.T. (Sacro Occipital Technique)",image:"",description:"Técnica suave que utiliza cuñas (bloques) posicionados debajo de la pelvis del paciente, usando su propio peso y la respiración para alinear.",execution:"1. Clasificar al paciente en Categoría I, II o III de SOT mediante indicadores y palpación fascial.\n2. Colocar las cuñas bajo trocánteres e ilíacos según la categoría detectada.\n3. Dejar al paciente reposar sobre los bloques durante 10-15 minutos.\n4. Sincronizar manipulaciones craneales suaves con las fases respiratorias (Inhalación/Exhalación).",help:"Ideal para dolores agudos y mujeres embarazadas. Sugerir reposo post-terapia y evitar ejercicio de alto impacto por 24 horas."},{title:"Tracción - Flexión (Mesa Cox)",image:"",description:"Técnica de descompresión espinal guiada. Abre el espacio del canal neural, reduce la presión discal y ayuda al tratamiento de la ciática.",execution:"1. Paciente en posición prona, asegurar las cintas o sujeciones en los tobillos.\n2. Desbloquear el eje de flexión de la sección inferior de la mesa.\n3. Contactar con la eminencia tenar el proceso espinoso de la vértebra inmediatamente superior a la hernia o lesión.\n4. Aplicar presión sostenida mientras se flexiona la mesa en ciclos de 20 segundos.",help:"Vital indicar al paciente evitar las flexiones de tronco. Enseñar a recoger objetos utilizando flexión de rodillas y mantener core activo."},{title:"Técnica de Activador",image:"",description:"Ajuste asistido por un instrumento de impacto mecánico (Activator Adjusting Instrument) con alta velocidad y muy baja fuerza. No genera cavitación (ruido).",execution:"1. Realizar el protocolo de aislamiento básico (aislamiento por zonas pidiendo al paciente mover brazos/piernas y midiendo el largo de las piernas).\n2. Seleccionar la línea de corrección adecuada según el manual.\n3. Posicionar el instrumento directamente sobre el proceso transverso o carilla articular.\n4. Aplicar el impacto mecánico seco.",help:"Ideal para pacientes con osteoporosis, miedo a la cavitación o pediátricos. Explicar al paciente que la rapidez del impacto engaña el reflejo muscular."},{title:"Toggle Recoil (Upper Cervical)",image:"",description:"Técnica de la escuela 'Hole in One' para ajustar la zona cervical superior (Atlas y Axis). Caracterizada por un impulso y retirada hiperrápida.",execution:"1. Paciente en decúbito lateral sobre cabezal de Drop cervical o mesa específica.\n2. Contactar el proceso transverso del Atlas con la eminencia pisiforme.\n3. Mantener los codos ligeramente flexionados y el pecho arriba.\n4. Efectuar un thrust de triceps altísima velocidad e inmediatamente retirar las manos (Recoil) dejando caer el Drop.",help:"Después del ajuste cervical superior, es importante que el paciente descanse 10-15 min en sala de recuperación para equilibrar el sistema nervioso autónomo."},{title:"Técnica Webster (Embarazadas)",image:"",description:"Análisis y ajuste sacropélvico específico para embarazadas, diseñado para reducir interferencias neurológicas y equilibrar el útero.",execution:"1. Evaluar restricción de la flexión de la rodilla en posición prona (con almohadas de soporte para embarazo).\n2. Ajustar el sacro en el lado de mayor restricción usando Drop o el pulgar.\n3. Paciente en supino: Identificar tensión en el ligamento redondo del útero.\n4. Aplicar presión ultra suave y sostenida (sin masajear) sobre el ligamento tenso hasta sentir la liberación.",help:"Indicar que esta técnica ayuda a optimizar el espacio para el bebé (evitar presentación de nalgas). Usar cojín para dormir de lado con apoyo entre rodillas."},{title:"Técnica Logan Basic",image:"",description:"Un enfoque muy ligero y suave que utiliza contactos de presión continua en el ligamento sacrotuberoso para nivelar la columna completa.",execution:"1. Localizar tensión y sensibilidad asimétrica cerca de la tuberosidad isquiática.\n2. Aplicar un contacto con el pulgar bajo la tuberosidad isquiática (ligamento sacrotuberoso).\n3. Mantener una presión en direction Anterior, Superior y Lateral por 10 a 15 minutos continuos.\n4. Masajear simultáneamente la musculatura paravertebral a lo largo de toda la columna.",help:"Técnica sumamente relajante que activa el sistema parasimpático. Recomendar al paciente tomar mucha agua y descansar."},{title:"Ajuste de Extremidades",image:"",description:"Manipulación de las articulaciones fuera de la columna vertebral, como muñecas (túnel carpiano), hombros, codos, rodillas y tobillos.",execution:"1. Evaluar la restricción del rango de movimiento y juego articular (joint play).\n2. Hombro (A-P): Paciente supino, tracción suave del húmero y thrust sobre la cabeza humeral hacia posterior.\n3. Rodilla/Tobillo: Típicamente ajustes en tracción del eje largo de la pierna o ajuste en mortaja tibioastragalina.\n4. Verificar la recuperación del movimiento.",help:"Usar ejercicios con bandas de resistencia elástica para rehabilitar las articulaciones después de devolverles su biomecánica normal."},{title:"Liberación Miofascial / IASTM",image:"",description:"Movilización de tejidos blandos asistida por herramientas de acero inoxidable (Graston) o terapia manual intensa para romper adherencias fasciales.",execution:"1. Aplicar crema o emoliente sobre la zona afectada (ej. fascia plantar, isquiotibiales, trapecios).\n2. Utilizar el instrumento IASTM o los pulgares con ángulo de 30-45 grados.\n3. Deslizar con presión profunda creando fricción hasta generar petequias ligeras (enrojecimiento terapéutico).\n4. Acompañar de movilización pasiva del paciente.",help:"Indicar al paciente que el enrojecimiento es normal. Realizar estiramientos activos del músculo trabajado para reconstruir las fibras colágenas."},{title:"Vendaje Neuromuscular (Kinesiotaping)",image:"",description:"Aplicación de cintas elásticas transpirables sobre la piel post-ajuste. Alivia el dolor, drena la inflamación y proporciona soporte propioceptivo.",execution:"1. Limpiar y secar bien la piel del área tratada. Recortar los bordes de la cinta en forma redondeada.\n2. Anclar la base de la cinta (sin tensión) en posición neutral.\n3. Llevar el músculo o articulación a tensión (estirado) y aplicar el resto de la cinta con la tensión deseada (0-50% según sea para relajar o tonificar).\n4. Friccionar la cinta para activar el adhesivo con el calor.",help:"Informar que la cinta puede durar de 3 a 5 días y se puede mojar en la ducha. Retirar tirando la piel hacia atrás, no jalando la cinta."}];
-const RED_FLAGS = ['Tumor','Infecciones','Fractura','Problema neurológico','Problemas nerviosos','Herida abierta local','Quemadura','Sangrado prolongado','Implantes artificiales','Marcapasos','Infección articular'];
-const CHIRO_TECHNIQUES = ['Diversified','Gonstead','Thompson','Activador','Toggle Recoil','SOT (Sacro Occipital)','Cox Flexion-Distraction','Miofascial / Graston','Ajuste Cervical Específico'];
-const POSTURAL_DEVIATIONS = ['Cabeza Adelantada','Hombro Elevado','Escápula Alada','Hipercifosis Dorsal','Hiperlordosis Lumbar','Rectificación Cervical','Pelvis Basculada','Escoliosis','Genu Valgo (X)','Genu Varo (O)','Pie Plano/Cavo'];
 
 const SpineLogo = ({ className }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -479,7 +303,8 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
 };
 
 const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule, onEdit }) => {
-  const [activeSection, setActiveSection] = useState('historial'); 
+  const [activeSection, setActiveSection] = useState('historial');
+  const edadMostrar = patient.birthDate ? calculateAge(patient.birthDate) : patient.age;
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
 
   const handleExportPDF = () => {
@@ -516,7 +341,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 
       <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
       
-      {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{patient.age ? `${patient.age} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
+      {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{edadMostrar ? `${edadMostrar} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div></div></div>)}
       {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in"><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div></div></div>)}
       {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in"><div className="grid grid-cols-4 gap-2 mb-2"><div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div><div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div></div><div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4"><div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div></div></div>)}
       {activeSection === 'anatomia' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 animate-fade-in"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Anterior</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureAnterior || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Lateral</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureLateral || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Posterior</h4><p className="text-sm text-indigo-100">{patient.posturePosterior || "--"}</p></div>)}
@@ -1142,6 +967,8 @@ export default function App() {
     localStorage.setItem('quiroTheme', visualMode);
   }, [visualMode]);
 
+  useEffect(() => { getRedirectResult(auth).catch((err) => { if (err) setAuthError(authErrorMessage(err)); }); }, []);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -1186,7 +1013,7 @@ export default function App() {
     }
   }, [user, doctorInfo?.isAdmin]);
 
-  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
+  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); setAuthNotice(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') { try { await signInWithRedirect(auth, new GoogleAuthProvider()); return; } catch (e2) { setAuthError(authErrorMessage(e2)); setAuthInProcess(false); return; } } if (err.code !== 'auth/popup-closed-by-user') setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
   const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError(authErrorMessage(e)); setAuthInProcess(false); } };
   const handleResetPassword = async (email) => {
     const clean = (email || '').trim();
@@ -1201,7 +1028,7 @@ export default function App() {
     }
   };
 
-  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
+  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else { await createUserWithEmailAndPassword(auth, e, p); try { await sendEmailVerification(auth.currentUser); } catch (e2) {} } } catch (err) { setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
   const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert(authErrorMessage(err)); } };
   const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert(authErrorMessage(err)); } };
 
@@ -1261,6 +1088,8 @@ export default function App() {
   const handleEditPatient = (data) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, editPatient: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), data); };
   const handleEditAppointment = (form) => { if (!editingAppointment) return; const id = editingAppointment.id; setEditingAppointment(null); setModals(prev => ({ ...prev, calendar: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', id), { date: form.date, time: form.time }); };
   const handleDeleteAppointment = (app) => { if (window.confirm("¿Eliminar esta cita?")) deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', app.id)); };
+  const handleResendVerification = async () => { try { await sendEmailVerification(auth.currentUser); alert(`Correo de verificación enviado a ${user.email}. Revisa tu bandeja y el spam, y abre el enlace para confirmar.`); } catch (e) { alert(authErrorMessage(e)); } };
+  const handleVerifiedReload = () => { window.location.reload(); };
   const handleBackup = () => {
     const respaldo = { app: 'QuiroApp', version: 1, exportedAt: new Date().toISOString(), cuenta: user?.email || user?.uid || '', perfil: doctorInfo, pacientes: patients, citas: appointments, ...(doctorInfo.isAdmin ? { codigos: adminCodes } : {}) };
     const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' });
@@ -1277,6 +1106,7 @@ export default function App() {
 
   const handleOpenNewPatient = () => { if (!doctorInfo.isPremium && patients.length >= MAX_TRIAL_PATIENTS) setModals(m => ({ ...m, upsell: true })); else setModals(m => ({ ...m, patient: true })); };
 
+  const showVerifyBanner = !!user && !user.isAnonymous && !user.emailVerified && (user.providerData || []).some(p => p.providerId === 'password');
   const filteredPatients = patients.filter(p => {
     const q = patientSearch.trim().toLowerCase();
     if (!q) return true;
@@ -1304,6 +1134,7 @@ export default function App() {
       </header>
 
       <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
+        {showVerifyBanner && (<div className="mb-6 bg-amber-500/10 border border-amber-500/40 rounded-[25px] p-5 text-left shadow-xl animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-1">Verifica tu correo</p><p className="text-xs text-amber-100/90 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-400 text-black py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow-lg">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white/5 text-white py-3 rounded-2xl font-black uppercase text-[10px] border border-white/10 active:scale-95">Ya lo verifiqué</button></div></div>)}
         {selectedPatientId ? (
           <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} />
         ) : (
@@ -1320,23 +1151,7 @@ export default function App() {
                 <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
               </div>
             )}
-            {activeTab === 'techniques' && (
-              <div className="animate-fade-in space-y-6 text-left pb-10">
-                <h2 className="text-3xl font-black uppercase italic mb-2 underline decoration-cyan-500 decoration-4 underline-offset-8">Guía de Ajustes</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {techniquesData.map((tech, idx) => (
-                    <div key={idx} className="bg-slate-900/80 rounded-[35px] border border-white/5 overflow-hidden shadow-2xl transition hover:border-cyan-500/30 flex flex-col">
-                      <div className="p-6 space-y-5 flex-1">
-                        <h3 className="text-xl font-black uppercase text-cyan-400">{tech.title}</h3>
-                        <div><p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1 flex items-center gap-1"><BookOpen className="w-3 h-3"/> Fundamento</p><p className="text-xs text-indigo-100/90 leading-relaxed">{tech.description}</p></div>
-                        <div className="bg-slate-950 p-4 rounded-2xl border border-white/5 shadow-inner"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest mb-2 flex items-center gap-1"><Target className="w-3 h-3"/> Ejecución</p><p className="text-xs text-white leading-relaxed whitespace-pre-line">{tech.execution}</p></div>
-                        <div className="bg-emerald-950/20 p-4 rounded-2xl border border-emerald-500/20 mt-auto"><p className="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Casa</p><p className="text-xs text-emerald-100/80 leading-relaxed">{tech.help}</p></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {activeTab === 'techniques' && (<Suspense fallback={<div className="py-20 text-center text-cyan-400 font-black uppercase tracking-widest text-xs">Cargando guía...</div>}><TechniquesTab /></Suspense>)}
             {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} />}
             {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
             {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
