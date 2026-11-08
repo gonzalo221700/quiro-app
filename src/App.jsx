@@ -268,11 +268,11 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   const firstName = String(doctorInfo.name || 'Especialista').split(' ')[0];
   const dateLong = (() => { const s = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); })();
   const fmtUpcoming = (ds) => { const s = new Date(ds + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }); return s.charAt(0).toUpperCase() + s.slice(1); };
-  const kpiCard = "bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-5";
+  const kpiCard = "bg-white rounded-2xl border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.09)] p-5";
   const kpiLabel = "text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] mb-1.5";
   const kpiNum = "text-[28px] leading-none font-extrabold text-[#0b2b31]";
   const qaBtn = "flex items-center gap-2.5 bg-[#f2f6f4] hover:bg-[#e9f1ee] border border-slate-200/70 rounded-xl px-3 py-3 transition active:scale-[0.98] text-left";
-  const qaIcon = "w-8 h-8 rounded-lg bg-[#0b3b42] text-white flex items-center justify-center flex-none";
+  const qaIcon = "w-8 h-8 rounded-lg bg-[#dcebe7] text-[#0b3b42] flex items-center justify-center flex-none";
 
   return (
     <div className="space-y-6 animate-fade-in text-left">
@@ -282,7 +282,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
         <p className="text-slate-500 text-sm mt-2">{dateLong} · Esto es lo que pasa hoy en tu consultorio</p>
       </div>
 
-      {!doctorInfo.isPremium && (<div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex items-center justify-between shadow-sm gap-4"><div><h4 className="text-amber-700 font-black uppercase text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4" /> Prueba Activa</h4><p className="text-[10px] text-amber-600/80 mt-1 uppercase tracking-widest font-bold">Activa PRO y libera todo el potencial</p></div><button onClick={onUpgrade} className="bg-amber-500 text-white px-4 py-3 rounded-xl font-black uppercase text-[10px] active:scale-95 transition shadow flex-none">Obtener PRO</button></div>)}
+      {!doctorInfo.isPremium && (<div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex items-center justify-between shadow-sm gap-4"><div><h4 className="text-amber-700 font-black uppercase text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4" /> Prueba Activa</h4><p className="text-[10px] text-amber-600/80 mt-1 uppercase tracking-widest font-bold">Activa PRO y libera todo el potencial</p></div><button onClick={onUpgrade} className="bg-amber-500 text-[#fff] px-4 py-3 rounded-xl font-black uppercase text-[10px] active:scale-95 transition shadow flex-none">Obtener PRO</button></div>)}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className={kpiCard}><p className={kpiLabel}>Pacientes</p><p className={kpiNum}>{String(patients.length)}{!doctorInfo.isPremium && <span className="text-xs text-amber-500 font-bold"> / {MAX_TRIAL_PATIENTS}</span>}</p><p className="text-[11px] text-slate-400 font-semibold mt-1.5">expedientes activos</p></div>
@@ -292,12 +292,12 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-6">
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.09)] p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-extrabold text-[#0b2b31]">Agenda del Día</h3>
             <div className="flex gap-2">
               <button onClick={onOpenCalendar} className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-slate-200 text-[#0b3b42] rounded-xl active:scale-95 transition text-[11px] font-black uppercase"><CalendarIcon className="w-4 h-4" /> <span className="hidden sm:inline">Calendario</span></button>
-              <button onClick={onAddAppointment} className="flex items-center gap-2 px-3.5 py-2.5 bg-[#0b3b42] text-white rounded-xl active:scale-95 transition text-[11px] font-black uppercase shadow"><Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Cita</span></button>
+              <button onClick={onAddAppointment} className="flex items-center gap-2 px-3.5 py-2.5 bg-[#0b3b42] text-[#fff] rounded-xl active:scale-95 transition text-[11px] font-black uppercase shadow"><Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Cita</span></button>
             </div>
           </div>
           {todays.length === 0 ? (
@@ -305,7 +305,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
               <ClipboardList className="w-11 h-11 mx-auto mb-3 text-slate-300" />
               <p className="text-slate-500 font-extrabold text-sm">Sin citas para hoy</p>
               <p className="text-slate-400 text-xs mt-1.5 mb-5">Agenda la primera desde el expediente de un paciente.</p>
-              <button onClick={onAddAppointment} className="px-4 py-2.5 bg-[#0b3b42] text-white rounded-xl text-[11px] font-black uppercase active:scale-95 transition">Ir a Pacientes</button>
+              <button onClick={onAddAppointment} className="px-4 py-2.5 bg-[#0b3b42] text-[#fff] rounded-xl text-[11px] font-black uppercase active:scale-95 transition">Ir a Pacientes</button>
             </div>
           ) : (todays.map(app => {
             const pInfo = patients.find(p => p.id === app.patientId);
@@ -332,7 +332,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-5">
+          <div className="bg-white rounded-3xl border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.09)] p-5">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em] mb-3.5">Accesos Rápidos</h3>
             <div className="grid grid-cols-2 gap-2.5">
               <button onClick={onNewPatient} className={qaBtn}><span className={qaIcon}><Users className="w-4 h-4" /></span><span className="text-[11px] font-extrabold text-[#16323a] leading-tight">Nuevo paciente</span></button>
@@ -342,7 +342,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-5">
+          <div className="bg-white rounded-3xl border border-slate-300 shadow-[0_8px_22px_rgba(8,48,57,0.09)] p-5">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em] mb-2">Próximas Citas</h3>
             {upcoming.length === 0 ? (
               <p className="text-slate-400 text-xs font-semibold py-3">Sin citas próximas agendadas.</p>
@@ -1241,11 +1241,11 @@ export default function App() {
   const premiumDaysLeft = doctorInfo.premiumExpiresAt ? Math.max(0, Math.ceil((doctorInfo.premiumExpiresAt - Date.now()) / 86400000)) : null;
   const sectionTitle = selectedPatientId ? 'Expediente' : ({ home: 'Inicio', patients: 'Pacientes', techniques: 'Técnicas', admin: 'Admin', settings: 'Ajustes', premium: 'QuiroApp PRO' }[activeTab] || 'Inicio');
   const todayLong = (() => { const s = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); })();
-  const navItemCls = (active) => `flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition active:scale-[0.98] ${active ? 'bg-white/10 text-white border border-[#d8b878]/40' : 'text-[#b9d2d8] hover:bg-white/5 hover:text-white border border-transparent'}`;
+  const navItemCls = (active) => `flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition active:scale-[0.98] ${active ? 'bg-white/10 text-[#fff] border border-[#d8b878]/40' : 'text-[#b9d2d8] hover:bg-white/5 hover:text-white border border-transparent'}`;
 
   return (
-    <div className={`h-screen flex overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-[#f4f6f4] text-slate-900' : 'bg-[#020617] text-white'}`}>
-      <aside className="hidden lg:flex w-[250px] flex-none flex-col bg-gradient-to-b from-[#0b3b42] via-[#083039] to-[#07272d] text-white z-40">
+    <div className={`h-screen flex overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-[#e9efec] text-slate-900' : 'bg-[#020617] text-white'}`}>
+      <aside className="hidden lg:flex w-[250px] flex-none flex-col bg-gradient-to-b from-[#0b3b42] via-[#083039] to-[#07272d] text-[#fff] z-40">
         <div className="flex items-center gap-3 px-5 pt-6 pb-5">
           <img src={doctorInfo.logo || '/logo-quiroapp.png'} alt="Logo" className="w-11 h-11 rounded-2xl object-cover bg-white shadow-lg flex-none" />
           <div>
@@ -1286,7 +1286,7 @@ export default function App() {
             <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
               {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
             </div>
-            <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
+            <h1 className="text-xl font-black uppercase tracking-tighter text-[#fff]">Quiro<span className="text-cyan-400">App</span></h1>
           </div>
           <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
         </header>
@@ -1301,7 +1301,7 @@ export default function App() {
 
         <main className="flex-1 overflow-y-auto z-10">
           <div className="max-w-[1180px] mx-auto w-full p-6 lg:px-8 lg:py-7 pb-36 lg:pb-12">
-            {showVerifyBanner && (<div className="mb-6 bg-amber-50 border border-amber-300 rounded-3xl p-5 text-left shadow-sm animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Verifica tu correo</p><p className="text-xs text-amber-800/80 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-500 text-white py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white text-amber-700 py-3 rounded-2xl font-black uppercase text-[10px] border border-amber-300 active:scale-95">Ya lo verifiqué</button></div></div>)}
+            {showVerifyBanner && (<div className="mb-6 bg-amber-50 border border-amber-300 rounded-3xl p-5 text-left shadow-sm animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Verifica tu correo</p><p className="text-xs text-amber-800/80 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-500 text-[#fff] py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white text-amber-700 py-3 rounded-2xl font-black uppercase text-[10px] border border-amber-300 active:scale-95">Ya lo verifiqué</button></div></div>)}
             {selectedPatientId ? (
               <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} />
             ) : (
