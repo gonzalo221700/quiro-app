@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense , useRef } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense, useRef } from 'react';
 import './index.css';
 import { signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction, getDocs } from 'firebase/firestore';
