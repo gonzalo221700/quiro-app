@@ -252,51 +252,116 @@ const AdminTab = ({ codes, onGenerateCode }) => {
   );
 };
 
-const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenCalendar, onUpgrade }) => {
+const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenCalendar, onUpgrade, onNewPatient, onBackup, onGoTechniques }) => {
   const today = new Date().toISOString().split('T')[0];
   const todays = appointments.filter(a => String(a.date) === today).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-  const currentTheme = CLINIC_THEMES[doctorInfo.theme] || CLINIC_THEMES['azul'];
-  
+  const nowTime = new Date().toTimeString().slice(0, 5);
+  const nextToday = todays.find(a => String(a.time || '') >= nowTime) || todays[0];
+  const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const monday = new Date(); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const weekCount = appointments.filter(a => String(a.date) >= isoLocal(monday) && String(a.date) <= isoLocal(sunday)).length;
+  const totalSessions = patients.reduce((n, p) => n + (Array.isArray(p.history) ? p.history.length : 0), 0);
+  const upcoming = appointments.filter(a => String(a.date) > today).sort((a, b) => (String(a.date) + String(a.time || '')).localeCompare(String(b.date) + String(b.time || ''))).slice(0, 3);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const firstName = String(doctorInfo.name || 'Especialista').split(' ')[0];
+  const dateLong = (() => { const s = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); })();
+  const fmtUpcoming = (ds) => { const s = new Date(ds + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }); return s.charAt(0).toUpperCase() + s.slice(1); };
+  const kpiCard = "bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-5";
+  const kpiLabel = "text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] mb-1.5";
+  const kpiNum = "text-[28px] leading-none font-extrabold text-[#0b2b31]";
+  const qaBtn = "flex items-center gap-2.5 bg-[#f2f6f4] hover:bg-[#e9f1ee] border border-slate-200/70 rounded-xl px-3 py-3 transition active:scale-[0.98] text-left";
+  const qaIcon = "w-8 h-8 rounded-lg bg-[#0b3b42] text-white flex items-center justify-center flex-none";
+
   return (
     <div className="space-y-6 animate-fade-in text-left">
-      <div className={`p-8 rounded-[45px] border-[6px] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden transition-all duration-500 ${currentTheme.bg}`}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-        <div className="relative z-10">
-          <p className={`${currentTheme.text === 'text-white' ? 'text-cyan-400' : 'text-slate-500'} text-[10px] font-black uppercase tracking-widest mb-2 italic drop-shadow-md`}>{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p>
-          <h2 className={`text-4xl font-black italic ${currentTheme.text} leading-none tracking-tighter drop-shadow-lg`}>{String(doctorInfo.name || "Especialista")}</h2>
-          <p className={`${currentTheme.text === 'text-white' ? 'text-cyan-300' : 'text-slate-600'} text-sm font-black uppercase tracking-[0.2em] mt-3 drop-shadow-md opacity-90`}>{String(doctorInfo.title || "Tu Profesión")}</p>
-        </div>
+      <div>
+        <p className="text-[#b08d3e] text-[10px] font-black uppercase tracking-[0.2em] mb-1.5">{String(doctorInfo.clinic || (doctorInfo.isPremium ? "QuiroClínica Pro" : "QuiroClínica (Prueba)"))}</p>
+        <h2 className="text-[32px] font-extrabold text-[#0b2b31] leading-none tracking-tight">{greeting}, {firstName}</h2>
+        <p className="text-slate-500 text-sm mt-2">{dateLong} · Esto es lo que pasa hoy en tu consultorio</p>
       </div>
-      
-      {!doctorInfo.isPremium && (<div className="bg-gradient-to-r from-amber-500/10 to-orange-600/10 border border-amber-500/30 p-5 rounded-[30px] flex items-center justify-between shadow-lg"><div><h4 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1"><Sparkles className="w-4 h-4"/> Prueba Activa</h4><p className="text-[9px] text-amber-200/70 mt-1 uppercase tracking-widest">Activa PRO</p></div><button onClick={onUpgrade} className="bg-amber-500 text-black px-4 py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 transition shadow-lg border-b-4 border-amber-700">Obtener PRO</button></div>)}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner relative overflow-hidden"><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pacientes</p><p className="text-3xl font-black text-white flex items-end gap-1">{String(patients.length)} {!doctorInfo.isPremium && <span className="text-[10px] text-amber-500 mb-1 opacity-60">/ {MAX_TRIAL_PATIENTS}</span>}</p></div>
-        <div className="bg-slate-900 p-6 rounded-[30px] border border-white/5 shadow-inner"><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Citas Hoy</p><p className="text-3xl font-black text-white">{String(todays.length)}</p></div>
+
+      {!doctorInfo.isPremium && (<div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex items-center justify-between shadow-sm gap-4"><div><h4 className="text-amber-700 font-black uppercase text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4" /> Prueba Activa</h4><p className="text-[10px] text-amber-600/80 mt-1 uppercase tracking-widest font-bold">Activa PRO y libera todo el potencial</p></div><button onClick={onUpgrade} className="bg-amber-500 text-white px-4 py-3 rounded-xl font-black uppercase text-[10px] active:scale-95 transition shadow flex-none">Obtener PRO</button></div>)}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={kpiCard}><p className={kpiLabel}>Pacientes</p><p className={kpiNum}>{String(patients.length)}{!doctorInfo.isPremium && <span className="text-xs text-amber-500 font-bold"> / {MAX_TRIAL_PATIENTS}</span>}</p><p className="text-[11px] text-slate-400 font-semibold mt-1.5">expedientes activos</p></div>
+        <div className={kpiCard}><p className={kpiLabel}>Citas Hoy</p><p className={kpiNum}>{String(todays.length)}</p><p className="text-[11px] text-slate-400 font-semibold mt-1.5">{nextToday ? `siguiente: ${String(nextToday.time)}` : 'sin más por hoy'}</p></div>
+        <div className={kpiCard}><p className={kpiLabel}>Esta Semana</p><p className={kpiNum}>{String(weekCount)}</p><p className="text-[11px] text-slate-400 font-semibold mt-1.5">citas agendadas</p></div>
+        <div className={kpiCard}><p className={kpiLabel}>Sesiones</p><p className={kpiNum}>{String(totalSessions)}</p><p className="text-[11px] text-slate-400 font-semibold mt-1.5">registradas en expedientes</p></div>
       </div>
-      <div className="bg-indigo-950/20 p-6 rounded-[40px] border border-indigo-500/20 shadow-xl">
-        <div className="flex justify-between items-center mb-6 px-2"><h3 className="text-xl font-black uppercase italic text-white">Agenda del Día</h3><div className="flex gap-3"><button onClick={onOpenCalendar} className="p-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-2xl active:scale-90 shadow-lg"><CalendarIcon className="w-5 h-5" /></button><button onClick={onAddAppointment} className="p-3 bg-cyan-400 text-black rounded-2xl active:scale-90 shadow-lg"><Plus className="w-5 h-5" /></button></div></div>
-        {todays.length === 0 ? (<div className="py-12 text-center opacity-40"><ClipboardList className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (todays.map(app => {
-          const pInfo = patients.find(p => p.id === app.patientId);
-          const pName = pInfo?.name || 'Desconocido';
-          const pPhone = pInfo?.phone;
-          
-          return (
-            <div key={app.id} className="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg">
-              <div>
-                <p className="text-white font-black uppercase italic text-sm">{pName}</p>
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {pPhone && (
-                  <button onClick={(e) => { e.stopPropagation(); openWhatsApp(pPhone, `Hola ${pName}, te escribimos de ${doctorInfo.clinic || 'la clínica'} para recordarte tu ajuste quiropráctico programado para hoy a las ${app.time}. ¡Te esperamos!`); }} className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500/20 active:scale-90 transition border border-emerald-500/20">
-                    <MessageSquare className="w-4 h-4" />
-                  </button>
-                )}
-                <ChevronRight className="w-5 h-5 text-indigo-800" />
-              </div>
+
+      <div className="grid lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-extrabold text-[#0b2b31]">Agenda del Día</h3>
+            <div className="flex gap-2">
+              <button onClick={onOpenCalendar} className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-slate-200 text-[#0b3b42] rounded-xl active:scale-95 transition text-[11px] font-black uppercase"><CalendarIcon className="w-4 h-4" /> <span className="hidden sm:inline">Calendario</span></button>
+              <button onClick={onAddAppointment} className="flex items-center gap-2 px-3.5 py-2.5 bg-[#0b3b42] text-white rounded-xl active:scale-95 transition text-[11px] font-black uppercase shadow"><Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Cita</span></button>
             </div>
-          );
-        }))}
+          </div>
+          {todays.length === 0 ? (
+            <div className="py-12 text-center">
+              <ClipboardList className="w-11 h-11 mx-auto mb-3 text-slate-300" />
+              <p className="text-slate-500 font-extrabold text-sm">Sin citas para hoy</p>
+              <p className="text-slate-400 text-xs mt-1.5 mb-5">Agenda la primera desde el expediente de un paciente.</p>
+              <button onClick={onAddAppointment} className="px-4 py-2.5 bg-[#0b3b42] text-white rounded-xl text-[11px] font-black uppercase active:scale-95 transition">Ir a Pacientes</button>
+            </div>
+          ) : (todays.map(app => {
+            const pInfo = patients.find(p => p.id === app.patientId);
+            const pName = pInfo?.name || 'Desconocido';
+            const pPhone = pInfo?.phone;
+            return (
+              <div key={app.id} className="py-3.5 border-b border-slate-100 last:border-none flex items-center gap-4">
+                <span className="bg-[#eef5f2] text-[#0b3b42] font-extrabold text-xs rounded-lg px-2.5 py-1.5 w-[64px] text-center flex-none">{String(app.time)}</span>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-800 text-sm truncate">{pName}</p>
+                  <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{pPhone ? String(pPhone) : 'Cita programada'}</p>
+                </div>
+                <div className="flex items-center gap-1.5 ml-auto flex-none">
+                  {pPhone && (
+                    <button onClick={(e) => { e.stopPropagation(); openWhatsApp(pPhone, `Hola ${pName}, te escribimos de ${doctorInfo.clinic || 'la clínica'} para recordarte tu ajuste quiropráctico programado para hoy a las ${app.time}. ¡Te esperamos!`); }} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 active:scale-90 transition border border-emerald-100" title="Recordatorio por WhatsApp">
+                      <MessageSquare className="w-4 h-4" />
+                    </button>
+                  )}
+                  <ChevronRight className="w-5 h-5 text-slate-300" />
+                </div>
+              </div>
+            );
+          }))}
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-5">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em] mb-3.5">Accesos Rápidos</h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button onClick={onNewPatient} className={qaBtn}><span className={qaIcon}><Users className="w-4 h-4" /></span><span className="text-[11px] font-extrabold text-[#16323a] leading-tight">Nuevo paciente</span></button>
+              <button onClick={onOpenCalendar} className={qaBtn}><span className={qaIcon}><CalendarIcon className="w-4 h-4" /></span><span className="text-[11px] font-extrabold text-[#16323a] leading-tight">Calendario</span></button>
+              <button onClick={onGoTechniques} className={qaBtn}><span className={qaIcon}><BookOpen className="w-4 h-4" /></span><span className="text-[11px] font-extrabold text-[#16323a] leading-tight">Técnicas</span></button>
+              <button onClick={onBackup} className={qaBtn}><span className={qaIcon}><Download className="w-4 h-4" /></span><span className="text-[11px] font-extrabold text-[#16323a] leading-tight">Respaldo</span></button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(8,48,57,0.05)] p-5">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em] mb-2">Próximas Citas</h3>
+            {upcoming.length === 0 ? (
+              <p className="text-slate-400 text-xs font-semibold py-3">Sin citas próximas agendadas.</p>
+            ) : (upcoming.map(app => {
+              const pInfo = patients.find(p => p.id === app.patientId);
+              return (
+                <div key={app.id} className="py-3 border-b border-slate-100 last:border-none flex items-center gap-3.5">
+                  <div className="bg-[#fdf6e0] border border-[#e8d9ac] rounded-xl px-2.5 py-1.5 text-center flex-none min-w-[74px]">
+                    <p className="text-[10px] font-extrabold text-[#8a6d2f] leading-tight">{fmtUpcoming(String(app.date))}</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-800 text-[13px] truncate">{pInfo?.name || 'Desconocido'}</p>
+                    <p className="text-[11px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" /> {String(app.time)}</p>
+                  </div>
+                </div>
+              );
+            }))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1018,6 +1083,8 @@ export default function App() {
     localStorage.setItem('quiroTheme', visualMode);
   }, [visualMode]);
 
+  useEffect(() => { if (!localStorage.getItem('quiroDisenoV2')) { setVisualMode('claro'); localStorage.setItem('quiroDisenoV2', '1'); } }, []);
+
   useEffect(() => { getRedirectResult(auth).catch((err) => { if (err) setAuthError(authErrorMessage(err)); }); }, []);
 
   useEffect(() => {
@@ -1171,54 +1238,106 @@ export default function App() {
   if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} onResetPassword={handleResetPassword} inProcess={authInProcess} error={authError} notice={authNotice} step={authStep} setStep={setAuthStep} />;
   if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
 
+  const premiumDaysLeft = doctorInfo.premiumExpiresAt ? Math.max(0, Math.ceil((doctorInfo.premiumExpiresAt - Date.now()) / 86400000)) : null;
+  const sectionTitle = selectedPatientId ? 'Expediente' : ({ home: 'Inicio', patients: 'Pacientes', techniques: 'Técnicas', admin: 'Admin', settings: 'Ajustes', premium: 'QuiroApp PRO' }[activeTab] || 'Inicio');
+  const todayLong = (() => { const s = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); })();
+  const navItemCls = (active) => `flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition active:scale-[0.98] ${active ? 'bg-white/10 text-white border border-[#d8b878]/40' : 'text-[#b9d2d8] hover:bg-white/5 hover:text-white border border-transparent'}`;
+
   return (
-    <div className={`h-screen flex flex-col italic overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-[#020617] text-white'}`}>
-      <SpineWatermark />
-      <header className="p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
-            {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
+    <div className={`h-screen flex overflow-hidden transition-colors duration-500 ${visualMode === 'claro' ? 'theme-light bg-[#f4f6f4] text-slate-900' : 'bg-[#020617] text-white'}`}>
+      <aside className="hidden lg:flex w-[250px] flex-none flex-col bg-gradient-to-b from-[#0b3b42] via-[#083039] to-[#07272d] text-white z-40">
+        <div className="flex items-center gap-3 px-5 pt-6 pb-5">
+          <img src={doctorInfo.logo || '/logo-quiroapp.png'} alt="Logo" className="w-11 h-11 rounded-2xl object-cover bg-white shadow-lg flex-none" />
+          <div>
+            <p className="font-extrabold text-[17px] leading-none">QuiroApp</p>
+            <p className="text-[#d8b878] font-bold tracking-[0.2em] uppercase text-[8.5px] mt-1.5">Gestión Clínica</p>
           </div>
-          <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
         </div>
-        <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
-        {showVerifyBanner && (<div className="mb-6 bg-amber-500/10 border border-amber-500/40 rounded-[25px] p-5 text-left shadow-xl animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-1">Verifica tu correo</p><p className="text-xs text-amber-100/90 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-400 text-black py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow-lg">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white/5 text-white py-3 rounded-2xl font-black uppercase text-[10px] border border-white/10 active:scale-95">Ya lo verifiqué</button></div></div>)}
-        {selectedPatientId ? (
-          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} />
-        ) : (
-          <>
-            {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} />}
-            {activeTab === 'patients' && (
-              <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
-                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
-                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : filteredPatients.length === 0 ? <div className="py-20 text-center opacity-30"><Search className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin resultados para tu búsqueda</p></div> : filteredPatients.map(p => (
-                  <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
-                    <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
-                  </div>
-                ))}
-                <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
-              </div>
+        <nav className="px-3.5 space-y-1.5 mt-1">
+          <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={navItemCls(activeTab === 'home' && !selectedPatientId)}><Home className="w-5 h-5" />Inicio</button>
+          <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={navItemCls(activeTab === 'patients' || !!selectedPatientId)}><Users className="w-5 h-5" />Pacientes</button>
+          <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={navItemCls(activeTab === 'techniques')}><BookOpen className="w-5 h-5" />Técnicas</button>
+          {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={navItemCls(activeTab === 'admin')}><TerminalSquare className="w-5 h-5" />Admin</button>)}
+          <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={navItemCls(activeTab === 'settings' || activeTab === 'premium')}><Settings className="w-5 h-5" />Ajustes</button>
+        </nav>
+        <div className="mt-auto px-4 pb-5 space-y-4">
+          <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-4">
+            {doctorInfo.isPremium ? (
+              <><p className="text-[#d8b878] text-[9px] font-black tracking-[0.18em] uppercase">Licencia PRO</p><p className="text-[13px] font-bold mt-1.5 leading-snug">{premiumDaysLeft !== null ? `Activa · vence en ${premiumDaysLeft} días` : 'Activa'}</p></>
+            ) : doctorInfo.isAdmin ? (
+              <><p className="text-[#d8b878] text-[9px] font-black tracking-[0.18em] uppercase">Cuenta Admin</p><p className="text-[13px] font-bold mt-1.5 leading-snug">Acceso total</p></>
+            ) : (
+              <><p className="text-amber-300 text-[9px] font-black tracking-[0.18em] uppercase">Prueba Gratis</p><p className="text-[13px] font-bold mt-1.5 leading-snug">Te quedan {trialTimeLeft.days} días</p><button onClick={handleUpgradeRequest} className="mt-3 w-full bg-gradient-to-r from-[#d8b878] to-[#b08d3e] text-[#231a05] py-2.5 rounded-xl text-[10px] font-black uppercase active:scale-95 transition shadow">Obtener PRO</button></>
             )}
-            {activeTab === 'techniques' && (<Suspense fallback={<div className="py-20 text-center text-cyan-400 font-black uppercase tracking-widest text-xs">Cargando guía...</div>}><TechniquesTab /></Suspense>)}
-            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} />}
-            {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
-            {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
-          </>
-        )}
-      </main>
+          </div>
+          <div className="flex items-center gap-3 px-1">
+            <span className="w-9 h-9 rounded-full bg-[#d8b878]/20 border border-[#d8b878]/50 text-[#d8b878] flex items-center justify-center font-extrabold text-sm flex-none">{String(doctorInfo.name || 'Q').charAt(0).toUpperCase()}</span>
+            <div className="min-w-0">
+              <p className="text-[13px] font-bold truncate">{String(doctorInfo.name || 'Especialista')}</p>
+              <p className="text-[10px] text-[#9fc0c7] truncate">{String(doctorInfo.clinic || 'Mi consultorio')}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
 
-      {!doctorInfo.isPremium && <div className="fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <header className="lg:hidden p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
+              {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
+            </div>
+            <h1 className="text-xl font-black uppercase tracking-tighter">Quiro<span className="text-cyan-400">App</span></h1>
+          </div>
+          <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
+        </header>
 
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+        <div className="hidden lg:flex items-center justify-between px-8 py-[18px] border-b border-slate-200/70 bg-white/70 backdrop-blur z-40">
+          <h2 className="text-xl font-extrabold text-[#0b2b31]">{sectionTitle}</h2>
+          <div className="flex items-center gap-3.5">
+            <span className="text-xs font-semibold text-slate-500">{todayLong}</span>
+            <span className={`px-3 py-1.5 rounded-full border text-[9px] font-black uppercase flex items-center gap-1.5 ${isOnline ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}><span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>{isOnline ? 'Sync Activo' : 'Offline'}</span>
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto z-10">
+          <div className="max-w-[1180px] mx-auto w-full p-6 lg:px-8 lg:py-7 pb-36 lg:pb-12">
+            {showVerifyBanner && (<div className="mb-6 bg-amber-50 border border-amber-300 rounded-3xl p-5 text-left shadow-sm animate-fade-in"><p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Verifica tu correo</p><p className="text-xs text-amber-800/80 mb-4 leading-relaxed">Tu cuenta aún no confirma <strong>{String(user.email)}</strong>. Te enviamos un enlace de confirmación al registrarte. Sin verificar tu correo, si un día pierdes tu contraseña no podrás recuperarla.</p><div className="flex gap-2"><button onClick={handleResendVerification} className="flex-1 bg-amber-500 text-white py-3 rounded-2xl font-black uppercase text-[10px] active:scale-95 shadow">Reenviar correo</button><button onClick={handleVerifiedReload} className="flex-1 bg-white text-amber-700 py-3 rounded-2xl font-black uppercase text-[10px] border border-amber-300 active:scale-95">Ya lo verifiqué</button></div></div>)}
+            {selectedPatientId ? (
+              <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} />
+            ) : (
+              <>
+                {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} onNewPatient={handleOpenNewPatient} onBackup={handleBackup} onGoTechniques={() => { setActiveTab('techniques'); setSelectedPatientId(null); }} />}
+                {activeTab === 'patients' && (
+                  <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
+                    <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
+                    {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : filteredPatients.length === 0 ? <div className="py-20 text-center opacity-30"><Search className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin resultados para tu búsqueda</p></div> : filteredPatients.map(p => (
+                      <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
+                        <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
+                      </div>
+                    ))}
+                    <button onClick={handleOpenNewPatient} className="fixed bottom-36 right-6 lg:bottom-10 lg:right-10 w-16 h-16 bg-cyan-400 text-black rounded-[25px] shadow-2xl flex items-center justify-center active:scale-90 transition z-20 border-b-4 border-cyan-700 shadow-cyan-900/50"><Plus className="w-8 h-8" /></button>
+                  </div>
+                )}
+                {activeTab === 'techniques' && (<Suspense fallback={<div className="py-20 text-center text-cyan-400 font-black uppercase tracking-widest text-xs">Cargando guía...</div>}><TechniquesTab /></Suspense>)}
+                {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} />}
+                {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
+                {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {!doctorInfo.isPremium && <div className="lg:hidden fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
+
+      <nav className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
         <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
         <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
         <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
         {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
         <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
+
 
       {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
       {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
