@@ -2125,14 +2125,15 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <header className="lg:hidden p-6 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
+        <header className="lg:hidden px-5 py-4 bg-white/85 backdrop-blur-xl border-b border-slate-200 shadow-[0_2px_14px_rgba(8,48,57,0.06)] flex justify-between items-center z-50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-400/30 overflow-hidden flex items-center justify-center">
-              {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-7 h-7 object-cover" /> : <SpineLogo className="w-7 h-7 text-cyan-400" />}
+            <img src={doctorInfo.logo || '/logo-quiroapp.png'} alt="Logo" className="w-10 h-10 rounded-2xl object-cover bg-white shadow border border-slate-200 flex-none" />
+            <div>
+              <h1 className="text-[17px] font-extrabold leading-none text-[#0b3b42]">QuiroApp</h1>
+              <p className="text-[#b08d3e] font-bold tracking-[0.2em] uppercase text-[7.5px] mt-1">Gestión Clínica</p>
             </div>
-            <h1 className="text-xl font-black uppercase tracking-tighter text-[#fff]">Quiro<span className="text-cyan-400">App</span></h1>
           </div>
-          <div className={`px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[7px] font-black uppercase flex items-center gap-1 shadow-sm ${isOnline ? 'text-cyan-400' : 'text-rose-500'}`}>{isOnline ? 'Sync Activo' : 'Offline'}</div>
+          <div className={`px-3 py-1.5 rounded-full border text-[8px] font-black uppercase flex items-center gap-1.5 ${isOnline ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}><span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>{isOnline ? 'Sync Activo' : 'Offline'}</div>
         </header>
 
         <div className="hidden lg:flex items-center justify-between px-8 py-[18px] border-b border-slate-200/70 bg-white/70 backdrop-blur z-40">
@@ -2254,14 +2255,14 @@ export default function App() {
         </main>
       </div>
 
-      {!doctorInfo.isPremium && <div className="lg:hidden fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-indigo-600/90 backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-white/20 shadow-xl mx-auto max-w-[200px]"><Clock className="w-4 h-4 text-cyan-300 animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-white">Prueba: <span className="text-cyan-300">{trialTimeLeft.days}d restantes</span></span></div></div>}
+      {!doctorInfo.isPremium && <div className="lg:hidden fixed bottom-28 w-full px-6 z-40 pointer-events-none"><div className="bg-gradient-to-r from-[#d8b878] to-[#b08d3e] backdrop-blur-md p-3 rounded-full flex items-center justify-center gap-3 border border-[#b08d3e]/40 shadow-xl mx-auto max-w-[220px]"><Clock className="w-4 h-4 text-[#231a05] animate-pulse" /><span className="text-[9px] font-black uppercase tracking-widest text-[#231a05]">Prueba: {trialTimeLeft.days}d restantes</span></div></div>}
 
-      <nav className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
-        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
-        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
-        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
-        {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
-        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-slate-400 opacity-60 hover:text-white'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
+      <nav className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] bg-white/92 backdrop-blur-2xl border border-slate-200 rounded-[35px] py-3 px-2 flex justify-around items-center z-50 shadow-[0_16px_36px_rgba(8,48,57,0.20)]">
+        <button onClick={() => {setActiveTab('home'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' && !selectedPatientId ? 'text-[#0b3b42] scale-110' : 'text-slate-400 hover:text-[#0b3b42]'}`}><Home className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Inicio</span></button>
+        <button onClick={() => {setActiveTab('patients'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'patients' || selectedPatientId ? 'text-[#0b3b42] scale-110' : 'text-slate-400 hover:text-[#0b3b42]'}`}><Users className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Pacientes</span></button>
+        <button onClick={() => {setActiveTab('techniques'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'techniques' ? 'text-[#0b3b42] scale-110' : 'text-slate-400 hover:text-[#0b3b42]'}`}><BookOpen className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Técnicas</span></button>
+        {doctorInfo.isAdmin && (<button onClick={() => {setActiveTab('admin'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'text-[#b08d3e] scale-110' : 'text-slate-400 hover:text-[#0b3b42]'}`}><TerminalSquare className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Admin</span></button>)}
+        <button onClick={() => {setActiveTab('settings'); setSelectedPatientId(null);}} className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'settings' || activeTab === 'premium') ? 'text-[#0b3b42] scale-110' : 'text-slate-400 hover:text-[#0b3b42]'}`}><Settings className="w-6 h-6" /><span className="text-[8px] font-black uppercase">Ajustes</span></button>
       </nav>
 
 
