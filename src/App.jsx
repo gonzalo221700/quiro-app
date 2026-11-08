@@ -889,6 +889,14 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     reader.readAsDataURL(file);
   };
 
+  // Parte 10.1: quitar el logo (la app vuelve al logo oficial y el documento sale sin imagen)
+  const handleRemoveLogo = async () => {
+    if (isLocked) return;
+    setIsSaving(true);
+    await onUpdateInfo({ logo: null });
+    setIsSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
+  };
+
   const isEmailUser = !!(user.providerData || []).some(p => p.providerId === 'password');
   const handleChangePassword = async () => {
     if (user.isAnonymous) { setPassMsg('Tu cuenta es temporal: vincúlala con Google o correo (botón de arriba) para poder protegerla con contraseña.'); return; }
@@ -1015,8 +1023,11 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
               <div className="w-[70px] h-[70px] shrink-0 rounded-[18px] flex items-center justify-center border-2 border-dashed border-[#cfe0da] bg-[#f7faf8] overflow-hidden">
                 {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" /> : <ImagePlus className="w-7 h-7 text-[#0b3b42]/30" />}
               </div>
-              <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={isLocked} />
-              <label htmlFor="logo-upload" className={`flex-1 py-3.5 px-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 border transition ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'bg-[#eef5f2] text-[#0b3b42] border-[#cfe3dc] cursor-pointer active:scale-95'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
+              <div className="flex-1 flex flex-col gap-2">
+                <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={isLocked} />
+                <label htmlFor="logo-upload" className={`py-3.5 px-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 border transition ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'bg-[#eef5f2] text-[#0b3b42] border-[#cfe3dc] cursor-pointer active:scale-95'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
+                {doctorInfo.logo && (<button onClick={handleRemoveLogo} disabled={isLocked || isSaving} className="py-3 px-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 border bg-rose-50 text-rose-500 border-rose-200 active:scale-95 transition disabled:opacity-40"><Trash2 className="w-4 h-4" /> Quitar logo</button>)}
+              </div>
             </div>
           </div>
           <div>

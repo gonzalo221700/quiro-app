@@ -58,8 +58,9 @@ const calculateAge = (dobStr) => {
 // 🌟 MOTOR DE GENERACIÓN DE EXPEDIENTES CLÍNICOS (HTML/PDF/WORD)
 const generateClinicalHTML = (patient, doctorInfo) => {
   const edadActual = patient.birthDate ? calculateAge(patient.birthDate) : patient.age;
-  const logoSrc = doctorInfo.logo || 'https://quiro-app.vercel.app/logo-quiroapp.png';
-  const logoHtml = `<img src="${logoSrc}" style="max-height: 64px; max-width: 180px; border-radius: 10px; object-fit: contain;" />`;
+  // Parte 10.1: sin logo propio, el documento sale sin imagen (membrete de texto).
+  // Tamaño con atributos width/height porque Word ignora los topes CSS de las imágenes.
+  const logoHtml = doctorInfo.logo ? `<img src="${doctorInfo.logo}" width="54" height="54" style="width: 54px; height: 54px; object-fit: contain; border-radius: 10px;" />` : '';
   const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const hoy = new Date();
   const fechaEmision = hoy.getDate() + ' de ' + meses[hoy.getMonth()] + ' de ' + hoy.getFullYear();
@@ -142,7 +143,7 @@ const generateClinicalHTML = (patient, doctorInfo) => {
           <tr>
             <td style="padding: 0 14px 12px 0;">
               <table><tr>
-                <td style="width: 76px; padding: 0 12px 0 0;">${logoHtml}</td>
+                ${logoHtml ? `<td style="width: 66px; padding: 0 12px 0 0;">${logoHtml}</td>` : ''}
                 <td style="padding: 0;">
                   <p class="clinic">${doctorInfo.clinic || 'Clínica Quiropráctica'}</p>
                   <p style="margin: 2px 0 0 0; font-size: 10px; color: #b08d3e; font-weight: 800; letter-spacing: 2.5px;">SALUD · COLUMNA · BIENESTAR</p>
