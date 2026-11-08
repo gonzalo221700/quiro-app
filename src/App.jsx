@@ -918,7 +918,7 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, onResetPassword,
         </div>
         <div className="relative my-auto py-14">
           <h1 className="text-4xl xl:text-[44px] font-black leading-[1.08] tracking-tight">Tu consultorio,<br />bajo <span className="text-[#d8b878]">control total</span>.</h1>
-          <p className="text-white/70 text-sm leading-relaxed mt-5 max-w-sm">El CRM pensado para quiroprácticos: pacientes, agenda y licencias en un solo lugar.</p>
+          <p className="text-white/70 text-sm leading-relaxed mt-5 max-w-sm">El CRM pensado para quiroprácticos, fisioterapeutas y masajistas: pacientes, agenda y licencias en un solo lugar.</p>
           <ul className="mt-9 space-y-4 text-sm font-semibold">
             <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full border border-[#d8b878]/60 bg-[#d8b878]/15 flex items-center justify-center flex-none"><CheckCircle2 className="w-3.5 h-3.5 text-[#d8b878]" /></span>Expedientes y sesiones clínicas</li>
             <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full border border-[#d8b878]/60 bg-[#d8b878]/15 flex items-center justify-center flex-none"><CheckCircle2 className="w-3.5 h-3.5 text-[#d8b878]" /></span>Agenda con avisos por WhatsApp</li>
