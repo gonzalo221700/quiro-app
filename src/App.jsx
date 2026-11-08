@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
+import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil } from 'lucide-react';
 
@@ -17,6 +17,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+auth.languageCode = 'es';
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 const appId = firebaseConfig.projectId;
 const TRIAL_DAYS = 3;
@@ -1073,7 +1074,7 @@ const SubscriptionBlockedScreen = ({ onLogout }) => (
   </div>
 );
 
-const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error, step, setStep }) => {
+const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, onResetPassword, inProcess, error, notice, step, setStep }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoginView, setIsLoginView] = useState(true);
@@ -1087,6 +1088,7 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error
         <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
         
         {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+        {notice && <div className="bg-emerald-500/10 border border-emerald-500/50 p-4 rounded-2xl text-emerald-400 text-[10px] mb-4 text-left"><CheckCircle2 className="w-4 h-4 inline mr-2" /> {String(notice)}</div>}
         
         {inProcess ? (
           <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
@@ -1104,6 +1106,7 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, inProcess, error
               <div className="text-left">
                 <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
                 <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                {isLoginView ? (<p className="text-center mt-4"><button onClick={() => onResetPassword(email)} className="text-[9px] text-indigo-300 font-black uppercase underline">¿Olvidaste tu contraseña?</button></p>) : (<p className="text-center mt-4 text-[9px] text-indigo-300 uppercase font-bold tracking-wider">Usa un correo real: ahí te llegará la recuperación de tu contraseña</p>)}
                 <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
               </div>
             )}
@@ -1130,6 +1133,7 @@ export default function App() {
   const [modals, setModals] = useState({});
   const [authInProcess, setAuthInProcess] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
   const [authStep, setAuthStep] = useState('initial');
 
   const [visualMode, setVisualMode] = useState(localStorage.getItem('quiroTheme') || 'oscuro');
@@ -1184,6 +1188,19 @@ export default function App() {
 
   const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
   const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError(authErrorMessage(e)); setAuthInProcess(false); } };
+  const handleResetPassword = async (email) => {
+    const clean = (email || '').trim();
+    setAuthError(""); setAuthNotice("");
+    if (!clean) return setAuthError("Escribe tu correo en el campo de arriba y luego toca «¿Olvidaste tu contraseña?»." );
+    try {
+      await sendPasswordResetEmail(auth, clean);
+      setAuthNotice(`Listo: te enviamos un correo a ${clean} con el enlace para crear una contraseña nueva. Revisa también tu carpeta de spam. El enlace vence en 1 hora.`);
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') setAuthError("No hay ninguna cuenta registrada con ese correo.");
+      else setAuthError(authErrorMessage(err));
+    }
+  };
+
   const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
   const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert(authErrorMessage(err)); } };
   const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert(authErrorMessage(err)); } };
@@ -1270,7 +1287,7 @@ export default function App() {
   });
 
   if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
-  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} inProcess={authInProcess} error={authError} step={authStep} setStep={setAuthStep} />;
+  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} onResetPassword={handleResetPassword} inProcess={authInProcess} error={authError} notice={authNotice} step={authStep} setStep={setAuthStep} />;
   if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
 
   return (
