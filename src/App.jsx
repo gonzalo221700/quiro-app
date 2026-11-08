@@ -31,10 +31,10 @@ const SpineWatermark = () => (
 
 const Modal = ({ title, children, onClose }) => (
   <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 transition-all">
-    <div className="bg-slate-950 w-full sm:max-w-3xl sm:w-[95%] rounded-t-[40px] sm:rounded-[50px] max-h-[95vh] overflow-y-auto shadow-2xl p-6 sm:p-10 border-t-4 border-cyan-500 text-white animate-slide-up relative scrollbar-hide">
+    <div className="bg-slate-950 w-full sm:max-w-3xl sm:w-[95%] rounded-t-[40px] sm:rounded-[50px] max-h-[95vh] overflow-y-auto shadow-2xl p-6 sm:p-10 border-t-4 border-[#b08d3e] text-white animate-slide-up relative scrollbar-hide">
       <div className="flex justify-between items-center mb-8 relative z-10">
-        <h3 className="text-2xl font-black italic uppercase text-cyan-400 tracking-tight">{String(title)}</h3>
-        <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 rounded-full text-white active:scale-90 transition"><X className="w-5 h-5" /></button>
+        <h3 className="text-2xl font-black uppercase text-[#0b3b42] tracking-tight">{String(title)}</h3>
+        <button onClick={onClose} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 active:scale-90 transition"><X className="w-5 h-5" /></button>
       </div>
       {children}
     </div>
