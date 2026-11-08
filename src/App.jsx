@@ -2,12 +2,14 @@ import React, { useState, useEffect, useMemo, lazy, Suspense, useRef } from 'rea
 import './index.css';
 import { signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction, getDocs } from 'firebase/firestore';
-import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil, Smartphone, Monitor, Tag, MessageCircle } from 'lucide-react';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil, Smartphone, Monitor, Tag, MessageCircle, Phone } from 'lucide-react';
 import { auth, db, appId, TRIAL_DAYS, MAX_TRIAL_PATIENTS } from './lib/firebase.js';
 import { openWhatsApp, generateSecureCode, authErrorMessage, safeFormatDate, calculateAge, generateClinicalHTML, CLINIC_THEMES, RED_FLAGS, CHIRO_TECHNIQUES, POSTURAL_DEVIATIONS, MOTIVOS_CONSULTA, LIST_IRRADIACION, LIST_EMPEORA, LIST_MEJORA, LIST_PREVIOS, LIST_PATOLOGICOS, LIST_MEDICAMENTOS, LIST_DIAGNOSTICOS, LIST_OBJETIVOS, LIST_FRECUENCIAS, LIST_RECOMENDACIONES, LIST_PRUEBAS, LIST_PALPACION, BONE_NOTE_SUGGESTIONS, LIST_HALLAZGOS, LIST_VISITA, LIST_RESPUESTA, LIST_PROXIMA } from './lib/utils.js';
 
 // ===== Parte 8: planes por dispositivos =====
 const PLANS = { duo: { name: 'Dúo', pc: 1, mobile: 1 }, equipo: { name: 'Equipo', pc: 3, mobile: 3 }, full: { name: 'Full Pack', pc: 10, mobile: 10 } };
+// Parte 9: el WhatsApp de ventas vive en el perfil (Ajustes); si no hay, se usa el número original
+const salesPhoneOf = (info) => ((info && info.salesWhatsApp) || '').replace(/\D/g, '') || '529996180031';
 const getDeviceId = () => { try { let id = localStorage.getItem('quiroDeviceId'); if (!id) { id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10)); localStorage.setItem('quiroDeviceId', id); } return id; } catch (e) { return 'dev-' + Date.now(); } };
 const detectDevice = () => { const ua = navigator.userAgent || ''; const mobile = /iPad|iPhone|iPod|Android|Mobile/i.test(ua); const os = /Windows/i.test(ua) ? 'Windows' : /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Mac/i.test(ua) ? 'macOS' : /Linux/i.test(ua) ? 'Linux' : 'Web'; return { type: mobile ? 'mobile' : 'pc', label: (mobile ? 'Móvil' : 'Computadora') + ' · ' + os }; };
 
@@ -219,7 +221,7 @@ const AnatomyMap = ({ selectedAreas, toggleArea }) => {
   );
 };
 
-const PremiumTab = ({ onActivateCode }) => {
+const PremiumTab = ({ onActivateCode, salesPhone = "529996180031" }) => {
   const [code, setCode] = useState('');
   const [activating, setActivating] = useState(false);
   const handleActivate = async () => { if (!code) return; setActivating(true); await onActivateCode(code); setActivating(false); };
@@ -228,7 +230,7 @@ const PremiumTab = ({ onActivateCode }) => {
       <div className="bg-gradient-to-tr from-amber-400 to-orange-600 p-6 rounded-[35px] inline-block mb-2 shadow-[0_0_40px_rgba(251,191,36,0.3)]"><CreditCard className="w-12 h-12 text-black" /></div>
       <h2 className="text-3xl font-black uppercase italic text-white mb-2">Desbloquea <span className="text-amber-400">PRO</span></h2>
       <p className="text-indigo-200 text-sm leading-relaxed mb-8">Adquiere licencia para sincronizar tu cuenta en PC.</p>
-      <button onClick={() => openWhatsApp("529996180031", "Hola, me interesa adquirir QuiroApp PRO.")} className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8"><MessageSquare className="w-6 h-6" /> WhatsApp</button>
+      <button onClick={() => openWhatsApp(salesPhone, "Hola, me interesa adquirir QuiroApp PRO.")} className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8"><MessageSquare className="w-6 h-6" /> WhatsApp</button>
       <div className="grid grid-cols-3 gap-2.5 mb-8 text-left">
         {Object.entries(PLANS).map(([id, p]) => (
           <div key={id} className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm">
@@ -772,6 +774,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 
 const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onBackup, visualMode, setVisualMode, devices = [], currentDeviceId, onReleaseDevice }) => {
   const planDef = PLANS[doctorInfo.plan] || null;
+  const salesPhone = salesPhoneOf(doctorInfo);
   const pcUsed = devices.filter(d => d.type === 'pc').length;
   const mobUsed = devices.filter(d => d.type !== 'pc').length;
   const [isEditing, setIsEditing] = useState(false);
@@ -779,15 +782,27 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   const [customTitle, setCustomTitle] = useState('');
   const [name, setName] = useState(doctorInfo.name || '');
   const [clinic, setClinic] = useState(doctorInfo.clinic || '');
-  const [theme, setTheme] = useState(doctorInfo.theme || 'azul'); 
-  
+  const [theme, setTheme] = useState(doctorInfo.theme || 'azul');
+
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  
+
   const [showProDetails, setShowProDetails] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailLink, setEmailLink] = useState('');
   const [passLink, setPassLink] = useState('');
+
+  // ===== Parte 9: Ajustes Diseño 2 (lista iOS) + mejoras =====
+  const [openDevices, setOpenDevices] = useState(false);
+  const [openHelp, setOpenHelp] = useState(null);
+  const [isEditingOffice, setIsEditingOffice] = useState(false);
+  const [licenseNumber, setLicenseNumber] = useState(doctorInfo.licenseNumber || '');
+  const [officeAddress, setOfficeAddress] = useState(doctorInfo.officeAddress || '');
+  const [officePhone, setOfficePhone] = useState(doctorInfo.officePhone || '');
+  const [salesWhatsApp, setSalesWhatsApp] = useState(doctorInfo.salesWhatsApp || '');
+  const [officeSaved, setOfficeSaved] = useState(false);
+  const [passMsg, setPassMsg] = useState('');
+  const [lastBackup, setLastBackup] = useState(() => { try { const v = localStorage.getItem('quiroLastBackup'); return v ? parseInt(v) : null; } catch (e) { return null; } });
 
   const isLocked = !doctorInfo.isPremium;
   const PRO_TITLES = ["Dr.", "Dra.", "Quiropráctico", "Quiropráctica", "Fisioterapeuta", "Terapeuta Físico", "Masoterapeuta", "Terapeuta de Spa", "Osteópata", "Especialista en Rehabilitación", "Lic.", "Otro"];
@@ -796,10 +811,19 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     if (isLocked) return;
     setIsSaving(true);
     const finalTitle = title === 'Otro' ? customTitle : title;
-    await onUpdateInfo({ title: finalTitle, name, clinic, theme }); 
+    await onUpdateInfo({ title: finalTitle, name, clinic, theme });
     setIsSaving(false);
     setSaved(true);
-    setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500); 
+    setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500);
+  };
+
+  const handleSaveOffice = async () => {
+    if (isLocked) return;
+    setIsSaving(true);
+    await onUpdateInfo({ licenseNumber, officeAddress, officePhone, salesWhatsApp });
+    setIsSaving(false);
+    setOfficeSaved(true);
+    setTimeout(() => { setOfficeSaved(false); setIsEditingOffice(false); }, 1500);
   };
 
   const getProRemainingDays = () => {
@@ -813,7 +837,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     if (isLocked) return;
     const file = e.target.files[0];
     if (!file) return;
-    setIsSaving(true); 
+    setIsSaving(true);
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new window.Image();
@@ -821,7 +845,7 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         const canvas = document.createElement('canvas');
         const MAX_WIDTH = 256; const MAX_HEIGHT = 256;
         let width = img.width; let height = img.height;
-        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
         else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
         canvas.width = width; canvas.height = height;
         const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
@@ -833,47 +857,86 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     reader.readAsDataURL(file);
   };
 
-  const inputClass = `w-full bg-slate-950 p-5 rounded-[25px] border border-white/10 text-white font-bold outline-none transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'focus:border-cyan-400'}`;
+  const isEmailUser = !!(user.providerData || []).some(p => p.providerId === 'password');
+  const handleChangePassword = async () => {
+    if (user.isAnonymous) { setPassMsg('Tu cuenta es temporal: vincúlala con Google o correo (botón de arriba) para poder protegerla con contraseña.'); return; }
+    if (!isEmailUser) { setPassMsg('Tu cuenta entra con Google: la contraseña se gestiona desde tu cuenta de Google.'); return; }
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      setPassMsg('Te enviamos el enlace para cambiar tu contraseña a ' + user.email + '. Revisa también la carpeta de spam; el enlace dura 1 hora.');
+    } catch (e) { setPassMsg(authErrorMessage(e)); }
+  };
+
+  const handleBackupClick = () => {
+    onBackup();
+    const now = Date.now();
+    try { localStorage.setItem('quiroLastBackup', String(now)); } catch (e) {}
+    setLastBackup(now);
+  };
+  const backupStale = !lastBackup || (Date.now() - lastBackup > 60 * 86400000);
+  const lastBackupText = lastBackup ? safeFormatDate(new Date(lastBackup).toISOString().split('T')[0]) : null;
+
   const currentTheme = CLINIC_THEMES[doctorInfo.theme] || CLINIC_THEMES['azul'];
+  const inputClass = "w-full bg-[#f7faf8] border-[1.5px] border-[#cfe0da] rounded-2xl px-4 py-3.5 text-[13.5px] font-semibold text-[#22332d] outline-none focus:border-[#0b3b42] transition disabled:opacity-50";
+  const remainingDays = getProRemainingDays();
+
+  const Group = ({ label, children }) => (
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400 ml-2 mb-2">{label}</p>
+      <div className="bg-white rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] px-4 sm:px-5 overflow-hidden">{children}</div>
+    </div>
+  );
+  const Row = ({ icon: Icon, iconCls = 'bg-[#eef5f2] border-[#cfe3dc] text-[#0b3b42]', title, sub, value, onClick, last = false }) => (
+    <div onClick={onClick} className={`flex items-center gap-3 py-3.5 ${last ? '' : 'border-b border-[#eef3f0]'} ${onClick ? 'cursor-pointer active:bg-[#f7faf8] transition rounded-xl px-1 -mx-1' : ''}`}>
+      <span className={`w-[34px] h-[34px] flex-none rounded-[10px] border flex items-center justify-center ${iconCls}`}><Icon className="w-4 h-4" /></span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13.5px] font-bold text-[#23423c] leading-snug">{title}</p>
+        {sub && <p className="text-[11px] font-semibold text-slate-400 leading-snug mt-0.5">{sub}</p>}
+      </div>
+      {value && <span className="text-[12px] font-semibold text-slate-400 text-right truncate max-w-[45%]">{value}</span>}
+      {onClick && <ChevronRight className="w-4 h-4 text-[#b6c8c1] flex-none" />}
+    </div>
+  );
 
   return (
-    <div className="animate-fade-in space-y-6 text-left">
-      <div className="flex justify-between items-start mb-6">
-        <h2 className="text-3xl font-black uppercase italic underline decoration-cyan-500 decoration-4 underline-offset-8">Ajustes</h2>
-        
+    <div className="animate-fade-in text-left max-w-[680px] mx-auto space-y-6">
+      {/* Encabezado */}
+      <div className="flex justify-between items-start gap-3">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">Configuración</p>
+          <h2 className="text-[26px] font-black text-[#0b3b42] mt-0.5">Ajustes</h2>
+        </div>
         <div className="relative z-50">
-          <button 
+          <button
             onClick={() => isLocked ? onUpgrade() : setShowProDetails(!showProDetails)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all ${isLocked ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' : 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 hover:bg-cyan-500/20'}`}
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-wider shadow-sm transition-all border ${isLocked ? 'bg-[#fdf6e0] text-[#8a6d2f] border-[#e8d9ac]' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}
           >
-            {isLocked ? <Lock className="w-3 h-3"/> : <ShieldCheck className="w-3 h-3"/>}
+            {isLocked ? <Lock className="w-3.5 h-3.5"/> : <ShieldCheck className="w-3.5 h-3.5"/>}
             {isLocked ? 'Activar PRO' : 'Sincronización PRO'}
           </button>
-
           {showProDetails && !isLocked && (
-            <div className="absolute right-0 top-full mt-3 w-64 bg-slate-900 border border-cyan-500/30 p-5 rounded-3xl shadow-2xl z-50 animate-slide-up">
+            <div className="absolute right-0 top-full mt-3 w-64 bg-white border border-slate-200 p-5 rounded-3xl shadow-2xl z-50 animate-slide-up text-left">
               <div className="flex items-center gap-2 mb-3">
-                <Cloud className="w-5 h-5 text-cyan-400"/>
-                <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Licencia en Nube</p>
+                <Cloud className="w-5 h-5 text-[#0b3b42]"/>
+                <p className="text-[10px] font-black uppercase text-[#0b3b42] tracking-widest">Licencia en Nube</p>
               </div>
-              <p className="text-xs text-slate-400 mb-4 uppercase font-bold">Tiempo restante: <br/><span className="text-xl text-emerald-400 font-black">{getProRemainingDays()} días</span></p>
-              
-              <div className="border-t border-white/10 pt-4">
+              <p className="text-xs text-slate-500 mb-4 uppercase font-bold">Tiempo restante: <br/><span className="text-xl text-emerald-500 font-black">{remainingDays} días</span></p>
+              <div className="border-t border-slate-100 pt-4">
                 <p className="text-[9px] text-slate-400 uppercase mb-3 font-bold tracking-widest">Sincronización de Cuenta</p>
                 {user.isAnonymous ? (
                   <div className="space-y-2">
-                    <button onClick={onLinkGoogle} className="w-full bg-white text-black text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Globe className="w-4 h-4"/> Google</button>
-                    <button onClick={() => setShowEmailForm(!showEmailForm)} className="w-full bg-indigo-500 text-white text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Mail className="w-4 h-4"/> Correo</button>
+                    <button onClick={onLinkGoogle} className="w-full bg-white text-black text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow border border-slate-200"><Globe className="w-4 h-4"/> Google</button>
+                    <button onClick={() => setShowEmailForm(!showEmailForm)} className="w-full bg-[#0b3b42] text-[#fff] text-[9px] font-black uppercase py-3 rounded-xl flex items-center justify-center gap-2 shadow"><Mail className="w-4 h-4"/> Correo</button>
                     {showEmailForm && (
                       <div className="mt-2 space-y-2">
-                        <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
-                        <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-slate-950 p-3 rounded-lg text-white text-[9px] outline-none border border-white/10" />
-                        <button onClick={() => onLinkEmail(emailLink, passLink)} className="w-full bg-cyan-400 text-black py-2 rounded-lg text-[9px] font-black uppercase shadow-lg">Guardar</button>
+                        <input type="email" placeholder="Correo" value={emailLink} onChange={e => setEmailLink(e.target.value)} className="w-full bg-[#f7faf8] border border-[#cfe0da] p-3 rounded-lg text-slate-700 text-[11px] outline-none" />
+                        <input type="password" placeholder="Contraseña" value={passLink} onChange={e => setPassLink(e.target.value)} className="w-full bg-[#f7faf8] border border-[#cfe0da] p-3 rounded-lg text-slate-700 text-[11px] outline-none" />
+                        <button onClick={() => onLinkEmail(emailLink, passLink)} className="w-full bg-[#b08d3e] text-[#fff] py-2.5 rounded-lg text-[9px] font-black uppercase shadow">Guardar</button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 py-3 rounded-xl flex justify-center items-center gap-2 font-black text-[10px] uppercase"><CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada</div>
+                  <div className="bg-emerald-50 text-emerald-600 border border-emerald-200 py-3 rounded-xl flex justify-center items-center gap-2 font-black text-[10px] uppercase"><CheckCircle2 className="w-4 h-4"/> Cuenta Vinculada</div>
                 )}
               </div>
             </div>
@@ -881,147 +944,190 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
         </div>
       </div>
 
-      <div className="flex gap-3 mb-6">
-        <button onClick={() => setVisualMode('claro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'claro' ? 'bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] border-b-4 border-cyan-600 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
-          ☀️ Modo Claro
+      {/* Tarjeta de identidad (toca para editar) */}
+      <div>
+        <button onClick={() => setIsEditing(!isEditing)} className="w-full bg-white rounded-[26px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] overflow-hidden text-left active:scale-[0.99] transition">
+          <div className={`h-2.5 ${currentTheme.bg}`}></div>
+          <div className="p-5 flex items-center gap-4">
+            <div className="w-[62px] h-[62px] flex-none rounded-[18px] border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+              {doctorInfo.logo ? <img src={doctorInfo.logo} className="w-full h-full object-cover" alt="Logo"/> : <User className="w-7 h-7 text-[#0b3b42]/40"/>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-[#0b3b42] text-[16px] truncate">{doctorInfo.name || 'Tu Nombre'}</p>
+              <p className="text-[11.5px] text-slate-400 font-semibold truncate">{doctorInfo.title || 'Especialista'} · {doctorInfo.clinic || 'Tu Clínica'}</p>
+              <p className="mt-1.5 flex flex-wrap gap-1.5">
+                {doctorInfo.isPremium
+                  ? <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full">Licencia PRO · Activa</span>
+                  : <span className="text-[9px] font-black uppercase tracking-wider bg-rose-50 text-rose-500 border border-rose-200 px-2.5 py-1 rounded-full">Sin licencia PRO</span>}
+                {planDef
+                  ? <span className="text-[9px] font-black uppercase tracking-wider bg-[#fdf6e0] text-[#8a6d2f] border border-[#e8d9ac] px-2.5 py-1 rounded-full">Plan {planDef.name}</span>
+                  : <span className="text-[9px] font-black uppercase tracking-wider bg-[#fdf6e0] text-[#8a6d2f] border border-[#e8d9ac] px-2.5 py-1 rounded-full">Legado · sin límite</span>}
+                {remainingDays != null && doctorInfo.isPremium && <span className="text-[9px] font-black uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-200 px-2.5 py-1 rounded-full">{remainingDays} días restantes</span>}
+              </p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#b6c8c1] flex-none" />
+          </div>
         </button>
-        <button onClick={() => setVisualMode('oscuro')} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all shadow-lg ${visualMode === 'oscuro' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] border-b-4 border-indigo-800 scale-105' : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:bg-slate-800'}`}>
-          🌙 Modo Oscuro
-        </button>
+        <p className="text-[11px] text-slate-400 font-semibold ml-2 mt-1.5">Toca tu tarjeta para editar tu perfil.</p>
       </div>
 
-      <div className="bg-slate-900/80 rounded-[40px] border border-cyan-400/20 shadow-xl overflow-hidden relative transition-all duration-500">
-        {!isEditing ? (
-          <div className="relative animate-fade-in">
-            <div className={`h-36 w-full relative border-b border-white/10 ${currentTheme.bg}`}>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-            </div>
-            <div className="px-8 pb-8 relative mt-[-45px] text-center flex flex-col items-center">
-               <div className="w-24 h-24 bg-slate-950 rounded-[25px] border-4 border-cyan-500/50 flex items-center justify-center overflow-hidden mb-4 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                 {doctorInfo.logo ? <img src={doctorInfo.logo} className="w-full h-full object-cover" alt="Logo"/> : <User className="w-10 h-10 text-cyan-500/50"/>}
-               </div>
-               <h3 className="text-3xl font-black uppercase text-white tracking-tight leading-none mb-2">{doctorInfo.name || 'Tu Nombre'}</h3>
-               <p className="text-[11px] font-black uppercase text-cyan-400 tracking-[0.2em]">{doctorInfo.title || 'Especialista'}</p>
-               <p className="text-xs text-indigo-200 mt-4 flex items-center gap-2 bg-black/40 px-5 py-2.5 rounded-xl border border-white/5 uppercase font-bold tracking-widest"><Building className="w-4 h-4 text-indigo-400"/> {doctorInfo.clinic || 'Nombre de Clínica'}</p>
-               
-               <button onClick={() => setIsEditing(true)} className="w-full mt-8 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 py-4 rounded-3xl font-black uppercase text-xs active:scale-95 transition-all flex justify-center items-center gap-2 hover:bg-cyan-500/20">
-                 <Settings className="w-4 h-4" /> Configurar Perfil
-               </button>
-            </div>
+      {isEditing && (
+        <div className="bg-white p-6 rounded-[26px] border border-slate-200 shadow-sm animate-fade-in space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-[12px] font-black uppercase text-[#0b3b42] tracking-widest flex items-center gap-2"><Settings className="w-4 h-4"/> Editar Perfil</h3>
+            <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 bg-slate-50 border border-slate-200 rounded-full flex items-center gap-1"><X className="w-3 h-3"/> Cancelar</button>
           </div>
-        ) : (
-          <div className="p-8 space-y-6 animate-fade-in bg-indigo-950/20">
-             <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-               <h3 className="text-sm font-black uppercase text-cyan-400 flex items-center gap-2"><Settings className="w-4 h-4"/> Editar Perfil</h3>
-               <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-full flex items-center gap-1 transition-all"><X className="w-3 h-3"/> Cancelar</button>
-             </div>
-             
-             <div className="border-b border-white/10 pb-6 mb-6">
-               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}>
-                 <Palette className="w-3 h-3" /> Color de Fondo de Ventana
-               </label>
-               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                 {Object.entries(CLINIC_THEMES).map(([key, t]) => (
-                   <button 
-                     key={key} 
-                     onClick={() => setTheme(key)} 
-                     disabled={isLocked}
-                     className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${theme === key ? 'border-cyan-400 scale-105 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'} ${t.bg}`}
-                   >
-                     <span className={`text-[9px] font-black uppercase tracking-widest text-center ${t.text}`}>{t.name}</span>
-                   </button>
-                 ))}
-               </div>
-             </div>
-
-             <div className="border-b border-white/10 pb-6 mb-6">
-               <label className={`text-[10px] font-black uppercase ml-4 mb-3 flex items-center gap-2 tracking-widest ${isLocked ? 'text-slate-500' : 'text-cyan-400'}`}><ImagePlus className="w-3 h-3" /> Logo de Clínica</label>
-               <div className="flex items-center gap-4">
-                 <div className={`w-20 h-20 shrink-0 rounded-[20px] flex items-center justify-center border-2 border-dashed ${isLocked ? 'border-slate-700 bg-slate-900/50' : 'border-cyan-500/50 bg-slate-950 overflow-hidden'}`}>
-                   {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" /> : <ImagePlus className={`w-8 h-8 ${isLocked ? 'text-slate-700' : 'text-cyan-500/50'}`} />}
-                 </div>
-                 <div className="flex-1">
-                   <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={isLocked} />
-                   <label htmlFor="logo-upload" className={`py-3 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${isLocked ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 cursor-pointer active:scale-95 hover:bg-cyan-500/20'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
-                 </div>
-               </div>
-             </div>
-
-             <div>
-               <label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Título Profesional</label>
-               <select className={`${inputClass} appearance-none cursor-pointer`} value={PRO_TITLES.includes(title) ? title : (title ? 'Otro' : '')} onChange={(e) => {setTitle(e.target.value); if(e.target.value !== 'Otro') setCustomTitle('');}} disabled={isLocked}>
-                 <option value="">Selecciona tu profesión...</option>
-                 {PRO_TITLES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
-               </select>
-               {(!PRO_TITLES.includes(title) && title !== '') || title === 'Otro' ? (
-                 <input type="text" placeholder="Escribe tu título..." className={`${inputClass} mt-3`} value={title === 'Otro' ? customTitle : title} onChange={(e) => {setTitle('Otro'); setCustomTitle(e.target.value);}} disabled={isLocked} />
-               ) : null}
-             </div>
-             
-             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><User className="w-3 h-3"/> Tu Nombre</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} /></div>
-             <div><label className="text-[10px] font-black uppercase ml-4 mb-2 flex items-center gap-2 text-cyan-400 tracking-widest"><Building className="w-3 h-3"/> Clínica</label><input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} /></div>
-
-             <button onClick={handleSave} disabled={isSaving || saved || isLocked} className={`w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic shadow-xl mt-4 border-b-8 border-cyan-700 active:scale-95 transition-all flex justify-center items-center gap-2 ${isLocked ? 'opacity-30' : ''}`}>
-               {isSaving ? <><Loader2 className="w-5 h-5 animate-spin"/> Guardando...</> : <><CheckCircle2 className="w-5 h-5"/> Guardar Cambios</>}
-             </button>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center shadow-xl">
-        <UserCircle className="w-12 h-12 mx-auto mb-4 text-indigo-500"/>
-        <p className="text-[9px] font-black uppercase text-indigo-400 mb-1 tracking-widest">Cuenta Activa</p>
-        <p className="text-xs font-bold text-white mb-6 break-all">{user.isAnonymous ? "Perfil Temporal (No Guardado)" : String(user.email || user.phoneNumber)}</p>
-        <button onClick={onBackup} className="w-full mb-3 bg-cyan-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-cyan-400 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-cyan-500/20">
-          <Download className="w-5 h-5"/> Descargar Respaldo
-        </button>
-        <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-rose-500/20">
-          <LogOut className="w-5 h-5"/> Cerrar Sesión
-        </button>
-      </div>
-      <div className="bg-white p-6 sm:p-8 rounded-[32px] border border-slate-200 shadow-[0_8px_22px_rgba(8,48,57,0.08)] text-left">
-        <h4 className="text-[11px] font-black text-[#0b3b42] uppercase tracking-widest flex items-center gap-2 mb-3"><Smartphone className="w-4 h-4 text-[#b08d3e]" /> Mi plan y dispositivos</h4>
-        {planDef ? (
-          <p className="text-sm text-slate-600 leading-relaxed">Plan <b className="text-[#0b3b42]">{planDef.name}</b> · {planDef.pc} PC + {planDef.mobile} móviles{doctorInfo.premiumExpiresAt ? ` · Vence el ${safeFormatDate(new Date(doctorInfo.premiumExpiresAt).toISOString().split('T')[0])}` : ''}</p>
-        ) : (
-          <p className="text-sm text-slate-500 leading-relaxed">Tu cuenta no tiene límite de dispositivos (plan legado). Los planes nuevos (Dúo, Equipo y Full Pack) controlan en cuántos aparatos se puede entrar a la vez.</p>
-        )}
-        {planDef && (
-          <div className="grid grid-cols-2 gap-2.5 mt-4">
-            <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 text-center">
-              <Monitor className="w-5 h-5 mx-auto text-[#0b3b42]" />
-              <p className="text-sm font-black text-[#0b3b42] mt-1.5">{pcUsed} / {planDef.pc}</p>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Computadoras</p>
-            </div>
-            <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 text-center">
-              <Smartphone className="w-5 h-5 mx-auto text-[#0b3b42]" />
-              <p className="text-sm font-black text-[#0b3b42] mt-1.5">{mobUsed} / {planDef.mobile}</p>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Móviles</p>
-            </div>
-          </div>
-        )}
-        <div className="space-y-2 mt-5">
-          {devices.map(d => (
-            <div key={d.id} className="flex items-center gap-3 bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl px-4 py-3">
-              {d.type === 'pc' ? <Monitor className="w-4 h-4 text-[#0b3b42] flex-none" /> : <Smartphone className="w-4 h-4 text-[#0b3b42] flex-none" />}
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-bold text-[#0b3b42] truncate">{String(d.label || 'Dispositivo')}</p>
-                <p className="text-[10.5px] text-slate-400 font-semibold">Registrado el {d.firstSeen ? safeFormatDate(String(d.firstSeen).split('T')[0]) : '—'}</p>
+          <div>
+            <label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest flex items-center gap-1.5 mb-2"><ImagePlus className="w-3.5 h-3.5"/> Logo de la clínica</label>
+            <div className="flex items-center gap-4">
+              <div className="w-[70px] h-[70px] shrink-0 rounded-[18px] flex items-center justify-center border-2 border-dashed border-[#cfe0da] bg-[#f7faf8] overflow-hidden">
+                {doctorInfo.logo ? <img src={doctorInfo.logo} alt="Logo" className="w-full h-full object-cover" /> : <ImagePlus className="w-7 h-7 text-[#0b3b42]/30" />}
               </div>
-              {d.id === currentDeviceId
-                ? <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1.5 rounded-full flex-none">Este dispositivo</span>
-                : <button onClick={() => onReleaseDevice(d.id)} className="text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-500 border border-rose-200 px-2.5 py-1.5 rounded-full flex-none active:scale-90 transition">Liberar</button>}
+              <input type="file" id="logo-upload" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={isLocked} />
+              <label htmlFor="logo-upload" className={`flex-1 py-3.5 px-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 border transition ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'bg-[#eef5f2] text-[#0b3b42] border-[#cfe3dc] cursor-pointer active:scale-95'}`}><Upload className="w-4 h-4" /> Subir Logo</label>
             </div>
-          ))}
-          {devices.length === 0 && <p className="text-[12px] text-slate-400 font-semibold">Aún no hay dispositivos registrados en tu cuenta.</p>}
-        </div>
-        {planDef && (
-          <button onClick={() => openWhatsApp("529996180031", `Hola, quiero ampliar mi plan ${planDef.name} de QuiroApp.`)} className="w-full mt-5 bg-[#b08d3e] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2">
-            <MessageCircle className="w-4 h-4" /> Ampliar mi plan
+          </div>
+          <div>
+            <label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">Título Profesional</label>
+            <select className={`${inputClass} appearance-none cursor-pointer`} value={PRO_TITLES.includes(title) ? title : (title ? 'Otro' : '')} onChange={(e) => {setTitle(e.target.value); if(e.target.value !== 'Otro') setCustomTitle('');}} disabled={isLocked}>
+              <option value="">Selecciona tu profesión...</option>
+              {PRO_TITLES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+            </select>
+            {((!PRO_TITLES.includes(title) && title !== '') || title === 'Otro') && (
+              <input type="text" placeholder="Escribe tu título..." className={`${inputClass} mt-3`} value={title === 'Otro' ? customTitle : title} onChange={(e) => {setTitle('Otro'); setCustomTitle(e.target.value);}} disabled={isLocked} />
+            )}
+          </div>
+          <div><label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">Tu Nombre</label><input type="text" placeholder="Ej. Juan Pérez" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} /></div>
+          <div><label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">Clínica</label><input type="text" placeholder="Nombre de tu Clínica" className={inputClass} value={clinic} onChange={(e) => setClinic(e.target.value)} disabled={isLocked} /></div>
+          <button onClick={handleSave} disabled={isSaving || saved || isLocked} className="w-full bg-[#0b3b42] text-[#fff] py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-40">
+            {isSaving ? <><Loader2 className="w-4 h-4 animate-spin"/> Guardando...</> : saved ? <><CheckCircle2 className="w-4 h-4"/> ¡Guardado!</> : <><CheckCircle2 className="w-4 h-4"/> Guardar Cambios</>}
           </button>
-        )}
-      </div>
+          {isLocked && <p className="text-[11px] text-amber-600 font-bold">Activa tu licencia PRO para editar tu perfil.</p>}
+        </div>
+      )}
 
+      {/* Cuenta y licencia */}
+      <Group label="Cuenta y licencia">
+        <Row icon={Mail} title="Correo" sub="Tu acceso principal" value={user.isAnonymous ? "Perfil temporal (no guardado)" : String(user.email || user.phoneNumber || '')} />
+        <Row icon={Smartphone} iconCls="bg-[#fdf6e0] border-[#e8d9ac] text-[#8a6d2f]" title="Plan y dispositivos"
+          sub={planDef ? `Plan ${planDef.name}${doctorInfo.premiumExpiresAt ? ' · Vence el ' + safeFormatDate(new Date(doctorInfo.premiumExpiresAt).toISOString().split('T')[0]) : ''}` : 'Sin límite de dispositivos (legado)'}
+          value={`${devices.length} aparato${devices.length === 1 ? '' : 's'}`}
+          onClick={() => setOpenDevices(!openDevices)} />
+        {openDevices && (
+          <div className="pb-4 animate-fade-in">
+            {!planDef && <p className="text-[12.5px] text-slate-500 leading-relaxed bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5">Tu cuenta no tiene límite de dispositivos (plan legado). Los planes nuevos (Dúo, Equipo y Full Pack) controlan en cuántos aparatos se puede entrar a la vez.</p>}
+            {planDef && (
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 text-center">
+                  <Monitor className="w-5 h-5 mx-auto text-[#0b3b42]" />
+                  <p className="text-sm font-black text-[#0b3b42] mt-1.5">{pcUsed} / {planDef.pc}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Computadoras</p>
+                </div>
+                <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 text-center">
+                  <Smartphone className="w-5 h-5 mx-auto text-[#0b3b42]" />
+                  <p className="text-sm font-black text-[#0b3b42] mt-1.5">{mobUsed} / {planDef.mobile}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Móviles</p>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2 mt-3">
+              {devices.map(d => (
+                <div key={d.id} className="flex items-center gap-3 bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl px-4 py-3">
+                  {d.type === 'pc' ? <Monitor className="w-4 h-4 text-[#0b3b42] flex-none" /> : <Smartphone className="w-4 h-4 text-[#0b3b42] flex-none" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-[#0b3b42] truncate">{String(d.label || 'Dispositivo')}</p>
+                    <p className="text-[10.5px] text-slate-400 font-semibold">Registrado el {d.firstSeen ? safeFormatDate(String(d.firstSeen).split('T')[0]) : '—'}</p>
+                  </div>
+                  {d.id === currentDeviceId
+                    ? <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1.5 rounded-full flex-none">Este dispositivo</span>
+                    : <button onClick={() => onReleaseDevice(d.id)} className="text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-500 border border-rose-200 px-2.5 py-1.5 rounded-full flex-none active:scale-90 transition">Liberar</button>}
+                </div>
+              ))}
+              {devices.length === 0 && <p className="text-[12px] text-slate-400 font-semibold">Aún no hay dispositivos registrados en tu cuenta.</p>}
+            </div>
+            {planDef && (
+              <button onClick={() => openWhatsApp(salesPhone, `Hola, quiero ampliar mi plan ${planDef.name} de QuiroApp.`)} className="w-full mt-4 bg-[#b08d3e] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2">
+                <MessageCircle className="w-4 h-4" /> Ampliar mi plan
+              </button>
+            )}
+          </div>
+        )}
+        <Row icon={KeyRound} title="Cambiar contraseña" sub="Te enviamos el enlace seguro a tu correo" onClick={handleChangePassword} last />
+        {passMsg && <p className="text-[12px] font-bold text-[#0b3b42] bg-[#eef5f2] border border-[#cfe3dc] rounded-2xl px-4 py-3 mb-4 leading-relaxed">{passMsg}</p>}
+      </Group>
+
+      {/* Ayuda rápida */}
+      <Group label="Ayuda rápida">
+        <Row icon={KeyRound} title="¿Cómo activo un código?" sub="Códigos MES-, ANU- y UPG-" onClick={() => setOpenHelp(openHelp === 'code' ? null : 'code')} />
+        {openHelp === 'code' && <p className="text-[12.5px] text-slate-500 leading-relaxed bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 mb-2 animate-fade-in">Ve a la sección <b className="text-[#0b3b42]">Premium</b>, escribe tu código tal cual (ej. ANU-XXXXXX) en el campo «Código de activación» y toca <b className="text-[#0b3b42]">Activar Código</b>. El tiempo se suma a tu licencia al instante.</p>}
+        <Row icon={Sparkles} iconCls="bg-[#fdf6e0] border-[#e8d9ac] text-[#8a6d2f]" title="¿Cómo amplío mi plan?" sub="Más dispositivos sin perder tu tiempo" onClick={() => setOpenHelp(openHelp === 'plan' ? null : 'plan')} />
+        {openHelp === 'plan' && <p className="text-[12.5px] text-slate-500 leading-relaxed bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 mb-2 animate-fade-in">Pide un <b className="text-[#0b3b42]">código de mejora UPG-</b> por WhatsApp y canjéalo igual que un código normal: tu cupo de dispositivos sube al instante y <b className="text-[#0b3b42]">el tiempo que ya pagaste se conserva</b>.</p>}
+        <Row icon={MessageCircle} iconCls="bg-emerald-50 border-emerald-200 text-emerald-600" title="Soporte por WhatsApp" sub="Respuesta del equipo de QuiroApp" onClick={() => openWhatsApp(salesPhone, "Hola, necesito soporte con QuiroApp.")} last />
+      </Group>
+
+      {/* Consultorio y documentos */}
+      <Group label="Consultorio y documentos">
+        <Row icon={ShieldCheck} title="Cédula profesional" value={doctorInfo.licenseNumber || 'Sin registrar'} onClick={() => setIsEditingOffice(true)} />
+        <Row icon={Building} title="Dirección" value={doctorInfo.officeAddress || 'Sin registrar'} onClick={() => setIsEditingOffice(true)} />
+        <Row icon={Phone} title="Teléfono del consultorio" value={doctorInfo.officePhone || 'Sin registrar'} onClick={() => setIsEditingOffice(true)} />
+        <Row icon={MessageCircle} iconCls="bg-emerald-50 border-emerald-200 text-emerald-600" title="WhatsApp de ventas" sub="Se usa en toda la app: PRO, ampliar plan y soporte" value={doctorInfo.salesWhatsApp || '+52 999 618 0031'} onClick={() => setIsEditingOffice(true)} last />
+      </Group>
+      {isEditingOffice && (
+        <div className="bg-white p-6 rounded-[26px] border border-slate-200 shadow-sm animate-fade-in space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-[12px] font-black uppercase text-[#0b3b42] tracking-widest flex items-center gap-2"><Building className="w-4 h-4"/> Datos del consultorio</h3>
+            <button onClick={() => setIsEditingOffice(false)} className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 bg-slate-50 border border-slate-200 rounded-full flex items-center gap-1"><X className="w-3 h-3"/> Cancelar</button>
+          </div>
+          <p className="text-[11.5px] text-slate-400 font-semibold leading-relaxed">La cédula, dirección y teléfono salen en el expediente PDF/Word de tus pacientes. El WhatsApp se usa en los botones de venta y soporte de toda la app.</p>
+          <div><label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">Cédula profesional</label><input type="text" placeholder="Ej. 12345678" className={inputClass} value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} disabled={isLocked} /></div>
+          <div><label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">Dirección del consultorio</label><input type="text" placeholder="Calle, colonia, ciudad…" className={inputClass} value={officeAddress} onChange={(e) => setOfficeAddress(e.target.value)} disabled={isLocked} /></div>
+          <div><label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">Teléfono del consultorio</label><input type="tel" placeholder="Para tus documentos" className={inputClass} value={officePhone} onChange={(e) => setOfficePhone(e.target.value)} disabled={isLocked} /></div>
+          <div><label className="text-[10px] font-black uppercase text-[#0b5563] tracking-widest block mb-2">WhatsApp de ventas y soporte</label><input type="tel" placeholder="Ej. +52 999 000 0000" className={inputClass} value={salesWhatsApp} onChange={(e) => setSalesWhatsApp(e.target.value)} disabled={isLocked} /></div>
+          <button onClick={handleSaveOffice} disabled={isSaving || officeSaved || isLocked} className="w-full bg-[#0b3b42] text-[#fff] py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow active:scale-95 transition flex justify-center items-center gap-2 disabled:opacity-40">
+            {isSaving ? <><Loader2 className="w-4 h-4 animate-spin"/> Guardando...</> : officeSaved ? <><CheckCircle2 className="w-4 h-4"/> ¡Guardado!</> : <><CheckCircle2 className="w-4 h-4"/> Guardar datos</>}
+          </button>
+          {isLocked && <p className="text-[11px] text-amber-600 font-bold">Activa tu licencia PRO para editar estos datos.</p>}
+        </div>
+      )}
+
+      {/* Apariencia */}
+      <Group label="Apariencia">
+        <div className="flex items-center gap-3 py-3.5 border-b border-[#eef3f0]">
+          <span className="w-[34px] h-[34px] flex-none rounded-[10px] border bg-[#eef5f2] border-[#cfe3dc] text-[#0b3b42] flex items-center justify-center"><Palette className="w-4 h-4" /></span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13.5px] font-bold text-[#23423c]">Modo</p>
+            <p className="text-[11px] font-semibold text-slate-400 mt-0.5">El claro es el diseño oficial de la app</p>
+          </div>
+          <div className="flex bg-[#eef3f0] rounded-xl p-[3px] gap-[3px] flex-none">
+            <button onClick={() => setVisualMode('claro')} className={`px-3.5 py-2 rounded-[9px] text-[11.5px] font-extrabold transition ${visualMode === 'claro' ? 'bg-[#0b3b42] text-[#fff] shadow' : 'text-slate-500'}`}>☀️ Claro</button>
+            <button onClick={() => setVisualMode('oscuro')} className={`px-3.5 py-2 rounded-[9px] text-[11.5px] font-extrabold transition ${visualMode === 'oscuro' ? 'bg-[#0b3b42] text-[#fff] shadow' : 'text-slate-500'}`}>🌙 Oscuro</button>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 py-3.5">
+          <span className="w-[34px] h-[34px] flex-none rounded-[10px] border bg-[#eef5f2] border-[#cfe3dc] text-[#0b3b42] flex items-center justify-center"><Sparkles className="w-4 h-4" /></span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13.5px] font-bold text-[#23423c]">Color de acento</p>
+            <p className="text-[11px] font-semibold text-slate-400 mt-0.5">{currentTheme.name}</p>
+          </div>
+          <div className="flex gap-2 flex-none">
+            {Object.entries(CLINIC_THEMES).map(([key, t]) => (
+              <button key={key} title={t.name} onClick={() => { setTheme(key); if (!isLocked) onUpdateInfo({ theme: key }); }} className={`w-6 h-6 rounded-full border-[3px] transition ${theme === key ? 'border-[#0b3b42] scale-110' : 'border-transparent'} ${t.bg}`}></button>
+            ))}
+          </div>
+        </div>
+      </Group>
+
+      {/* Respaldo y datos */}
+      <Group label="Respaldo y datos">
+        <Row icon={Download} title="Descargar respaldo" last
+          sub={lastBackup ? `Último respaldo: ${lastBackupText}${backupStale ? ' · Ya pasaron más de 60 días, descarga uno nuevo' : ''}` : 'Último respaldo: nunca · Descarga una copia de tus pacientes y citas'}
+          onClick={handleBackupClick} />
+      </Group>
+
+      {/* Cerrar sesión */}
+      <div className="bg-white rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] overflow-hidden">
+        <button onClick={onLogout} className="w-full py-4 flex items-center justify-center gap-2 text-[13.5px] font-black text-[#9d2b57] active:bg-rose-50 transition"><LogOut className="w-4 h-4" /> Cerrar sesión</button>
+      </div>
     </div>
   );
 };
@@ -1601,7 +1707,7 @@ const CalendarModal = ({ appointments, patients, onClose, onEditAppointment, onD
 
 const SubscriptionBlockedScreen = ({ onLogout }) => (
   <div className="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
-    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp("529996180031", "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
+    <div className="bg-rose-500/10 p-8 rounded-[50px] border border-rose-500/30 mb-8 relative shadow-2xl max-w-sm w-full"><div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-rose-500 p-3 rounded-2xl shadow-lg"><Lock className="w-8 h-8 text-white" /></div><h2 className="text-4xl font-black uppercase italic text-white mt-4 mb-4 tracking-tighter">Acceso <span className="text-rose-500">Bloqueado</span></h2><p className="text-indigo-200 text-sm leading-relaxed mb-6">Tu prueba gratuita ha finalizado. Adquiere una licencia PRO.</p><button onClick={() => openWhatsApp(salesPhoneOf(doctorInfo), "Hola, mi prueba venció. Me interesa QuiroApp Pro.")} className="w-full bg-cyan-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-cyan-700 active:scale-95 mb-4 shadow-xl"><CreditCard className="w-6 h-6" /> Comprar Licencia</button><button onClick={onLogout} className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition">Salir de la cuenta</button></div>
   </div>
 );
 
@@ -1720,7 +1826,7 @@ const DeviceLimitScreen = ({ info, onActivate, onRetry, onLogout }) => {
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Canjear y ampliar mi plan'}
           </button>
         </div>
-        <button onClick={() => openWhatsApp("529996180031", `Hola, quiero ampliar mi plan ${info.planName} de QuiroApp para usar más dispositivos.`)} className="w-full mt-3 bg-[#22c55e] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2">
+        <button onClick={() => openWhatsApp(salesPhoneOf(info), `Hola, quiero ampliar mi plan ${info.planName} de QuiroApp para usar más dispositivos.`)} className="w-full mt-3 bg-[#22c55e] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2">
           <MessageCircle className="w-4 h-4" /> Ampliar por WhatsApp
         </button>
         <button onClick={onRetry} className="w-full mt-3 bg-white border-[1.5px] border-[#cfe0da] text-[#0b3b42] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition">
@@ -1919,7 +2025,7 @@ export default function App() {
   const handleDeleteAdminCode = async (codeId) => { try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeId)); } catch (e) { alert("No se pudo borrar el código. Verifica que las reglas nuevas de la Parte 8 estén publicadas en Firebase."); } };
   const handleAssignBuyer = async (codeId, name) => { try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeId), { buyerName: name }); } catch (e) {} };
 
-  const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
+  const handleUpgradeRequest = () => { openWhatsApp(salesPhoneOf(doctorInfo), "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
   const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
   const handleAddPatient = (data) => { setModals(prev => ({ ...prev, patient: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'patients'), { ...data, createdAt: new Date().toISOString() }); };
   const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
@@ -2140,7 +2246,7 @@ export default function App() {
                 )}
                 {activeTab === 'techniques' && (<Suspense fallback={<div className="py-20 text-center text-cyan-400 font-black uppercase tracking-widest text-xs">Cargando guía...</div>}><TechniquesTab /></Suspense>)}
                 {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} devices={myDevices} currentDeviceId={getDeviceId()} onReleaseDevice={handleReleaseDevice} />}
-                {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
+                {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} salesPhone={salesPhoneOf(doctorInfo)} />}
                 {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCodes={handleGenerateCodes} onGenerateUpgrade={handleGenerateUpgrade} onDeleteCode={handleDeleteAdminCode} onAssignBuyer={handleAssignBuyer} />}
               </>
             )}

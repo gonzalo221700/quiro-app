@@ -108,6 +108,9 @@ const generateClinicalHTML = (patient, doctorInfo) => {
           ${logoHtml}
           <h1>${doctorInfo.clinic || 'Clínica Quiropráctica'}</h1>
           <h3>${doctorInfo.name || 'Especialista'} - ${doctorInfo.title || 'Doctor'}</h3>
+          ${doctorInfo.licenseNumber ? `<p style="font-size:12px;color:#475569;margin-top:4px;">Céd. Prof. ${doctorInfo.licenseNumber}</p>` : ''}
+          ${doctorInfo.officeAddress ? `<p style="font-size:12px;color:#475569;">${doctorInfo.officeAddress}</p>` : ''}
+          ${doctorInfo.officePhone ? `<p style="font-size:12px;color:#475569;">Tel. ${doctorInfo.officePhone}</p>` : ''}
         </div>
         
         <div class="section">
