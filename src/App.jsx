@@ -565,10 +565,13 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   const painDelta = chronoHist.length >= 2 ? (chronoHist[chronoHist.length - 1].painLevel ?? 0) - (chronoHist[0].painLevel ?? 0) : 0;
   const [confirmDelete, setConfirmDelete] = useState(null);
   const ci = patient.currentIllness || {};
+  const lastEntry = historyEntries[0] || null;
+  const initials = String(patient.name || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('');
+  const motivoTxt = patient.reason || patient.consultationReason || ((ci.motivos || []).join(', ')) || '—';
   const life = patient.lifestyle || {};
   const ex = patient.exploration || {};
-  const darkChip = "text-[9px] bg-white/5 border border-white/10 text-indigo-100 px-2.5 py-1 rounded-lg font-extrabold uppercase";
-  const darkLbl = "text-[8px] text-indigo-400 uppercase font-black tracking-widest";
+  const darkChip = "text-[9px] bg-[#eef5f2] border border-[#cfe3dc] text-[#0b3b42] px-2.5 py-1 rounded-lg font-extrabold uppercase";
+  const darkLbl = "text-[9px] text-[#0e7c5b] uppercase font-black tracking-widest";
 
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
@@ -592,91 +595,118 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
 
   return (
     <div className="animate-fade-in text-left pb-10">
-      <div className="flex items-center gap-4 mb-4 sticky top-0 bg-slate-950/80 backdrop-blur-md py-4 z-20"><button onClick={onBack} className="p-3 bg-white/5 rounded-2xl active:scale-90"><ChevronRight className="rotate-180"/></button><div className="flex-1 min-w-0"><h2 className="text-2xl font-black uppercase italic truncate text-white">{String(patient.name)}</h2><p className="text-[9px] font-black uppercase text-cyan-400 tracking-widest">{String(patient.phone || 'Sin Teléfono')}</p></div><button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active:scale-90"><Trash2 className="w-5 h-5"/></button></div>
-      
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><MessageSquare className="w-4 h-4"/> WhatsApp</button>
-        <button onClick={onSchedule} className="bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button>
-        <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/30 text-rose-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><FileText className="w-4 h-4"/> PDF</button>
-        <button onClick={handleExportWord} className="bg-blue-500/10 border border-blue-500/30 text-blue-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><Download className="w-4 h-4"/> Word</button>
-        <button onClick={onEdit} className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><Pencil className="w-4 h-4"/> Editar</button>
+      <div className="flex items-center gap-3 mb-5">
+        <button onClick={onBack} className="p-2.5 bg-white border border-slate-200 rounded-xl active:scale-90 transition shadow-sm"><ChevronRight className="rotate-180 w-5 h-5 text-[#0b3b42]"/></button>
+        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">Pacientes · <span className="text-[#0b3b42]">Expediente</span></p>
+        <button onClick={onDelete} className="ml-auto p-2.5 text-rose-500 bg-rose-50 border border-rose-200 rounded-xl active:scale-90 transition"><Trash2 className="w-5 h-5"/></button>
       </div>
 
-      <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+        <aside className="w-full lg:w-[268px] flex-none bg-white rounded-[26px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] p-5 lg:sticky lg:top-5">
+          <div className="flex items-center gap-3">
+            <span className="w-14 h-14 rounded-[18px] bg-gradient-to-br from-[#0b3b42] to-[#0e5563] text-[#fff] flex items-center justify-center text-[19px] font-black flex-none">{initials}</span>
+            <div className="min-w-0">
+              <p className="font-black text-[#0b3b42] text-[15px] leading-tight">{String(patient.name)}</p>
+              <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{patient.gender || '—'}{edadMostrar ? ' · ' + edadMostrar + ' años' : ''}</p>
+              <p className="text-[11px] text-slate-400 font-semibold">{String(patient.phone || 'Sin teléfono')}</p>
+            </div>
+          </div>
+          <hr className="border-0 border-t border-dashed border-slate-200 my-4" />
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#0e7c5b] mb-1">Motivo de consulta</p>
+          <p className="text-[13px] font-bold text-[#22332d] leading-snug">{motivoTxt}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#0e7c5b] mt-4 mb-1.5">Dolor (EVA) · última sesión</p>
+          {lastEntry ? (<p className="flex gap-1.5 flex-wrap"><span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-600">Entra {lastEntry.painLevel ?? '—'}/10</span>{lastEntry.painOut !== null && lastEntry.painOut !== undefined && (<span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600">Sale {lastEntry.painOut}/10</span>)}</p>) : (<p className="text-[12px] text-slate-400 font-semibold">Sin sesiones registradas</p>)}
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#0e7c5b] mt-4 mb-1">Próxima cita</p>
+          <p className="text-[13px] font-bold text-[#22332d]">{lastEntry && lastEntry.nextVisit ? lastEntry.nextVisit : 'Sin programar'}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#0e7c5b] mt-4 mb-1">Sesiones</p>
+          <p className="text-[13px] font-bold text-[#22332d]">{historyEntries.length} registrada{historyEntries.length === 1 ? '' : 's'}</p>
+          <button onClick={() => openWhatsApp(patient.phone, "Hola desde la clínica.")} className="w-full mt-5 bg-[#22c55e] text-[#fff] py-3 rounded-2xl font-black uppercase text-[10.5px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2"><MessageSquare className="w-4 h-4"/> WhatsApp</button>
+          <button onClick={onAddHistory} className="w-full mt-2.5 bg-[#0b3b42] text-[#fff] py-3 rounded-2xl font-black uppercase text-[10.5px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2"><Plus className="w-4 h-4"/> Nueva sesión</button>
+        </aside>
+        <div className="flex-1 min-w-0 w-full">
       
-      {activeSection === 'identidad' && (<div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-indigo-400 uppercase font-black">Sexo</p><p className="text-sm font-bold text-white">{patient.gender || '--'}</p></div><div><p className="text-[8px] text-indigo-400 uppercase font-black">Edad</p><p className="text-sm font-bold text-white">{edadMostrar ? `${edadMostrar} años` : '--'}</p></div><div className="col-span-2"><p className="text-[8px] text-indigo-400 uppercase font-black">Dirección</p><p className="text-sm font-bold text-white">{patient.address || '--'}</p></div>{patient.occupation && (<div><p className={darkLbl}>Ocupación</p><p className="text-sm font-bold text-white">{patient.occupation}</p></div>)}{(patient.origin && patient.origin.length > 0) && (<div><p className={darkLbl}>¿Cómo nos conoció?</p><p className="text-sm font-bold text-white">{patient.origin.join(', ')}</p></div>)}{patient.emergencyName && (<div className="col-span-2"><p className={darkLbl}>Contacto de emergencia</p><p className="text-sm font-bold text-white">{patient.emergencyName}{patient.emergencyPhone ? ' · ' + patient.emergencyPhone : ''}</p></div>)}{(patient.allergies && patient.allergies.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Alergias</p><p className="text-sm font-bold text-white">{patient.allergies.join(', ')}</p></div>)}</div></div>)}
+      <div className="flex flex-wrap gap-2 mb-5">
+        <button onClick={onSchedule} className="bg-white border-[1.5px] border-[#cfe0da] text-[#42655e] px-4 py-2.5 rounded-xl flex items-center gap-2 font-black text-[10px] uppercase tracking-wider active:scale-95 transition"><CalendarPlus className="w-4 h-4"/> Agendar</button>
+        <button onClick={handleExportPDF} className="bg-white border-[1.5px] border-[#cfe0da] text-[#42655e] px-4 py-2.5 rounded-xl flex items-center gap-2 font-black text-[10px] uppercase tracking-wider active:scale-95 transition"><FileText className="w-4 h-4"/> PDF</button>
+        <button onClick={handleExportWord} className="bg-white border-[1.5px] border-[#cfe0da] text-[#42655e] px-4 py-2.5 rounded-xl flex items-center gap-2 font-black text-[10px] uppercase tracking-wider active:scale-95 transition"><Download className="w-4 h-4"/> Word</button>
+        <button onClick={onEdit} className="bg-[#b08d3e] text-[#fff] px-4 py-2.5 rounded-xl flex items-center gap-2 font-black text-[10px] uppercase tracking-wider active:scale-95 transition"><Pencil className="w-4 h-4"/> Editar</button>
+      </div>
+
+      <div className="flex overflow-x-auto gap-1 mb-5 border-b-2 border-[#dfe9e4] scrollbar-hide">{[['identidad','Identidad'],['historial','Historial'],['evaluacion','Evaluación'],['anatomia','Anatomía'],['tratamiento','Tratamiento'],['sesiones','Sesiones']].map(([sec, label]) => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-3.5 py-2.5 text-[10.5px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-[3px] -mb-[2px] ${activeSection === sec ? 'text-[#0b3b42] border-[#b08d3e]' : 'text-slate-400 border-transparent hover:text-[#0b3b42]'}`}>{label}</button>))}</div>
+      
+      {activeSection === 'identidad' && (<div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-4 animate-fade-in"><div className="grid grid-cols-2 gap-4"><div><p className="text-[9px] text-[#0e7c5b] uppercase font-black tracking-widest">Sexo</p><p className="text-sm font-bold text-[#22332d]">{patient.gender || '--'}</p></div><div><p className="text-[9px] text-[#0e7c5b] uppercase font-black tracking-widest">Edad</p><p className="text-sm font-bold text-[#22332d]">{edadMostrar ? `${edadMostrar} años` : '--'}</p></div><div className="col-span-2"><p className="text-[9px] text-[#0e7c5b] uppercase font-black tracking-widest">Dirección</p><p className="text-sm font-bold text-[#22332d]">{patient.address || '--'}</p></div>{patient.occupation && (<div><p className={darkLbl}>Ocupación</p><p className="text-sm font-bold text-[#22332d]">{patient.occupation}</p></div>)}{(patient.origin && patient.origin.length > 0) && (<div><p className={darkLbl}>¿Cómo nos conoció?</p><p className="text-sm font-bold text-[#22332d]">{patient.origin.join(', ')}</p></div>)}{patient.emergencyName && (<div className="col-span-2"><p className={darkLbl}>Contacto de emergencia</p><p className="text-sm font-bold text-[#22332d]">{patient.emergencyName}{patient.emergencyPhone ? ' · ' + patient.emergencyPhone : ''}</p></div>)}{(patient.allergies && patient.allergies.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Alergias</p><p className="text-sm font-bold text-[#22332d]">{patient.allergies.join(', ')}</p></div>)}</div></div>)}
       {activeSection === 'historial' && (<div className="space-y-4 animate-fade-in">
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-          <div><h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-indigo-100 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div>
+        <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-4">
+          <div><h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest mb-1">Motivo Consulta</h4><p className="text-sm italic text-slate-500 bg-slate-950 p-4 rounded-2xl">{patient.consultationReason || "--"}</p></div>
           {(ci.tiempoUnidad || ci.inicio || (ci.irradiacion && ci.irradiacion.length > 0) || (ci.empeora && ci.empeora.length > 0) || (ci.mejora && ci.mejora.length > 0) || (ci.previos && ci.previos.length > 0)) && (
             <div className="grid grid-cols-2 gap-4">
-              {ci.tiempoUnidad && (<div><p className={darkLbl}>Evolución</p><p className="text-sm font-bold text-white">{[ci.tiempoValor, ci.tiempoUnidad].filter(Boolean).join(' ')}</p></div>)}
-              {ci.inicio && (<div><p className={darkLbl}>Inicio</p><p className="text-sm font-bold text-white">{ci.inicio}</p></div>)}
-              {(ci.irradiacion && ci.irradiacion.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Irradiación</p><p className="text-sm font-bold text-white">{ci.irradiacion.join(', ')}</p></div>)}
-              {(ci.empeora && ci.empeora.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Empeora con</p><p className="text-sm font-bold text-white">{ci.empeora.join(', ')}</p></div>)}
-              {(ci.mejora && ci.mejora.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Mejora con</p><p className="text-sm font-bold text-white">{ci.mejora.join(', ')}</p></div>)}
-              {(ci.previos && ci.previos.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Tratamientos previos</p><p className="text-sm font-bold text-white">{ci.previos.join(', ')}</p></div>)}
+              {ci.tiempoUnidad && (<div><p className={darkLbl}>Evolución</p><p className="text-sm font-bold text-[#22332d]">{[ci.tiempoValor, ci.tiempoUnidad].filter(Boolean).join(' ')}</p></div>)}
+              {ci.inicio && (<div><p className={darkLbl}>Inicio</p><p className="text-sm font-bold text-[#22332d]">{ci.inicio}</p></div>)}
+              {(ci.irradiacion && ci.irradiacion.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Irradiación</p><p className="text-sm font-bold text-[#22332d]">{ci.irradiacion.join(', ')}</p></div>)}
+              {(ci.empeora && ci.empeora.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Empeora con</p><p className="text-sm font-bold text-[#22332d]">{ci.empeora.join(', ')}</p></div>)}
+              {(ci.mejora && ci.mejora.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Mejora con</p><p className="text-sm font-bold text-[#22332d]">{ci.mejora.join(', ')}</p></div>)}
+              {(ci.previos && ci.previos.length > 0) && (<div className="col-span-2"><p className={darkLbl}>Tratamientos previos</p><p className="text-sm font-bold text-[#22332d]">{ci.previos.join(', ')}</p></div>)}
             </div>
           )}
         </div>
         {((patient.pathologicalList && patient.pathologicalList.length > 0) || (patient.medications && patient.medications.length > 0) || patient.pathological) && (
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Antecedentes</h4>
+          <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-4">
+            <h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest">Antecedentes</h4>
             {(patient.pathologicalList && patient.pathologicalList.length > 0) && (<div className="flex flex-wrap gap-1.5">{patient.pathologicalList.map(x => <span key={x} className={darkChip}>{x}</span>)}</div>)}
-            {(patient.medications && patient.medications.length > 0) && (<div><p className={darkLbl}>Medicamentos actuales</p><p className="text-sm font-bold text-white">{patient.medications.join(', ')}</p></div>)}
-            {patient.pathological && (<p className="text-sm text-indigo-100">{patient.pathological}</p>)}
+            {(patient.medications && patient.medications.length > 0) && (<div><p className={darkLbl}>Medicamentos actuales</p><p className="text-sm font-bold text-[#22332d]">{patient.medications.join(', ')}</p></div>)}
+            {patient.pathological && (<p className="text-sm text-slate-600">{patient.pathological}</p>)}
           </div>
         )}
         {(life.actividad || life.trabajo || life.tabaco || life.alcohol || life.sueno || life.estres || patient.nonPathological) && (
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-3">
-            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Estilo de vida</h4>
+          <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-3">
+            <h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest">Estilo de vida</h4>
             <div className="grid grid-cols-2 gap-4">
-              {life.actividad && (<div><p className={darkLbl}>Actividad física</p><p className="text-sm font-bold text-white">{life.actividad}</p></div>)}
-              {life.trabajo && (<div><p className={darkLbl}>Trabajo</p><p className="text-sm font-bold text-white">{life.trabajo}</p></div>)}
-              {life.tabaco && (<div><p className={darkLbl}>Tabaco</p><p className="text-sm font-bold text-white">{life.tabaco}</p></div>)}
-              {life.alcohol && (<div><p className={darkLbl}>Alcohol</p><p className="text-sm font-bold text-white">{life.alcohol}</p></div>)}
-              {life.sueno && (<div><p className={darkLbl}>Sueño</p><p className="text-sm font-bold text-white">{life.sueno}</p></div>)}
-              {life.estres && (<div><p className={darkLbl}>Estrés</p><p className="text-sm font-bold text-white">{life.estres}</p></div>)}
+              {life.actividad && (<div><p className={darkLbl}>Actividad física</p><p className="text-sm font-bold text-[#22332d]">{life.actividad}</p></div>)}
+              {life.trabajo && (<div><p className={darkLbl}>Trabajo</p><p className="text-sm font-bold text-[#22332d]">{life.trabajo}</p></div>)}
+              {life.tabaco && (<div><p className={darkLbl}>Tabaco</p><p className="text-sm font-bold text-[#22332d]">{life.tabaco}</p></div>)}
+              {life.alcohol && (<div><p className={darkLbl}>Alcohol</p><p className="text-sm font-bold text-[#22332d]">{life.alcohol}</p></div>)}
+              {life.sueno && (<div><p className={darkLbl}>Sueño</p><p className="text-sm font-bold text-[#22332d]">{life.sueno}</p></div>)}
+              {life.estres && (<div><p className={darkLbl}>Estrés</p><p className="text-sm font-bold text-[#22332d]">{life.estres}</p></div>)}
             </div>
-            {patient.nonPathological && (<p className="text-sm text-indigo-100">{patient.nonPathological}</p>)}
+            {patient.nonPathological && (<p className="text-sm text-slate-600">{patient.nonPathological}</p>)}
           </div>
         )}
         {(patient.redFlags && patient.redFlags.length > 0) && (
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-3">
+          <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-3">
             <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5" /> Banderas Rojas</h4>
-            <div className="flex flex-wrap gap-1.5">{patient.redFlags.map(f => <span key={f} className="text-[9px] bg-rose-500/15 border border-rose-400/30 text-rose-300 px-2.5 py-1 rounded-lg font-extrabold uppercase">{f}</span>)}</div>
+            <div className="flex flex-wrap gap-1.5">{patient.redFlags.map(f => <span key={f} className="text-[9px] bg-rose-50 border border-rose-200 text-rose-600 px-2.5 py-1 rounded-lg font-extrabold uppercase">{f}</span>)}</div>
           </div>
         )}
       </div>)}
       {activeSection === 'evaluacion' && (<div className="space-y-4 animate-fade-in">
         <div className="grid grid-cols-4 gap-2 mb-2">
-          <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Peso</p><p className="text-xs font-bold text-white">{patient.weight || '-'}kg</p></div>
-          <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 text-center"><p className="text-[8px] font-black text-indigo-400 uppercase">Altura</p><p className="text-xs font-bold text-white">{patient.height || '-'}cm</p></div>
-          <div className="bg-indigo-900/40 p-3 rounded-2xl border border-cyan-400/20 text-center"><p className="text-[8px] font-black text-cyan-400 uppercase">IMC</p><p className="text-xs font-bold text-cyan-400">{bmi}</p></div>
+          <div className="bg-[#f7faf8] p-3 rounded-2xl border border-[#dfe9e4] text-center"><p className="text-[9px] font-black text-[#0e7c5b] uppercase tracking-widest">Peso</p><p className="text-xs font-bold text-[#22332d]">{patient.weight || '-'}kg</p></div>
+          <div className="bg-[#f7faf8] p-3 rounded-2xl border border-[#dfe9e4] text-center"><p className="text-[9px] font-black text-[#0e7c5b] uppercase tracking-widest">Altura</p><p className="text-xs font-bold text-[#22332d]">{patient.height || '-'}cm</p></div>
+          <div className="bg-[#fdf6e0] p-3 rounded-2xl border border-[#e8d9ac] text-center"><p className="text-[9px] font-black text-[#8a6d2f] uppercase tracking-widest">IMC</p><p className="text-xs font-black text-[#0b3b42]">{bmi}</p></div>
         </div>
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-          <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div>
+        <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-4">
+          <div><h5 className="text-[9px] font-black text-[#0e7c5b] uppercase tracking-widest tracking-widest mb-1">Dx Quiropráctico</h5><p className="text-sm font-bold text-cyan-300">{patient.chiropracticDiagnosis || "--"}</p></div>
         </div>
         {((ex.tests && ex.tests.length > 0) || (ex.palpation && ex.palpation.length > 0) || Object.values(ex.rom || {}).some(Boolean) || ex.detail) && (
-          <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4">
-            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Exploración Física</h4>
-            {Object.values(ex.rom || {}).some(Boolean) && (<div className="space-y-1.5">{Object.entries(ex.rom || {}).filter(([, v]) => v).map(([k, v]) => <p key={k} className="text-sm text-indigo-100"><span className="font-bold text-white">{k}:</span> {v}</p>)}</div>)}
-            {(ex.tests && ex.tests.length > 0) && (<div className="flex flex-wrap gap-1.5">{ex.tests.map(t => <span key={t.name} className={`text-[9px] px-2.5 py-1 rounded-lg font-extrabold uppercase border ${t.result === '+' ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300' : 'bg-rose-500/15 border-rose-400/30 text-rose-300'}`}>{t.name} {t.result}</span>)}</div>)}
-            {(ex.palpation && ex.palpation.length > 0) && (<div><p className={darkLbl}>Palpación</p><p className="text-sm font-bold text-white">{ex.palpation.join(', ')}</p></div>)}
-            {ex.detail && (<p className="text-sm italic text-indigo-100">{ex.detail}</p>)}
+          <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-4">
+            <h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest">Exploración Física</h4>
+            {Object.values(ex.rom || {}).some(Boolean) && (<div className="space-y-1.5">{Object.entries(ex.rom || {}).filter(([, v]) => v).map(([k, v]) => <p key={k} className="text-sm text-slate-600"><span className="font-bold text-[#22332d]">{k}:</span> {v}</p>)}</div>)}
+            {(ex.tests && ex.tests.length > 0) && (<div className="flex flex-wrap gap-1.5">{ex.tests.map(t => <span key={t.name} className={`text-[9px] px-2.5 py-1 rounded-lg font-extrabold uppercase border ${t.result === '+' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>{t.name} {t.result}</span>)}</div>)}
+            {(ex.palpation && ex.palpation.length > 0) && (<div><p className={darkLbl}>Palpación</p><p className="text-sm font-bold text-[#22332d]">{ex.palpation.join(', ')}</p></div>)}
+            {ex.detail && (<p className="text-sm italic text-slate-500">{ex.detail}</p>)}
           </div>
         )}
-        {patient.consent && patient.consent.accepted && (<div className="bg-emerald-500/10 border border-emerald-400/25 p-4 rounded-3xl flex items-center gap-2.5"><ShieldCheck className="w-4 h-4 text-emerald-400 flex-none" /><p className="text-[11px] font-bold text-emerald-300">Consentimiento informado aceptado · {safeFormatDate((patient.consent.date || '').split('T')[0])}</p></div>)}
+        {patient.consent && patient.consent.accepted && (<div className="bg-emerald-50 border border-emerald-200 p-4 rounded-3xl flex items-center gap-2.5"><ShieldCheck className="w-4 h-4 text-emerald-500 flex-none" /><p className="text-[11px] font-bold text-emerald-700">Consentimiento informado aceptado · {safeFormatDate((patient.consent.date || '').split('T')[0])}</p></div>)}
       </div>)}
       {activeSection === 'anatomia' && (<div className="space-y-4 animate-fade-in">
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5"><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Anterior</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureAnterior || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Lateral</h4><p className="text-sm text-indigo-100 mb-4">{patient.postureLateral || "--"}</p><h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Postura Posterior</h4><p className="text-sm text-indigo-100">{patient.posturePosterior || "--"}</p></div>
+        <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)]"><h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest mb-4">Postura Anterior</h4><p className="text-sm text-slate-600 mb-4">{patient.postureAnterior || "--"}</p><h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest mb-4">Postura Lateral</h4><p className="text-sm text-slate-600 mb-4">{patient.postureLateral || "--"}</p><h4 className="text-[10px] font-black text-[#0b3b42] uppercase tracking-widest mb-4">Postura Posterior</h4><p className="text-sm text-slate-600">{patient.posturePosterior || "--"}</p></div>
         <PlanesSection patient={patient} onSavePlanes={onSavePlanes} />
       </div>)}
       {activeSection === 'tratamiento' && (<div className="space-y-4 animate-fade-in">
-        <div className="bg-slate-900/50 p-6 rounded-[40px] border border-white/5 space-y-4 animate-fade-in">
-          <div><h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Plan</h5><p className="text-sm text-indigo-100">{patient.treatmentPlan || "--"}</p></div>
+        <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200 shadow-[0_5px_16px_rgba(8,48,57,0.05)] space-y-4 animate-fade-in">
+          <div><h5 className="text-[9px] font-black text-[#0e7c5b] uppercase tracking-widest tracking-widest mb-1">Plan</h5><p className="text-sm text-slate-600">{patient.treatmentPlan || "--"}</p></div>
           {(patient.objectives && patient.objectives.length > 0) && (<div><p className={darkLbl}>Objetivos</p><div className="flex flex-wrap gap-1.5 mt-1">{patient.objectives.map(o => <span key={o} className={darkChip}>{o}</span>)}</div></div>)}
-          {(patient.frequency || patient.estimatedSessions) && (<div className="grid grid-cols-2 gap-4">{patient.frequency && (<div><p className={darkLbl}>Frecuencia</p><p className="text-sm font-bold text-white">{patient.frequency}</p></div>)}{patient.estimatedSessions && (<div><p className={darkLbl}>Sesiones estimadas</p><p className="text-sm font-bold text-white">{patient.estimatedSessions}</p></div>)}</div>)}
+          {(patient.frequency || patient.estimatedSessions) && (<div className="grid grid-cols-2 gap-4">{patient.frequency && (<div><p className={darkLbl}>Frecuencia</p><p className="text-sm font-bold text-[#22332d]">{patient.frequency}</p></div>)}{patient.estimatedSessions && (<div><p className={darkLbl}>Sesiones estimadas</p><p className="text-sm font-bold text-[#22332d]">{patient.estimatedSessions}</p></div>)}</div>)}
           {(patient.homeRecommendations && patient.homeRecommendations.length > 0) && (<div><p className={darkLbl}>Recomendaciones en casa</p><div className="flex flex-wrap gap-1.5 mt-1">{patient.homeRecommendations.map(r => <span key={r} className={darkChip}>{r}</span>)}</div></div>)}
         </div>
       </div>)}
@@ -768,6 +798,8 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
           )}
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 };

@@ -58,19 +58,29 @@ const calculateAge = (dobStr) => {
 // 🌟 MOTOR DE GENERACIÓN DE EXPEDIENTES CLÍNICOS (HTML/PDF/WORD)
 const generateClinicalHTML = (patient, doctorInfo) => {
   const edadActual = patient.birthDate ? calculateAge(patient.birthDate) : patient.age;
-  const logoHtml = doctorInfo.logo ? `<img src="${doctorInfo.logo}" style="max-height: 90px; border-radius: 8px; margin-bottom: 10px; object-fit: contain;" />` : '';
-  const historiesHtml = (patient.histories || []).map(h => `
-    <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
-      <p style="margin: 0 0 5px 0;"><strong>Fecha:</strong> ${safeFormatDate(h.date)} &nbsp;|&nbsp; <strong style="color: #e11d48;">Dolor: ${h.painLevel}/10</strong>${h.painOut !== null && h.painOut !== undefined ? ` &nbsp;|&nbsp; <strong style="color: #0e7c5b;">Al salir: ${h.painOut}/10</strong>` : ''}</p>
-      ${h.visitReason ? `<p style="margin: 0 0 5px 0;"><strong>Motivo de la visita:</strong> ${h.visitReason}${h.response ? ` &nbsp;|&nbsp; <strong>Respuesta:</strong> ${h.response}` : ''}</p>` : ''}
-      <p style="margin: 0 0 5px 0;"><strong>Zonas Ajustadas:</strong> ${h.areas?.join(', ') || 'Ninguna especificada'}</p>
-      ${h.techniques && h.techniques.length > 0 ? `<p style="margin: 0 0 5px 0;"><strong>Técnicas:</strong> ${h.techniques.join(', ')}</p>` : ''}
-      ${h.redFlags && h.redFlags.length > 0 ? `<p style="margin: 0 0 5px 0; color: #e11d48;"><strong>Banderas Rojas:</strong> ${h.redFlags.join(', ')}</p>` : ''}
-      <p style="margin: 0; font-style: italic; color: #475569;">" ${h.notes || 'Sin notas de evolución'} "</p>
-      ${h.recommendations && h.recommendations.length > 0 ? `<p style="margin: 5px 0 0 0;"><strong>Recomendaciones:</strong> ${h.recommendations.join(', ')}</p>` : ''}
-      ${h.nextVisit ? `<p style="margin: 5px 0 0 0;"><strong>Próxima cita sugerida:</strong> ${h.nextVisit}</p>` : ''}
-    </div>
-  `).join('');
+  const logoSrc = doctorInfo.logo || 'https://quiro-app.vercel.app/logo-quiroapp.png';
+  const logoHtml = `<img src="${logoSrc}" style="max-height: 64px; max-width: 180px; border-radius: 10px; object-fit: contain;" />`;
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const hoy = new Date();
+  const fechaEmision = hoy.getDate() + ' de ' + meses[hoy.getMonth()] + ' de ' + hoy.getFullYear();
+  const folio = 'EXP-' + String(patient.id || '').slice(0, 6).toUpperCase();
+
+  const chrono = [...(patient.histories || [])].reverse();
+  const sessRows = chrono.map(h => `<tr>
+      <td style="white-space: nowrap;">${safeFormatDate(h.date)}</td>
+      <td>${h.visitReason || '—'}</td>
+      <td style="color: #b91c1c; font-weight: 700;">${h.painLevel ?? '—'}${h.painLevel !== null && h.painLevel !== undefined ? '/10' : ''}</td>
+      <td style="color: #15803d; font-weight: 700;">${h.painOut !== null && h.painOut !== undefined ? h.painOut + '/10' : '—'}</td>
+      <td>${h.response || '—'}</td>
+    </tr>`).join('');
+  const sessDetails = chrono.filter(h => h.notes || (h.techniques && h.techniques.length > 0) || (h.areas && h.areas.length > 0) || (h.recommendations && h.recommendations.length > 0) || h.nextVisit || (h.redFlags && h.redFlags.length > 0)).map(h => `
+    <div style="border-bottom: 1px solid #eef2f4; padding: 8px 0;">
+      <p style="margin: 0 0 3px 0;"><strong>${safeFormatDate(h.date)}</strong>${h.areas && h.areas.length > 0 ? ` · <strong>Zonas ajustadas:</strong> ${h.areas.join(', ')}` : ''}${h.techniques && h.techniques.length > 0 ? ` · <strong>Técnicas:</strong> ${h.techniques.join(', ')}` : ''}</p>
+      ${h.redFlags && h.redFlags.length > 0 ? `<p style="margin: 0 0 3px 0; color: #b91c1c;"><strong>Banderas rojas:</strong> ${h.redFlags.join(', ')}</p>` : ''}
+      ${h.notes ? `<p style="margin: 0 0 3px 0; font-style: italic; color: #475569;">"${h.notes}"</p>` : ''}
+      ${h.recommendations && h.recommendations.length > 0 ? `<p style="margin: 0 0 3px 0;"><strong>Recomendaciones:</strong> ${h.recommendations.join(', ')}</p>` : ''}
+      ${h.nextVisit ? `<p style="margin: 0;"><strong>Próxima cita sugerida:</strong> ${h.nextVisit}</p>` : ''}
+    </div>`).join('');
 
   const ci = patient.currentIllness || {};
   const ciRows = [['Motivos', (ci.motivos || []).join(', ')], ['Evolución', [ci.tiempoValor, ci.tiempoUnidad].filter(Boolean).join(' ')], ['Inicio', ci.inicio || ''], ['Irradiación', (ci.irradiacion || []).join(', ')], ['Empeora con', (ci.empeora || []).join(', ')], ['Mejora con', (ci.mejora || []).join(', ')], ['Tratamientos previos', (ci.previos || []).join(', ')], ['Descripción', ci.descripcion || '']].filter(r => r[1]);
@@ -80,41 +90,79 @@ const generateClinicalHTML = (patient, doctorInfo) => {
   const pl = patient.planes || {};
   const plMarks = Object.entries(pl.marks || {}).map(([b, n]) => { const note = n ? [...(n.s || []), n.t || ''].filter(Boolean).join(' · ') : ''; return note ? b + ' (' + note + ')' : b; }).join(', ');
   const plCurve = pl.curve && pl.curve.type && pl.curve.type !== 'none' ? 'Escoliosis en ' + pl.curve.type + ' · ' + (pl.curve.from || '') + '–' + (pl.curve.to || '') + (pl.curve.cobb ? ' · Cobb ' + pl.curve.cobb + '°' : '') : '';
+  const life = patient.lifestyle || {};
+  const lifeRows = [['Actividad física', life.actividad || ''], ['Trabajo', life.trabajo || ''], ['Tabaco', life.tabaco || ''], ['Alcohol', life.alcohol || ''], ['Sueño', life.sueno || ''], ['Estrés', life.estres || '']].filter(r => r[1]);
+
   let extraSections = '';
-  if (ciRows.length > 0) extraSections += `<div class="section"><h2>Padecimiento Actual</h2><table>${ciRows.map(r => `<tr><td style="width:35%"><span class="label">${r[0]}</span></td><td><span class="value">${r[1]}</span></td></tr>`).join('')}</table></div>`;
-  if (exRom || exTests || (ex.palpation && ex.palpation.length > 0) || ex.detail) extraSections += `<div class="section"><h2>Exploración Física</h2>${exRom ? `<p style="margin: 0 0 5px 0;"><strong>Movimiento:</strong> ${exRom}</p>` : ''}${exTests ? `<p style="margin: 0 0 5px 0;"><strong>Pruebas especiales:</strong> ${exTests}</p>` : ''}${ex.palpation && ex.palpation.length > 0 ? `<p style="margin: 0 0 5px 0;"><strong>Palpación:</strong> ${ex.palpation.join(', ')}</p>` : ''}${ex.detail ? `<p style="margin: 0; font-style: italic; color: #475569;">" ${ex.detail} "</p>` : ''}</div>`;
-  if (plMarks || plCurve || (pl.sagittal && pl.sagittal.length > 0)) extraSections += `<div class="section"><h2>Planos Anatómicos (Rayos X)</h2>${plMarks ? `<p style="margin: 0 0 5px 0;"><strong>Huesos marcados:</strong> ${plMarks}</p>` : ''}${plCurve ? `<p style="margin: 0 0 5px 0;"><strong>${plCurve}</strong></p>` : ''}${pl.sagittal && pl.sagittal.length > 0 ? `<p style="margin: 0;"><strong>Curvas sagitales:</strong> ${pl.sagittal.join(', ')}</p>` : ''}</div>`;
-  if (patient.consent && patient.consent.accepted) extraSections += `<div class="section"><p style="margin: 0;"><strong>Consentimiento informado:</strong> el paciente aceptó el tratamiento el ${safeFormatDate((patient.consent.date || '').split('T')[0])}.</p></div>`;
+  if (ciRows.length > 0) extraSections += `<div class="section"><h2><span class="gold">▸</span> Padecimiento Actual</h2><table>${ciRows.map(r => `<tr><td style="width:35%"><span class="label">${r[0]}</span></td><td><span class="value">${r[1]}</span></td></tr>`).join('')}</table></div>`;
+  if ((patient.pathologicalList && patient.pathologicalList.length > 0) || (patient.medications && patient.medications.length > 0) || lifeRows.length > 0) extraSections += `<div class="section"><h2><span class="gold">▸</span> Antecedentes y Estilo de Vida</h2><table>
+    ${patient.pathologicalList && patient.pathologicalList.length > 0 ? `<tr><td style="width:35%"><span class="label">Antecedentes patológicos</span></td><td><span class="value">${patient.pathologicalList.join(', ')}</span></td></tr>` : ''}
+    ${patient.medications && patient.medications.length > 0 ? `<tr><td><span class="label">Medicamentos actuales</span></td><td><span class="value">${patient.medications.join(', ')}</span></td></tr>` : ''}
+    ${lifeRows.map(r => `<tr><td><span class="label">${r[0]}</span></td><td><span class="value">${r[1]}</span></td></tr>`).join('')}
+  </table></div>`;
+  if (exRom || exTests || (ex.palpation && ex.palpation.length > 0) || ex.detail) extraSections += `<div class="section"><h2><span class="gold">▸</span> Exploración Física</h2>${exRom ? `<p style="margin: 0 0 5px 0;"><strong>Movimiento:</strong> ${exRom}</p>` : ''}${exTests ? `<p style="margin: 0 0 5px 0;"><strong>Pruebas especiales:</strong> ${exTests}</p>` : ''}${ex.palpation && ex.palpation.length > 0 ? `<p style="margin: 0 0 5px 0;"><strong>Palpación:</strong> ${ex.palpation.join(', ')}</p>` : ''}${ex.detail ? `<p style="margin: 0; font-style: italic; color: #475569;">" ${ex.detail} "</p>` : ''}</div>`;
+  if (plMarks || plCurve || (pl.sagittal && pl.sagittal.length > 0)) extraSections += `<div class="section"><h2><span class="gold">▸</span> Planos Anatómicos (Rayos X)</h2>${plMarks ? `<p style="margin: 0 0 5px 0;"><strong>Huesos marcados:</strong> ${plMarks}</p>` : ''}${plCurve ? `<p style="margin: 0 0 5px 0;"><strong>${plCurve}</strong></p>` : ''}${pl.sagittal && pl.sagittal.length > 0 ? `<p style="margin: 0;"><strong>Curvas sagitales:</strong> ${pl.sagittal.join(', ')}</p>` : ''}</div>`;
+  if ((patient.diagnosisList && patient.diagnosisList.length > 0) || (patient.objectives && patient.objectives.length > 0) || patient.frequency || patient.estimatedSessions || (patient.homeRecommendations && patient.homeRecommendations.length > 0)) extraSections += `<div class="section"><h2><span class="gold">▸</span> Diagnóstico y Plan de Tratamiento</h2><table>
+    ${patient.diagnosisList && patient.diagnosisList.length > 0 ? `<tr><td style="width:35%"><span class="label">Diagnóstico</span></td><td><span class="value">${patient.diagnosisList.join(', ')}</span></td></tr>` : ''}
+    ${patient.objectives && patient.objectives.length > 0 ? `<tr><td><span class="label">Objetivos</span></td><td><span class="value">${patient.objectives.join(', ')}</span></td></tr>` : ''}
+    ${patient.frequency ? `<tr><td><span class="label">Frecuencia</span></td><td><span class="value">${patient.frequency}</span></td></tr>` : ''}
+    ${patient.estimatedSessions ? `<tr><td><span class="label">Sesiones estimadas</span></td><td><span class="value">${patient.estimatedSessions}</span></td></tr>` : ''}
+    ${patient.homeRecommendations && patient.homeRecommendations.length > 0 ? `<tr><td><span class="label">Recomendaciones en casa</span></td><td><span class="value">${patient.homeRecommendations.join(', ')}</span></td></tr>` : ''}
+  </table></div>`;
+  if (patient.consent && patient.consent.accepted) extraSections += `<div class="section"><h2><span class="gold">▸</span> Consentimiento Informado</h2><p style="margin: 0;">El paciente aceptó el tratamiento y su consentimiento informado quedó registrado el <strong>${safeFormatDate((patient.consent.date || '').split('T')[0])}</strong>.</p></div>`;
+
   return `
     <html>
       <head>
         <meta charset="utf-8">
         <title>Expediente - ${patient.name}</title>
         <style>
-          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6; padding: 40px; max-width: 800px; margin: auto; }
-          h1 { color: #0f172a; margin: 0 0 5px 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
-          h2 { color: #0f172a; margin: 0 0 15px 0; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;}
-          h3 { color: #64748b; margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;}
-          .header { text-align: center; border-bottom: 4px solid #06b6d4; padding-bottom: 30px; margin-bottom: 40px; }
-          .section { margin-bottom: 30px; padding: 25px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; page-break-inside: avoid; }
-          .label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 900; letter-spacing: 1px; display: block; margin-bottom: 2px;}
-          .value { font-size: 14px; font-weight: 600; color: #0f172a; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 15px;}
-          td { padding: 8px 15px 8px 0; vertical-align: top; }
+          @page { margin: 16mm 15mm; }
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.55; padding: 34px 38px; max-width: 800px; margin: auto; font-size: 13px; }
+          .header { border-bottom: 3px solid #b08d3e; padding-bottom: 14px; margin-bottom: 6px; }
+          .clinic { font-size: 20px; font-weight: 900; color: #0b3b42; margin: 0; letter-spacing: 0.5px; }
+          .docTitle { font-size: 15px; font-weight: 900; color: #0b3b42; text-transform: uppercase; letter-spacing: 3px; margin: 20px 0 2px 0; }
+          .meta { font-size: 11px; color: #94a3b8; margin: 0 0 6px 0; }
+          .section { margin-bottom: 24px; page-break-inside: avoid; }
+          h2 { color: #0b3b42; margin: 0 0 11px 0; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 5px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.5px; }
+          h2 .gold { color: #b08d3e; }
+          .label { font-size: 9.5px; text-transform: uppercase; color: #94a3b8; font-weight: 800; letter-spacing: 1px; display: block; margin-bottom: 2px; }
+          .value { font-size: 13.5px; font-weight: 600; color: #0f172a; }
+          table { width: 100%; border-collapse: collapse; }
+          td { padding: 5px 14px 5px 0; vertical-align: top; }
+          table.sess th { background: #0b3b42; color: #ffffff; text-align: left; padding: 7px 9px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+          table.sess td { padding: 6px 9px; border-bottom: 1px solid #e8eef0; font-size: 12px; }
+          .sig { margin-top: 46px; text-align: center; }
+          .sigLine { width: 280px; margin: 0 auto; border-top: 1.5px solid #0b3b42; padding-top: 6px; font-size: 12px; color: #334155; }
+          .foot { margin-top: 26px; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 9.5px; color: #94a3b8; }
         </style>
       </head>
       <body>
-        <div class="header">
-          ${logoHtml}
-          <h1>${doctorInfo.clinic || 'Clínica Quiropráctica'}</h1>
-          <h3>${doctorInfo.name || 'Especialista'} - ${doctorInfo.title || 'Doctor'}</h3>
-          ${doctorInfo.licenseNumber ? `<p style="font-size:12px;color:#475569;margin-top:4px;">Céd. Prof. ${doctorInfo.licenseNumber}</p>` : ''}
-          ${doctorInfo.officeAddress ? `<p style="font-size:12px;color:#475569;">${doctorInfo.officeAddress}</p>` : ''}
-          ${doctorInfo.officePhone ? `<p style="font-size:12px;color:#475569;">Tel. ${doctorInfo.officePhone}</p>` : ''}
-        </div>
-        
+        <table class="header" style="border-bottom: 3px solid #b08d3e;">
+          <tr>
+            <td style="padding: 0 14px 12px 0;">
+              <table><tr>
+                <td style="width: 76px; padding: 0 12px 0 0;">${logoHtml}</td>
+                <td style="padding: 0;">
+                  <p class="clinic">${doctorInfo.clinic || 'Clínica Quiropráctica'}</p>
+                  <p style="margin: 2px 0 0 0; font-size: 10px; color: #b08d3e; font-weight: 800; letter-spacing: 2.5px;">SALUD · COLUMNA · BIENESTAR</p>
+                </td>
+              </tr></table>
+            </td>
+            <td style="text-align: right; padding: 0 0 12px 0; font-size: 11.5px; color: #64748b; line-height: 1.65;">
+              <strong style="color: #0b3b42; font-size: 12.5px;">${doctorInfo.name || 'Especialista'}</strong> · ${doctorInfo.title || 'Doctor'}<br/>
+              ${doctorInfo.licenseNumber ? `Céd. Prof. ${doctorInfo.licenseNumber}<br/>` : ''}
+              ${doctorInfo.officeAddress ? `${doctorInfo.officeAddress}<br/>` : ''}
+              ${doctorInfo.officePhone ? `Tel. ${doctorInfo.officePhone}` : ''}
+            </td>
+          </tr>
+        </table>
+
+        <p class="docTitle">Expediente Clínico</p>
+        <p class="meta">Fecha de emisión: ${fechaEmision} · Folio: ${folio}</p>
+
         <div class="section">
-          <h2>Ficha de Identificación</h2>
+          <h2><span class="gold">▸</span> Ficha de Identificación</h2>
           <table>
             <tr>
               <td><span class="label">Nombre del Paciente</span><span class="value">${patient.name}</span></td>
@@ -134,7 +182,7 @@ const generateClinicalHTML = (patient, doctorInfo) => {
         </div>
 
         <div class="section">
-          <h2>Evaluación Clínica Inicial</h2>
+          <h2><span class="gold">▸</span> Evaluación Clínica Inicial</h2>
           <table>
             <tr>
               <td colspan="2"><span class="label">Motivo de Consulta</span><span class="value">${patient.consultationReason || '--'}</span></td>
@@ -144,16 +192,16 @@ const generateClinicalHTML = (patient, doctorInfo) => {
               <td><span class="label">Ant. No Patológicos</span><span class="value">${patient.nonPathological || '--'}</span></td>
             </tr>
             <tr>
-              <td><span class="label">Diagnóstico Quiropráctico</span><span class="value" style="color: #0284c7;">${patient.chiropracticDiagnosis || '--'}</span></td>
+              <td><span class="label">Diagnóstico Quiropráctico</span><span class="value" style="color: #0b3b42;">${patient.chiropracticDiagnosis || '--'}</span></td>
               <td><span class="label">Morfología</span><span class="value">Peso: ${patient.weight ? patient.weight + ' kg' : '--'} | Altura: ${patient.height ? patient.height + ' cm' : '--'}</span></td>
             </tr>
             <tr>
               <td colspan="2"><span class="label">Plan de Tratamiento</span><span class="value">${patient.treatmentPlan || '--'}</span></td>
             </tr>
           </table>
-          <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 15px 0;" />
+          <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 13px 0;" />
           <span class="label">Análisis Postural</span>
-          <span class="value" style="font-size: 13px; font-weight: normal;">
+          <span class="value" style="font-size: 12.5px; font-weight: normal;">
             <b>Anterior:</b> ${patient.postureAnterior || '--'} <br/>
             <b>Lateral:</b> ${patient.postureLateral || '--'} <br/>
             <b>Posterior:</b> ${patient.posturePosterior || '--'}
@@ -162,13 +210,22 @@ const generateClinicalHTML = (patient, doctorInfo) => {
 
         ${extraSections}
         <div class="section">
-          <h2>Historial de Sesiones y Ajustes</h2>
-          ${patient.histories && patient.histories.length > 0 ? historiesHtml : '<p style="color: #64748b; font-style: italic;">Sin registros clínicos documentados aún.</p>'}
+          <h2><span class="gold">▸</span> Historial de Sesiones</h2>
+          ${chrono.length > 0 ? `<table class="sess">
+            <tr><th>Fecha</th><th>Motivo</th><th>EVA entra</th><th>EVA sale</th><th>Respuesta</th></tr>
+            ${sessRows}
+          </table>
+          ${sessDetails ? `<p class="label" style="margin-top: 14px;">Notas de evolución</p>${sessDetails}` : ''}` : '<p style="color: #64748b; font-style: italic;">Sin registros clínicos documentados aún.</p>'}
         </div>
-        
-        <div style="text-align: center; margin-top: 50px; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">
-          Expediente Clínico Digital Generado por QuiroApp
+
+        <div class="sig">
+          <div class="sigLine">${doctorInfo.name || 'Especialista'} · ${doctorInfo.title || ''}${doctorInfo.licenseNumber ? ' · Céd. Prof. ' + doctorInfo.licenseNumber : ''}<br/><span style="color: #94a3b8; font-size: 10px;">Firma y sello</span></div>
         </div>
+
+        <table class="foot"><tr>
+          <td style="padding: 0;">Documento generado con QuiroApp</td>
+          <td style="padding: 0; text-align: right;">Confidencial · Uso clínico</td>
+        </tr></table>
       </body>
     </html>
   `;
