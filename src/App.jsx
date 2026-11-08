@@ -1,10 +1,16 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense , useRef } from 'react';
 import './index.css';
 import { signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
-import { collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
-import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil } from 'lucide-react';
+import { collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction, getDocs } from 'firebase/firestore';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil, Smartphone, Monitor, Tag, MessageCircle } from 'lucide-react';
 import { auth, db, appId, TRIAL_DAYS, MAX_TRIAL_PATIENTS } from './lib/firebase.js';
 import { openWhatsApp, generateSecureCode, authErrorMessage, safeFormatDate, calculateAge, generateClinicalHTML, CLINIC_THEMES, RED_FLAGS, CHIRO_TECHNIQUES, POSTURAL_DEVIATIONS, MOTIVOS_CONSULTA, LIST_IRRADIACION, LIST_EMPEORA, LIST_MEJORA, LIST_PREVIOS, LIST_PATOLOGICOS, LIST_MEDICAMENTOS, LIST_DIAGNOSTICOS, LIST_OBJETIVOS, LIST_FRECUENCIAS, LIST_RECOMENDACIONES, LIST_PRUEBAS, LIST_PALPACION, BONE_NOTE_SUGGESTIONS, LIST_HALLAZGOS, LIST_VISITA, LIST_RESPUESTA, LIST_PROXIMA } from './lib/utils.js';
+
+// ===== Parte 8: planes por dispositivos =====
+const PLANS = { duo: { name: 'Dúo', pc: 1, mobile: 1 }, equipo: { name: 'Equipo', pc: 3, mobile: 3 }, full: { name: 'Full Pack', pc: 10, mobile: 10 } };
+const getDeviceId = () => { try { let id = localStorage.getItem('quiroDeviceId'); if (!id) { id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10)); localStorage.setItem('quiroDeviceId', id); } return id; } catch (e) { return 'dev-' + Date.now(); } };
+const detectDevice = () => { const ua = navigator.userAgent || ''; const mobile = /iPad|iPhone|iPod|Android|Mobile/i.test(ua); const os = /Windows/i.test(ua) ? 'Windows' : /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Mac/i.test(ua) ? 'macOS' : /Linux/i.test(ua) ? 'Linux' : 'Web'; return { type: mobile ? 'mobile' : 'pc', label: (mobile ? 'Móvil' : 'Computadora') + ' · ' + os }; };
+
 
 const TechniquesTab = lazy(() => import('./components/TechniquesTab.jsx'));
 
@@ -223,6 +229,14 @@ const PremiumTab = ({ onActivateCode }) => {
       <h2 className="text-3xl font-black uppercase italic text-white mb-2">Desbloquea <span className="text-amber-400">PRO</span></h2>
       <p className="text-indigo-200 text-sm leading-relaxed mb-8">Adquiere licencia para sincronizar tu cuenta en PC.</p>
       <button onClick={() => openWhatsApp("529996180031", "Hola, me interesa adquirir QuiroApp PRO.")} className="w-full bg-amber-400 text-black font-black uppercase italic py-5 rounded-[25px] flex items-center justify-center gap-3 border-b-8 border-amber-600 active:scale-95 transition shadow-2xl mb-8"><MessageSquare className="w-6 h-6" /> WhatsApp</button>
+      <div className="grid grid-cols-3 gap-2.5 mb-8 text-left">
+        {Object.entries(PLANS).map(([id, p]) => (
+          <div key={id} className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-[13px] font-black text-[#0b3b42]">{p.name}</p>
+            <p className="text-[11px] text-slate-500 mt-1 leading-snug">{p.pc} PC / laptop<br />{p.mobile} móviles</p>
+          </div>
+        ))}
+      </div>
       <div className="bg-slate-900/80 p-8 rounded-[40px] border border-cyan-400/20 text-left space-y-5 shadow-xl">
         <h4 className="text-cyan-400 font-black uppercase tracking-widest text-xs mb-4 flex items-center gap-2"><KeyRound className="w-4 h-4"/> Tengo un código</h4>
         <input type="text" placeholder="Ej: PRO-X7Y8Z9" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="w-full bg-slate-950 p-5 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-400 tracking-[0.2em] uppercase text-center" />
@@ -232,21 +246,163 @@ const PremiumTab = ({ onActivateCode }) => {
   );
 };
 
-const AdminTab = ({ codes, onGenerateCode }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const handleGen = async (type, days) => { setIsGenerating(true); await onGenerateCode(type, days); setIsGenerating(false); };
+const AdminTab = ({ codes, onGenerateCodes, onGenerateUpgrade, onDeleteCode, onAssignBuyer }) => {
+  const [duration, setDuration] = useState('Mensual');
+  const [plan, setPlan] = useState('duo');
+  const [qty, setQty] = useState(1);
+  const [upgPlan, setUpgPlan] = useState('equipo');
+  const [generating, setGenerating] = useState(false);
+  const [lastBatch, setLastBatch] = useState(null);
+  const [filter, setFilter] = useState('todos');
+  const [query, setQuery] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+  const [assignFor, setAssignFor] = useState(null);
+  const [assignText, setAssignText] = useState('');
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  const sorted = useMemo(() => [...codes].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))), [codes]);
+  const disp = sorted.filter(c => !c.used);
+  const usados = sorted.filter(c => c.used);
+  const nowD = new Date();
+  const canjesMes = usados.filter(c => { if (!c.usedAt) return false; const d = new Date(c.usedAt); return d.getMonth() === nowD.getMonth() && d.getFullYear() === nowD.getFullYear(); }).length;
+  const tasa = codes.length ? Math.round((usados.length / codes.length) * 100) : 0;
+  const stockMes = disp.filter(c => c.kind !== 'upgrade' && c.type === 'Mensual').length;
+  const stockAnu = disp.filter(c => c.kind !== 'upgrade' && c.type === 'Anual').length;
+  const stockBajo = codes.length > 0 && (stockMes <= 1 || stockAnu <= 1);
+  const filtered = sorted.filter(c => {
+    if (filter === 'disp' && c.used) return false;
+    if (filter === 'usados' && !c.used) return false;
+    if (query) { const q = query.toLowerCase(); if (!(String(c.id).toLowerCase().includes(q) || String(c.buyerName || '').toLowerCase().includes(q) || String(c.usedByEmail || '').toLowerCase().includes(q))) return false; }
+    return true;
+  });
+  const copyCode = (id) => { navigator.clipboard.writeText(id); setCopiedId(id); setTimeout(() => setCopiedId(null), 1600); };
+  const waLink = (c) => {
+    const planName = c.plan ? (PLANS[c.plan]?.name || '') : '';
+    const msg = c.kind === 'upgrade'
+      ? `Hola 👋 Tu código de MEJORA de plan para QuiroApp es: ${c.id}${planName ? ` (subes al plan ${planName})` : ''}. Canjéalo dentro de la app, en la sección Premium: https://quiro-app.vercel.app/`
+      : `Hola 👋 Tu código de acceso PRO para QuiroApp es: ${c.id}${planName ? ` (Plan ${planName} · ${c.type})` : ` (${c.type})`}. Abre la app: https://quiro-app.vercel.app/ y actívalo en la sección Premium.`;
+    return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  };
+  const handleGen = async () => { setGenerating(true); const out = await onGenerateCodes({ type: duration, days: duration === 'Mensual' ? 30 : 365, plan, qty }); setGenerating(false); if (out && out.length) setLastBatch({ codes: out, label: `${duration} · Plan ${PLANS[plan].name}` }); };
+  const handleUpg = async () => { setGenerating(true); const code = await onGenerateUpgrade(upgPlan); setGenerating(false); if (code) setLastBatch({ codes: [code], label: `Mejora al plan ${PLANS[upgPlan].name} (sin tiempo extra)` }); };
+  const fmtD = (iso) => iso ? safeFormatDate(String(iso).split('T')[0]) : '';
+  const pill = "text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border";
+  const toggleCls = (on) => `px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wide border transition active:scale-95 ${on ? 'bg-[#0b3b42] border-[#0b3b42] text-[#fff]' : 'bg-white border-slate-300 text-slate-500'}`;
+
   return (
-    <div className="animate-fade-in space-y-6 text-left py-6 px-2">
-      <div className="flex items-center gap-3 mb-6"><div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/30"><TerminalSquare className="w-8 h-8 text-rose-500" /></div><div><h2 className="text-2xl font-black uppercase italic text-white leading-none">Panel <span className="text-rose-500">Admin</span></h2></div></div>
-      <div className="flex gap-3 mb-8"><button onClick={() => handleGen('Mensual', 30)} disabled={isGenerating} className="flex-1 bg-indigo-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 border-b-4 border-indigo-700">Mensual</button><button onClick={() => handleGen('Anual', 365)} disabled={isGenerating} className="flex-1 bg-rose-500 text-white py-4 rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 border-b-4 border-rose-800">Anual</button></div>
-      <h3 className="text-sm font-black uppercase text-indigo-400 mb-4 tracking-widest">Historial Códigos ({codes.length})</h3>
-      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-        {codes.map(c => (
-          <div key={c.id} className="bg-slate-900 p-5 rounded-3xl flex justify-between shadow-lg">
-            <div><p className="font-mono text-xl font-black text-white">{String(c.id)}</p><p className={`text-[9px] font-black uppercase tracking-widest ${c.used ? 'text-rose-400' : 'text-emerald-400'}`}>{c.used ? 'Usado' : 'Disponible'}</p></div>
-            {!c.used && <button onClick={() => { navigator.clipboard.writeText(c.id); alert("Copiado"); }} className="p-3 bg-white/5 rounded-xl text-white"><Copy className="w-5 h-5"/></button>}
+    <div className="animate-fade-in space-y-5 text-left pb-10">
+      <div className="flex items-center gap-3">
+        <div className="p-3.5 bg-[#0b3b42] rounded-2xl shadow"><TerminalSquare className="w-7 h-7 text-[#d8b878]" /></div>
+        <div>
+          <h2 className="text-2xl font-black text-[#0b3b42] leading-none">Panel Admin</h2>
+          <p className="text-xs text-slate-400 mt-1.5 font-semibold">Control maestro de licencias y planes</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[['Disponibles', disp.length], ['Usados', usados.length], ['Canjes este mes', canjesMes], ['Tasa de canje', tasa + '%']].map(([l, v]) => (
+          <div key={l} className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm"><p className="text-[22px] font-black text-[#0b3b42] leading-none">{v}</p><p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1.5">{l}</p></div>
+        ))}
+      </div>
+
+      {stockBajo && (
+        <div className="bg-[#fdf6e0] border border-[#e8d9ac] text-[#7a5f1e] rounded-2xl px-4 py-3 text-[12.5px] font-bold flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 flex-none" /> Te queda poco stock: {stockMes} Mensual(es) y {stockAnu} Anual(es) disponibles. Genera más para no quedarte sin códigos a mitad de una venta.
+        </div>
+      )}
+
+      <div className="bg-white rounded-[28px] border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-[#0e7c5b]">Generar códigos</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={() => setDuration('Mensual')} className={toggleCls(duration === 'Mensual')}>Mensual · 30 días</button>
+          <button onClick={() => setDuration('Anual')} className={toggleCls(duration === 'Anual')}>Anual · 365 días</button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {Object.entries(PLANS).map(([id, p]) => (
+            <button key={id} onClick={() => setPlan(id)} className={toggleCls(plan === id)}>{p.name} · {p.pc} PC + {p.mobile} móvil</button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex gap-1.5">
+            {[1, 5, 10].map(n => <button key={n} onClick={() => setQty(n)} className={toggleCls(qty === n)}>×{n}</button>)}
+          </div>
+          <button onClick={handleGen} disabled={generating} className="flex-1 min-w-[180px] bg-[#0b3b42] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition shadow disabled:opacity-50 flex items-center justify-center gap-2">
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#d8b878]" />} Generar {qty} código{qty > 1 ? 's' : ''}
+          </button>
+        </div>
+        <div className="border-t border-dashed border-slate-200 pt-4">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#b08d3e] mb-2.5">Mejora de plan (sube el cupo, sin tiempo extra)</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.entries(PLANS).map(([id, p]) => (
+              <button key={id} onClick={() => setUpgPlan(id)} className={toggleCls(upgPlan === id)}>{p.name}</button>
+            ))}
+            <button onClick={handleUpg} disabled={generating} className="bg-[#b08d3e] text-[#fff] px-5 py-2.5 rounded-xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition disabled:opacity-50">Generar mejora</button>
+          </div>
+        </div>
+        {lastBatch && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2">✓ Generado · {lastBatch.label}</p>
+            <div className="flex flex-wrap gap-2">
+              {lastBatch.codes.map(cd => (
+                <button key={cd} onClick={() => copyCode(cd)} className="font-mono font-black text-[13px] bg-white border border-emerald-300 text-[#0b3b42] px-3 py-1.5 rounded-xl active:scale-95 transition">{copiedId === cd ? '✓ Copiado' : cd}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center gap-3">
+        <div className="flex items-center gap-2.5 bg-white border-[1.5px] border-[#cfe0da] rounded-2xl px-4 py-3 flex-1">
+          <Search className="w-4 h-4 text-slate-400 flex-none" />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar código, comprador o correo…" className="bg-transparent outline-none text-sm font-semibold text-slate-700 w-full placeholder:text-slate-400" />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {[['todos', `Todos (${codes.length})`], ['disp', `Disponibles (${disp.length})`], ['usados', `Usados (${usados.length})`]].map(([id, l]) => (
+            <button key={id} onClick={() => setFilter(id)} className={toggleCls(filter === id)}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        {filtered.map(c => (
+          <div key={c.id} className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="flex justify-between items-start gap-3 flex-wrap">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-mono text-[17px] font-black text-[#0b3b42]">{String(c.id)}</span>
+                  {c.kind === 'upgrade' ? <span className={`${pill} bg-[#fdf6e0] text-[#8a6d2f] border-[#e8d9ac]`}>Mejora</span> : <span className={`${pill} bg-[#eef5f2] text-[#0b5563] border-[#cfe3dc]`}>{String(c.type || '')}</span>}
+                  {c.plan && PLANS[c.plan] && <span className={`${pill} bg-[#eef5f2] text-[#0b5563] border-[#cfe3dc]`}>Plan {PLANS[c.plan].name}</span>}
+                  <span className={`${pill} ${c.used ? 'bg-[#fdeef4] text-[#9d2b57] border-[#f3c4d8]' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>{c.used ? 'Usado' : 'Disponible'}</span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
+                  Creado {fmtD(c.createdAt)}{c.used && c.usedAt ? ` · Canjeado ${fmtD(c.usedAt)}` : ''}{c.used && c.usedByEmail ? ` · ${String(c.usedByEmail)}` : ''}{c.buyerName ? ` · Para: ${String(c.buyerName)}` : ''}
+                </p>
+              </div>
+              {!c.used && (
+                <div className="flex gap-1.5 flex-none">
+                  <button onClick={() => copyCode(c.id)} title="Copiar" className="p-2.5 bg-[#eef5f2] border border-[#cfe3dc] rounded-xl text-[#0b3b42] active:scale-90 transition">{copiedId === c.id ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}</button>
+                  <a href={waLink(c)} target="_blank" rel="noreferrer" title="Enviar por WhatsApp" className="p-2.5 bg-[#e7f8ee] border border-[#bbe7cc] rounded-xl text-[#15803d] active:scale-90 transition inline-flex"><MessageCircle className="w-4 h-4" /></a>
+                  <button onClick={() => { setAssignFor(assignFor === c.id ? null : c.id); setAssignText(String(c.buyerName || '')); }} title="Asignar comprador" className="p-2.5 bg-[#fdf6e0] border border-[#e8d9ac] rounded-xl text-[#8a6d2f] active:scale-90 transition"><Tag className="w-4 h-4" /></button>
+                  {confirmDel === c.id ? (
+                    <span className="flex gap-1 items-center">
+                      <button onClick={() => { onDeleteCode(c.id); setConfirmDel(null); }} className="px-3 py-2.5 bg-rose-500 text-[#fff] rounded-xl text-[10px] font-black uppercase active:scale-90 transition">Borrar</button>
+                      <button onClick={() => setConfirmDel(null)} className="px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-[10px] font-black uppercase text-slate-500 active:scale-90 transition">No</button>
+                    </span>
+                  ) : (
+                    <button onClick={() => setConfirmDel(c.id)} title="Borrar código" className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-500 active:scale-90 transition"><Trash2 className="w-4 h-4" /></button>
+                  )}
+                </div>
+              )}
+            </div>
+            {assignFor === c.id && !c.used && (
+              <div className="flex gap-2 mt-3">
+                <input value={assignText} onChange={e => setAssignText(e.target.value)} placeholder="Nombre del comprador (tu control)…" className="flex-1 bg-[#f7faf8] border-[1.5px] border-[#cfe0da] rounded-xl px-3.5 py-2.5 text-[13px] font-semibold text-slate-700 outline-none" />
+                <button onClick={() => { onAssignBuyer(c.id, assignText.trim()); setAssignFor(null); }} className="bg-[#0b3b42] text-[#fff] px-4 rounded-xl text-[11px] font-black uppercase active:scale-95 transition">Guardar</button>
+              </div>
+            )}
           </div>
         ))}
+        {filtered.length === 0 && <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-8 text-center text-sm font-bold text-slate-400">Ningún código coincide con el filtro o la búsqueda.</div>}
       </div>
     </div>
   );
@@ -614,7 +770,10 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
-const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onBackup, visualMode, setVisualMode }) => {
+const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onBackup, visualMode, setVisualMode, devices = [], currentDeviceId, onReleaseDevice }) => {
+  const planDef = PLANS[doctorInfo.plan] || null;
+  const pcUsed = devices.filter(d => d.type === 'pc').length;
+  const mobUsed = devices.filter(d => d.type !== 'pc').length;
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(doctorInfo.title || '');
   const [customTitle, setCustomTitle] = useState('');
@@ -820,6 +979,49 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
           <LogOut className="w-5 h-5"/> Cerrar Sesión
         </button>
       </div>
+      <div className="bg-white p-6 sm:p-8 rounded-[32px] border border-slate-200 shadow-[0_8px_22px_rgba(8,48,57,0.08)] text-left">
+        <h4 className="text-[11px] font-black text-[#0b3b42] uppercase tracking-widest flex items-center gap-2 mb-3"><Smartphone className="w-4 h-4 text-[#b08d3e]" /> Mi plan y dispositivos</h4>
+        {planDef ? (
+          <p className="text-sm text-slate-600 leading-relaxed">Plan <b className="text-[#0b3b42]">{planDef.name}</b> · {planDef.pc} PC + {planDef.mobile} móviles{doctorInfo.premiumExpiresAt ? ` · Vence el ${safeFormatDate(new Date(doctorInfo.premiumExpiresAt).toISOString().split('T')[0])}` : ''}</p>
+        ) : (
+          <p className="text-sm text-slate-500 leading-relaxed">Tu cuenta no tiene límite de dispositivos (plan legado). Los planes nuevos (Dúo, Equipo y Full Pack) controlan en cuántos aparatos se puede entrar a la vez.</p>
+        )}
+        {planDef && (
+          <div className="grid grid-cols-2 gap-2.5 mt-4">
+            <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 text-center">
+              <Monitor className="w-5 h-5 mx-auto text-[#0b3b42]" />
+              <p className="text-sm font-black text-[#0b3b42] mt-1.5">{pcUsed} / {planDef.pc}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Computadoras</p>
+            </div>
+            <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl p-3.5 text-center">
+              <Smartphone className="w-5 h-5 mx-auto text-[#0b3b42]" />
+              <p className="text-sm font-black text-[#0b3b42] mt-1.5">{mobUsed} / {planDef.mobile}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Móviles</p>
+            </div>
+          </div>
+        )}
+        <div className="space-y-2 mt-5">
+          {devices.map(d => (
+            <div key={d.id} className="flex items-center gap-3 bg-[#f7faf8] border border-[#dfe9e4] rounded-2xl px-4 py-3">
+              {d.type === 'pc' ? <Monitor className="w-4 h-4 text-[#0b3b42] flex-none" /> : <Smartphone className="w-4 h-4 text-[#0b3b42] flex-none" />}
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-[#0b3b42] truncate">{String(d.label || 'Dispositivo')}</p>
+                <p className="text-[10.5px] text-slate-400 font-semibold">Registrado el {d.firstSeen ? safeFormatDate(String(d.firstSeen).split('T')[0]) : '—'}</p>
+              </div>
+              {d.id === currentDeviceId
+                ? <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1.5 rounded-full flex-none">Este dispositivo</span>
+                : <button onClick={() => onReleaseDevice(d.id)} className="text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-500 border border-rose-200 px-2.5 py-1.5 rounded-full flex-none active:scale-90 transition">Liberar</button>}
+            </div>
+          ))}
+          {devices.length === 0 && <p className="text-[12px] text-slate-400 font-semibold">Aún no hay dispositivos registrados en tu cuenta.</p>}
+        </div>
+        {planDef && (
+          <button onClick={() => openWhatsApp("529996180031", `Hola, quiero ampliar mi plan ${planDef.name} de QuiroApp.`)} className="w-full mt-5 bg-[#b08d3e] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2">
+            <MessageCircle className="w-4 h-4" /> Ampliar mi plan
+          </button>
+        )}
+      </div>
+
     </div>
   );
 };
@@ -1497,6 +1699,40 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, onResetPassword,
   );
 };
 
+const DeviceLimitScreen = ({ info, onActivate, onRetry, onLogout }) => {
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const handleAct = async () => { if (!code) return; setBusy(true); await onActivate(code); setBusy(false); };
+  return (
+    <div className="min-h-screen bg-[#e9efec] flex items-center justify-center p-5">
+      <div className="bg-white w-full max-w-md rounded-[36px] border border-slate-200 shadow-[0_20px_50px_rgba(8,48,57,0.15)] p-8 text-center animate-fade-in">
+        <div className="w-16 h-16 mx-auto rounded-3xl bg-[#0b3b42] flex items-center justify-center mb-5">
+          {info.type === 'pc' ? <Monitor className="w-8 h-8 text-[#d8b878]" /> : <Smartphone className="w-8 h-8 text-[#d8b878]" />}
+        </div>
+        <h2 className="text-[22px] font-black text-[#0b3b42] leading-tight">Límite de dispositivos alcanzado</h2>
+        <p className="text-sm text-slate-500 leading-relaxed mt-3">
+          Tu plan <b className="text-[#0b3b42]">{info.planName}</b> permite {info.limit} {info.typeLabel} y ya están en uso. Este aparato todavía no puede entrar.
+        </p>
+        <div className="bg-[#f7faf8] border border-[#dfe9e4] rounded-3xl p-5 mt-6 text-left space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#0e7c5b] flex items-center gap-1.5"><KeyRound className="w-3.5 h-3.5" /> ¿Tienes un código de mejora?</p>
+          <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="Ej: UPG-X7Y8Z9" className="w-full bg-white border-[1.5px] border-[#cfe0da] rounded-2xl px-4 py-3.5 text-center font-black tracking-[0.15em] uppercase text-[#0b3b42] outline-none placeholder:text-slate-300" />
+          <button onClick={handleAct} disabled={busy || !code} className="w-full bg-[#0b3b42] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-2">
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Canjear y ampliar mi plan'}
+          </button>
+        </div>
+        <button onClick={() => openWhatsApp("529996180031", `Hola, quiero ampliar mi plan ${info.planName} de QuiroApp para usar más dispositivos.`)} className="w-full mt-3 bg-[#22c55e] text-[#fff] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition flex items-center justify-center gap-2">
+          <MessageCircle className="w-4 h-4" /> Ampliar por WhatsApp
+        </button>
+        <button onClick={onRetry} className="w-full mt-3 bg-white border-[1.5px] border-[#cfe0da] text-[#0b3b42] py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition">
+          Ya liberé un dispositivo · Reintentar
+        </button>
+        <button onClick={onLogout} className="mt-5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition">Cerrar sesión</button>
+      </div>
+    </div>
+  );
+};
+
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1512,6 +1748,8 @@ export default function App() {
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
   const [adminCodes, setAdminCodes] = useState([]);
+  const [myDevices, setMyDevices] = useState([]);
+  const [deviceBlock, setDeviceBlock] = useState(null);
   const [modals, setModals] = useState({});
   const [authInProcess, setAuthInProcess] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -1604,15 +1842,23 @@ export default function App() {
         const codeData = codeSnap.data();
         if (codeData.used) throw new Error('CODIGO_USADO');
         const profileSnap = await tx.get(profileRef);
-        const currentExpiry = profileSnap.exists() ? (profileSnap.data().premiumExpiresAt || 0) : 0;
+        const prof = profileSnap.exists() ? profileSnap.data() : {};
+        tx.update(codeRef, { used: true, usedBy: user.uid, usedByEmail: user.email || '', usedAt: new Date().toISOString() });
+        if (codeData.kind === 'upgrade') {
+          tx.update(profileRef, { plan: codeData.plan || 'equipo' });
+          return { kind: 'upgrade', plan: codeData.plan || 'equipo', newExpiresAt: prof.premiumExpiresAt || 0 };
+        }
+        const currentExpiry = prof.premiumExpiresAt || 0;
         const base = Math.max(currentExpiry, Date.now());
         const newExpiresAt = base + ((codeData.durationDays || 30) * 86400000);
-        tx.update(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
-        tx.update(profileRef, { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
-        return { days: codeData.durationDays || 30, newExpiresAt };
+        const profUpdate = { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt };
+        if (codeData.plan) profUpdate.plan = codeData.plan;
+        tx.update(profileRef, profUpdate);
+        return { kind: 'time', days: codeData.durationDays || 30, plan: codeData.plan || null, newExpiresAt };
       });
-      setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: result.newExpiresAt}));
-      alert(`¡PRO activado por ${result.days} días!`);
+      setDoctorInfo(p => ({ ...p, isPremium: result.kind === 'time' ? true : p.isPremium, premiumExpiresAt: result.newExpiresAt || p.premiumExpiresAt, plan: result.plan || p.plan }));
+      if (result.kind === 'upgrade') alert(`¡Plan actualizado a ${PLANS[result.plan]?.name || 'superior'}! Tu tiempo se conserva tal cual.`);
+      else alert(`¡PRO activado por ${result.days} días!${result.plan ? ` Plan ${PLANS[result.plan]?.name || ''}.` : ''}`);
       setActiveTab('settings');
     } catch (e) {
       if (e.message === 'CODIGO_NO_EXISTE') alert("Ese código no existe. Revisa que esté bien escrito.");
@@ -1622,21 +1868,56 @@ export default function App() {
     }
   };
 
-  const handleGenerateAdminCode = async (type, durationDays) => {
+  const deviceCheckedFor = useRef(null);
+  const ensureDevice = async (force = false) => {
+    if (!user) return;
+    const myId = getDeviceId();
+    const info = detectDevice();
+    const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'devices', myId);
     try {
-      const prefix = type === 'Mensual' ? 'MES-' : 'ANU-';
-      let newCode = null;
-      // Si el código ya existiera (casi imposible), se genera otro: jamás se sobrescribe uno.
-      for (let intento = 0; intento < 5 && !newCode; intento++) {
-        const candidato = generateSecureCode(prefix);
-        const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', candidato));
-        if (!snap.exists()) newCode = candidato;
+      const snap = await getDoc(ref);
+      if (snap.exists()) { updateDoc(ref, { lastSeen: new Date().toISOString() }).catch(() => {}); setDeviceBlock(null); return; }
+      const planDef = PLANS[doctorInfo.plan];
+      const premiumActive = doctorInfo.isPremium && (doctorInfo.premiumExpiresAt || 0) > Date.now();
+      if (!doctorInfo.isAdmin && premiumActive && planDef) {
+        const all = await getDocs(collection(db, 'artifacts', appId, 'users', user.uid, 'devices'));
+        const count = all.docs.filter(d => (d.data().type || 'pc') === info.type).length;
+        const limit = info.type === 'pc' ? planDef.pc : planDef.mobile;
+        if (count >= limit) { setDeviceBlock({ planName: planDef.name, type: info.type, typeLabel: info.type === 'pc' ? 'computadoras' : 'dispositivos móviles', limit }); return; }
       }
-      if (!newCode) return alert("No se pudo generar un código único. Inténtalo de nuevo.");
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), { used: false, type, durationDays, createdAt: new Date().toISOString(), createdBy: user?.uid });
-      alert(`Código generado: ${newCode}`);
-    } catch (e) { alert("No se pudo generar el código. Revisa tu conexión e inténtalo de nuevo."); }
+      await setDoc(ref, { type: info.type, label: info.label, firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString() });
+      setDeviceBlock(null);
+    } catch (e) { setDeviceBlock(null); }
   };
+  useEffect(() => { if (user && !loading && deviceCheckedFor.current !== user.uid) { deviceCheckedFor.current = user.uid; ensureDevice(); } }, [user, loading]);
+  useEffect(() => { if (user && deviceBlock) ensureDevice(true); }, [doctorInfo.plan]);
+  useEffect(() => { if (!user) { setMyDevices([]); return; } const unsub = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'devices'), (snap) => setMyDevices(snap.docs.map(d => ({ id: d.id, ...d.data() })))); return () => unsub(); }, [user]);
+  const handleReleaseDevice = async (deviceId) => { if (!user) return; try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'devices', deviceId)); } catch (e) {} };
+
+  const createAdminCode = async (prefix, fields) => {
+    for (let intento = 0; intento < 5; intento++) {
+      const candidato = generateSecureCode(prefix);
+      const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', candidato));
+      if (!snap.exists()) { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', candidato), fields); return candidato; }
+    }
+    return null;
+  };
+  const handleGenerateCodes = async ({ type, days, plan, qty }) => {
+    const out = [];
+    try {
+      for (let n = 0; n < qty; n++) {
+        const code = await createAdminCode(type === 'Mensual' ? 'MES-' : 'ANU-', { used: false, type, durationDays: days, plan, createdAt: new Date().toISOString(), createdBy: user?.uid });
+        if (code) out.push(code);
+      }
+    } catch (e) { alert("No se pudieron generar todos los códigos. Revisa tu conexión e inténtalo de nuevo."); }
+    return out;
+  };
+  const handleGenerateUpgrade = async (plan) => {
+    try { return await createAdminCode('UPG-', { used: false, kind: 'upgrade', type: 'Mejora', durationDays: 0, plan, createdAt: new Date().toISOString(), createdBy: user?.uid }); }
+    catch (e) { alert("No se pudo generar el código de mejora. Revisa tu conexión."); return null; }
+  };
+  const handleDeleteAdminCode = async (codeId) => { try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeId)); } catch (e) { alert("No se pudo borrar el código. Verifica que las reglas nuevas de la Parte 8 estén publicadas en Firebase."); } };
+  const handleAssignBuyer = async (codeId, name) => { try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeId), { buyerName: name }); } catch (e) {} };
 
   const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
   const handleUpdateProfile = async (newData) => { setDoctorInfo(prev => ({ ...prev, ...newData })); await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { ...doctorInfo, ...newData }, { merge: true }); };
@@ -1692,6 +1973,7 @@ export default function App() {
   );
   if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} onResetPassword={handleResetPassword} inProcess={authInProcess} error={authError} notice={authNotice} step={authStep} setStep={setAuthStep} />;
   if (trialTimeLeft.expired && !doctorInfo.isPremium && !doctorInfo.isAdmin) return <SubscriptionBlockedScreen onLogout={() => signOut(auth)} />;
+  if (deviceBlock) return <DeviceLimitScreen info={deviceBlock} onActivate={handleActivateCode} onRetry={() => ensureDevice(true)} onLogout={() => signOut(auth)} />;
 
   const initialsOf = (name) => (String(name || '?').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
   const premiumDaysLeft = doctorInfo.premiumExpiresAt ? Math.max(0, Math.ceil((doctorInfo.premiumExpiresAt - Date.now()) / 86400000)) : null;
@@ -1857,9 +2139,9 @@ export default function App() {
                   </div>
                 )}
                 {activeTab === 'techniques' && (<Suspense fallback={<div className="py-20 text-center text-cyan-400 font-black uppercase tracking-widest text-xs">Cargando guía...</div>}><TechniquesTab /></Suspense>)}
-                {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} />}
+                {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} devices={myDevices} currentDeviceId={getDeviceId()} onReleaseDevice={handleReleaseDevice} />}
                 {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
-                {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
+                {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCodes={handleGenerateCodes} onGenerateUpgrade={handleGenerateUpgrade} onDeleteCode={handleDeleteAdminCode} onAssignBuyer={handleAssignBuyer} />}
               </>
             )}
           </div>
