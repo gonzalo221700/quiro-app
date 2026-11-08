@@ -1,7 +1,7 @@
 // QuiroApp — Service Worker
 // Estrategia RED PRIMERO: con internet siempre sirve la versión más nueva;
 // la caché solo responde cuando NO hay conexión (para abrir la app offline).
-const CACHE = 'quiroapp-cache-v1';
+const CACHE = 'quiroapp-cache-v2';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 

@@ -905,39 +905,90 @@ const AuthScreen = ({ onGoogleLogin, onEmailAuth, onStartTrial, onResetPassword,
   const [isLoginView, setIsLoginView] = useState(true);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-[#020617] to-black p-6 text-center relative overflow-hidden text-white italic">
-      <SpineWatermark />
-      <div className="w-full max-w-sm z-10 relative bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
-        <div className="flex justify-center mb-6"><div className="bg-gradient-to-tr from-cyan-400 to-indigo-700 p-5 rounded-[25px] shadow-2xl border border-white/20"><SpineLogo className="w-10 h-10 text-white" /></div></div>
-        <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 leading-none text-white">Quiro<span className="text-cyan-400 font-bold">App</span></h2>
-        <p className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[8px] opacity-70 mb-8">Gestión Clínica Profesional</p>
-        
-        {error && <div className="bg-rose-500/10 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-[10px] mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
-        {notice && <div className="bg-emerald-500/10 border border-emerald-500/50 p-4 rounded-2xl text-emerald-400 text-[10px] mb-4 text-left"><CheckCircle2 className="w-4 h-4 inline mr-2" /> {String(notice)}</div>}
-        
-        {inProcess ? (
-          <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" /><p className="text-cyan-200 font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
-        ) : (
-          <div className="space-y-4 animate-slide-up">
+    <div className="min-h-screen flex bg-[#f4f6f4] text-slate-800">
+      <aside className="hidden lg:flex w-[44%] max-w-[580px] flex-col bg-gradient-to-br from-[#0b3b42] via-[#083039] to-[#0a2e26] text-white p-12 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full border border-[#d8b878]/20"></div>
+        <div className="absolute -bottom-32 -left-16 w-96 h-96 rounded-full border border-white/10"></div>
+        <div className="relative flex items-center gap-3">
+          <img src="/logo-quiroapp.png" alt="QuiroApp" className="w-12 h-12 rounded-2xl shadow-lg" />
+          <div>
+            <p className="font-black text-lg leading-none">QuiroApp</p>
+            <p className="text-[#d8b878] font-bold tracking-[0.22em] uppercase text-[9px] mt-1">Gestión Clínica</p>
+          </div>
+        </div>
+        <div className="relative my-auto py-14">
+          <h1 className="text-4xl xl:text-[44px] font-black leading-[1.08] tracking-tight">Tu consultorio,<br />bajo <span className="text-[#d8b878]">control total</span>.</h1>
+          <p className="text-white/70 text-sm leading-relaxed mt-5 max-w-sm">El CRM pensado para quiroprácticos: pacientes, agenda y licencias en un solo lugar.</p>
+          <ul className="mt-9 space-y-4 text-sm font-semibold">
+            <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full border border-[#d8b878]/60 bg-[#d8b878]/15 flex items-center justify-center flex-none"><CheckCircle2 className="w-3.5 h-3.5 text-[#d8b878]" /></span>Expedientes y sesiones clínicas</li>
+            <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full border border-[#d8b878]/60 bg-[#d8b878]/15 flex items-center justify-center flex-none"><CheckCircle2 className="w-3.5 h-3.5 text-[#d8b878]" /></span>Agenda con avisos por WhatsApp</li>
+            <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full border border-[#d8b878]/60 bg-[#d8b878]/15 flex items-center justify-center flex-none"><CheckCircle2 className="w-3.5 h-3.5 text-[#d8b878]" /></span>Funciona sin internet y sincroniza solo</li>
+          </ul>
+        </div>
+        <div className="relative flex gap-2 flex-wrap">
+          <span className="flex items-center gap-1.5 text-[9px] font-black tracking-[0.14em] uppercase border border-white/30 text-white/90 px-3 py-1.5 rounded-full"><ShieldCheck className="w-3.5 h-3.5" /> Datos cifrados</span>
+          <span className="flex items-center gap-1.5 text-[9px] font-black tracking-[0.14em] uppercase border border-white/30 text-white/90 px-3 py-1.5 rounded-full"><Cloud className="w-3.5 h-3.5" /> Respaldo incluido</span>
+        </div>
+      </aside>
+
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="lg:hidden flex flex-col items-center text-center mb-7">
+            <img src="/logo-quiroapp.png" alt="QuiroApp" className="w-20 h-20 rounded-full shadow-xl" />
+            <h1 className="text-2xl font-black text-[#0b2b31] mt-4">QuiroApp</h1>
+            <p className="text-[#b08d3e] font-bold tracking-[0.24em] uppercase text-[9px] mt-1">Gestión Clínica Profesional</p>
+          </div>
+
+          <div className="bg-white rounded-[28px] shadow-[0_24px_60px_rgba(8,48,57,0.14)] border border-slate-100 p-8 sm:p-10">
             {step === 'initial' && (
-              <><button onClick={onStartTrial} className="w-full bg-cyan-400 text-black py-4 rounded-[20px] font-black flex items-center justify-center gap-3 transition border-b-4 border-cyan-700 uppercase shadow-xl active:scale-95 text-xs"><PlayCircle className="w-5 h-5" /> Iniciar Prueba</button>
-                <div className="flex items-center gap-4 py-3 opacity-40"><div className="flex-1 h-[1px] bg-white"></div><span className="text-[9px] font-black uppercase tracking-widest italic">O ingresa</span><div className="flex-1 h-[1px] bg-white"></div></div>
-                <div className="grid grid-cols-1 gap-3">
-                   <button onClick={() => setStep('email')} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-cyan-400"><Mail className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Ingresar con Correo</span></button>
-                   <button onClick={onGoogleLogin} className="bg-black/20 p-4 rounded-[20px] border border-white/10 flex items-center justify-center gap-2 hover:bg-black/40 transition active:scale-95 text-white"><Globe className="w-4 h-4" /> <span className="text-[10px] font-black uppercase">Google</span></button>
-                </div></>
+              <div className="mb-7">
+                <p className="text-[#b08d3e] font-black tracking-[0.2em] uppercase text-[9px]">Acceso profesional</p>
+                <h2 className="text-[26px] font-black text-[#0b2b31] mt-2 leading-tight">Bienvenido de nuevo</h2>
+                <p className="text-slate-500 text-xs mt-1.5">Ingresa a tu panel clínico</p>
+              </div>
             )}
             {step === 'email' && (
-              <div className="text-left">
-                <div className="space-y-3 mb-6"><div><input type="email" placeholder="Correo electrónico" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={email} onChange={(e) => setEmail(e.target.value)} /></div><div><input type="password" placeholder="Contraseña" className="w-full bg-black/20 p-4 rounded-2xl border border-white/10 outline-none text-white text-sm focus:border-cyan-500 focus:bg-black/40 transition-all placeholder:text-white/30" value={password} onChange={(e) => setPassword(e.target.value)} /></div></div>
-                <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-black/20 py-4 rounded-2xl text-[10px] font-black uppercase text-white border border-white/10 active:scale-95">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-cyan-400 text-black py-4 rounded-2xl text-[10px] font-black uppercase border-b-4 border-cyan-700 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.4)]">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
-                {isLoginView ? (<p className="text-center mt-4"><button onClick={() => onResetPassword(email)} className="text-[9px] text-indigo-300 font-black uppercase underline">¿Olvidaste tu contraseña?</button></p>) : (<p className="text-center mt-4 text-[9px] text-indigo-300 uppercase font-bold tracking-wider">Usa un correo real: ahí te llegará la recuperación de tu contraseña</p>)}
-                <p className="text-center mt-6 text-[9px] text-indigo-200">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-cyan-400 font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+              <div className="mb-7">
+                <p className="text-[#b08d3e] font-black tracking-[0.2em] uppercase text-[9px]">Acceso con correo</p>
+                <h2 className="text-[26px] font-black text-[#0b2b31] mt-2 leading-tight">{isLoginView ? 'Ingresa a tu cuenta' : 'Crea tu cuenta'}</h2>
+                <p className="text-slate-500 text-xs mt-1.5">{isLoginView ? 'Qué bueno verte de nuevo' : 'Empieza a gestionar tu consultorio'}</p>
+              </div>
+            )}
+
+            {error && <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl text-rose-600 text-[11px] font-semibold mb-4 text-left animate-pulse"><ShieldAlert className="w-4 h-4 inline mr-2" /> {String(error)}</div>}
+            {notice && <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-emerald-700 text-[11px] font-semibold mb-4 text-left"><CheckCircle2 className="w-4 h-4 inline mr-2" /> {String(notice)}</div>}
+
+            {inProcess ? (
+              <div className="py-10 flex flex-col items-center"><Loader2 className="w-10 h-10 text-[#0b5563] animate-spin mb-4" /><p className="text-[#0b5563] font-black tracking-widest text-[10px] uppercase">Preparando Entorno...</p></div>
+            ) : (
+              <div className="animate-slide-up">
+                {step === 'initial' && (
+                  <>
+                    <button onClick={onStartTrial} className="w-full bg-gradient-to-r from-[#0b5563] to-[#0b3b42] text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2.5 transition uppercase shadow-lg shadow-[#0b3b42]/25 active:scale-[0.98] text-xs tracking-wide"><PlayCircle className="w-5 h-5" /> Iniciar Prueba Gratis</button>
+                    <div className="flex items-center gap-4 py-5"><div className="flex-1 h-[1px] bg-slate-200"></div><span className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">O ingresa con</span><div className="flex-1 h-[1px] bg-slate-200"></div></div>
+                    <div className="space-y-3">
+                      <button onClick={onGoogleLogin} className="w-full bg-white border border-slate-200 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 hover:bg-slate-50 transition active:scale-[0.98] text-slate-700 shadow-sm"><svg className="w-[18px] h-[18px]" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.2H12v4.3h6.5c-.1 1.1-.8 2.7-2.4 3.8l3.7 2.9c2.3-2.1 3.7-5.2 3.7-9z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.7-2.9c-1 .7-2.4 1.2-4.2 1.2-3.2 0-5.9-2.1-6.8-5l-3.9 3C3.3 21.3 7.3 24 12 24z"/><path fill="#FBBC05" d="M5.2 14.4c-.2-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4l-3.9-3C.5 8.2 0 10 0 12s.5 3.8 1.3 5.4l3.9-3z"/><path fill="#EA4335" d="M12 4.7c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.3 0 3.3 2.7 1.3 6.6l3.9 3c.9-2.8 3.6-4.9 6.8-4.9z"/></svg><span className="text-xs font-bold">Continuar con Google</span></button>
+                      <button onClick={() => setStep('email')} className="w-full bg-white border-[1.5px] border-[#0b3b42] py-3.5 rounded-2xl flex items-center justify-center gap-2.5 hover:bg-[#0b3b42]/5 transition active:scale-[0.98] text-[#0b3b42]"><Mail className="w-4 h-4" /><span className="text-xs font-bold">Ingresar con Correo</span></button>
+                    </div>
+                  </>
+                )}
+                {step === 'email' && (
+                  <div className="text-left">
+                    <div className="space-y-4 mb-6">
+                      <div><label className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 mb-1.5">Correo electrónico</label><input type="email" placeholder="tucorreo@ejemplo.com" className="w-full bg-slate-50 p-3.5 rounded-xl border border-slate-200 outline-none text-slate-800 text-sm focus:border-[#0b5563] focus:bg-white focus:ring-4 focus:ring-[#0b5563]/10 transition-all placeholder:text-slate-400" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                      <div><label className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 mb-1.5">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-50 p-3.5 rounded-xl border border-slate-200 outline-none text-slate-800 text-sm focus:border-[#0b5563] focus:bg-white focus:ring-4 focus:ring-[#0b5563]/10 transition-all placeholder:text-slate-400" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                    </div>
+                    <div className="flex gap-2"><button onClick={() => setStep('initial')} className="flex-1 bg-white py-3.5 rounded-xl text-[11px] font-black uppercase text-slate-500 border border-slate-200 active:scale-[0.98] transition">Volver</button><button onClick={() => onEmailAuth(email, password, isLoginView)} className="flex-[2] bg-gradient-to-r from-[#0b5563] to-[#0b3b42] text-white py-3.5 rounded-xl text-[11px] font-black uppercase active:scale-[0.98] transition shadow-lg shadow-[#0b3b42]/25">{isLoginView ? 'Ingresar' : 'Registrarse'}</button></div>
+                    {isLoginView ? (<p className="text-center mt-5"><button onClick={() => onResetPassword(email)} className="text-[10px] text-[#b08d3e] font-black uppercase underline">¿Olvidaste tu contraseña?</button></p>) : (<p className="text-center mt-5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl px-3 py-2.5 text-[10px] uppercase font-bold tracking-wider">Usa un correo real: ahí te llegará la recuperación de tu contraseña</p>)}
+                    <p className="text-center mt-6 text-[10px] text-slate-500 font-semibold">{isLoginView ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'} <button onClick={() => setIsLoginView(!isLoginView)} className="ml-1 text-[#0b5563] font-black uppercase underline">{isLoginView ? 'Regístrate' : 'Inicia Sesión'}</button></p>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
+          <p className="text-center text-[10px] text-slate-400 mt-6 leading-relaxed">Al continuar aceptas los Términos y la Política de Privacidad.</p>
+        </div>
+      </main>
     </div>
   );
 };
