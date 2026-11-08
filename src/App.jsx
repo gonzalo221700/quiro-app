@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, RecaptchaVerifier, signInWithPhoneNumber, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
-import { getFirestore, initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown } from 'lucide-react';
+import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
+import { initializeFirestore, collection, doc, setDoc, getDoc, getDocFromServer, onSnapshot, addDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { Home, Calendar as CalendarIcon, Users, Plus, X, ChevronRight, Search, Sparkles, Loader2, Settings, MessageSquare, LogOut, Globe, ClipboardList, BookOpen, Target, Cloud, Trash2, Lock, Activity, ShieldAlert, ShieldCheck, Mail, CheckCircle2, Ruler, Weight, UserCircle, Building, User, CreditCard, Clock, PlayCircle, WifiOff, HeartPulse, CalendarPlus, AlertTriangle, KeyRound, Copy, TerminalSquare, Upload, ImagePlus, Image as ImageIcon, Download, AlertOctagon, FileText, Stethoscope, Palette, ChevronDown, Pencil } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB-psPSH45hCnwRMbj6rSzxOf8_ITRXqhU",
@@ -24,8 +24,38 @@ const MAX_TRIAL_PATIENTS = 3;
 
 const openWhatsApp = (phone, message = "") => {
   if (!phone) return;
-  const cleanPhone = String(phone).replace(/\D/g, '');
+  let cleanPhone = String(phone).replace(/\D/g, '');
+  // Números mexicanos guardados a 10 dígitos: se agrega el código de país (52)
+  if (cleanPhone.length === 10) cleanPhone = '52' + cleanPhone;
   window.open(`https://wa.me/${cleanPhone}${message ? `?text=${encodeURIComponent(message)}` : ''}`, '_blank');
+};
+
+// Generador de códigos PRO: azar seguro del navegador, 8 caracteres sin confusos (sin O/0 ni I/1)
+const generateSecureCode = (prefix) => {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const arr = new Uint32Array(8);
+  crypto.getRandomValues(arr);
+  let suffix = '';
+  for (const n of arr) suffix += chars[n % chars.length];
+  return prefix + suffix;
+};
+
+// Mensajes de error reales y humanos según el código de Firebase Auth
+const authErrorMessage = (err) => {
+  switch (err?.code) {
+    case 'auth/unauthorized-domain': return 'Este dominio no está autorizado en Firebase. Avísale al administrador.';
+    case 'auth/network-request-failed': return 'Sin conexión a internet. Revisa tu señal e inténtalo de nuevo.';
+    case 'auth/operation-not-allowed': return 'El acceso por correo no está activado para esta app. Entra con Google.';
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password': return 'Correo o contraseña incorrectos.';
+    case 'auth/email-already-in-use': return 'Ese correo ya tiene una cuenta. Mejor inicia sesión.';
+    case 'auth/weak-password': return 'La contraseña debe tener al menos 6 caracteres.';
+    case 'auth/invalid-email': return 'Ese correo no parece válido.';
+    case 'auth/too-many-requests': return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+    case 'auth/popup-blocked': return 'Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes e inténtalo de nuevo.';
+    default: return `Algo salió mal (${err?.code || 'error desconocido'}). Inténtalo de nuevo.`;
+  }
 };
 
 const safeFormatDate = (dateStr) => {
@@ -447,7 +477,7 @@ const HomeTab = ({ appointments, patients, doctorInfo, onAddAppointment, onOpenC
   );
 };
 
-const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule }) => {
+const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, onSchedule, onEdit }) => {
   const [activeSection, setActiveSection] = useState('historial'); 
   const bmi = (patient.weight && patient.height) ? (parseFloat(patient.weight) / ((parseFloat(patient.height)/100)**2)).toFixed(1) : '--';
 
@@ -480,6 +510,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
         <button onClick={onSchedule} className="bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><CalendarPlus className="w-4 h-4"/> Agendar</button>
         <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/30 text-rose-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><FileText className="w-4 h-4"/> PDF</button>
         <button onClick={handleExportWord} className="bg-blue-500/10 border border-blue-500/30 text-blue-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><Download className="w-4 h-4"/> Word</button>
+        <button onClick={onEdit} className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase active:scale-95 shadow-lg"><Pencil className="w-4 h-4"/> Editar</button>
       </div>
 
       <div className="flex overflow-x-auto gap-2 pb-4 mb-2 scrollbar-hide">{['identidad', 'historial', 'evaluacion', 'anatomia', 'tratamiento', 'sesiones'].map(sec => (<button key={sec} onClick={() => setActiveSection(sec)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{sec}</button>))}</div>
@@ -538,7 +569,7 @@ const PatientProfile = ({ patient, doctorInfo, onBack, onAddHistory, onDelete, o
   );
 };
 
-const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onOpenAdminLogin, visualMode, setVisualMode }) => {
+const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLinkGoogle, onLinkEmail, onUpgrade, onBackup, visualMode, setVisualMode }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(doctorInfo.title || '');
   const [customTitle, setCustomTitle] = useState('');
@@ -548,7 +579,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
   
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
   
   const [showProDetails, setShowProDetails] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -566,11 +596,6 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
     setIsSaving(false);
     setSaved(true);
     setTimeout(() => { setSaved(false); setIsEditing(false); }, 1500); 
-  };
-
-  const handleAdminTap = () => {
-    if (tapCount >= 6) { onOpenAdminLogin(); setTapCount(0); } 
-    else setTapCount(prev => prev + 1);
   };
 
   const getProRemainingDays = () => {
@@ -740,9 +765,12 @@ const ProfileTab = ({ user, doctorInfo, patients, onUpdateInfo, onLogout, onLink
       </div>
 
       <div className="bg-slate-900 p-8 rounded-[40px] border border-white/5 text-center shadow-xl">
-        <UserCircle onClick={handleAdminTap} className="w-12 h-12 mx-auto mb-4 text-indigo-500 cursor-pointer"/>
+        <UserCircle className="w-12 h-12 mx-auto mb-4 text-indigo-500"/>
         <p className="text-[9px] font-black uppercase text-indigo-400 mb-1 tracking-widest">Cuenta Activa</p>
         <p className="text-xs font-bold text-white mb-6 break-all">{user.isAnonymous ? "Perfil Temporal (No Guardado)" : String(user.email || user.phoneNumber)}</p>
+        <button onClick={onBackup} className="w-full mb-3 bg-cyan-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-cyan-400 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-cyan-500/20">
+          <Download className="w-5 h-5"/> Descargar Respaldo
+        </button>
         <button onClick={onLogout} className="w-full bg-rose-500/10 py-5 rounded-[25px] flex items-center justify-center gap-3 text-rose-500 font-black uppercase italic shadow-lg active:scale-95 transition-all border border-rose-500/20">
           <LogOut className="w-5 h-5"/> Cerrar Sesión
         </button>
@@ -957,34 +985,57 @@ const NewHistoryModal = ({ onClose, onSave }) => {
   );
 };
 
-const NewAppointmentModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], time: '10:00' });
+const EditPatientModal = ({ patient, onClose, onSave }) => {
+  const [form, setForm] = useState({
+    name: patient.name || '', phone: patient.phone || '', gender: patient.gender || '',
+    birthDate: patient.birthDate || '', address: patient.address || '',
+    consultationReason: patient.consultationReason || '', pathological: patient.pathological || '',
+    nonPathological: patient.nonPathological || '', weight: patient.weight || '', height: patient.height || '',
+    chiropracticDiagnosis: patient.chiropracticDiagnosis || '', treatmentPlan: patient.treatmentPlan || ''
+  });
   const [isSaving, setIsSaving] = useState(false);
-  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
+  const inputClass = "w-full bg-slate-900 p-4 rounded-2xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all";
+  const labelClass = "text-[10px] font-black uppercase text-indigo-400 ml-2 mb-2 block tracking-widest";
+  const handleSaveClick = () => {
+    if (isSaving || !form.name.trim()) return;
+    setIsSaving(true);
+    onSave({ ...form, age: form.birthDate ? calculateAge(form.birthDate) : (patient.age || '') });
+  };
   return (
-    <Modal title="Agendar Cita" onClose={onClose}>
-      <div className="space-y-6 text-left">
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
-        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : 'Confirmar Cita'}</button>
+    <Modal title="Editar Paciente" onClose={onClose}>
+      <div className="space-y-4 text-left max-h-[65vh] overflow-y-auto pr-1 scrollbar-hide">
+        <div><label className={labelClass}>Nombre completo</label><input type="text" className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={labelClass}>Teléfono / WhatsApp</label><input type="tel" className={inputClass} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+          <div><label className={labelClass}>Sexo</label><select className={`${inputClass} appearance-none cursor-pointer`} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="">Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option></select></div>
+        </div>
+        <div><label className={labelClass}>Fecha de nacimiento</label><input type="date" className={inputClass} value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} /></div>
+        <div><label className={labelClass}>Dirección</label><input type="text" className={inputClass} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+        <div><label className={labelClass}>Motivo de consulta</label><textarea rows={2} className={inputClass} value={form.consultationReason} onChange={e => setForm({...form, consultationReason: e.target.value})} /></div>
+        <div><label className={labelClass}>Antecedentes patológicos</label><textarea rows={2} className={inputClass} value={form.pathological} onChange={e => setForm({...form, pathological: e.target.value})} /></div>
+        <div><label className={labelClass}>Antecedentes no patológicos</label><textarea rows={2} className={inputClass} value={form.nonPathological} onChange={e => setForm({...form, nonPathological: e.target.value})} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={labelClass}>Peso (kg)</label><input type="text" inputMode="decimal" className={inputClass} value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} /></div>
+          <div><label className={labelClass}>Altura (cm)</label><input type="text" inputMode="decimal" className={inputClass} value={form.height} onChange={e => setForm({...form, height: e.target.value})} /></div>
+        </div>
+        <div><label className={labelClass}>Diagnóstico quiropráctico</label><textarea rows={2} className={inputClass} value={form.chiropracticDiagnosis} onChange={e => setForm({...form, chiropracticDiagnosis: e.target.value})} /></div>
+        <div><label className={labelClass}>Plan de tratamiento</label><textarea rows={2} className={inputClass} value={form.treatmentPlan} onChange={e => setForm({...form, treatmentPlan: e.target.value})} /></div>
+        <button onClick={handleSaveClick} disabled={isSaving || !form.name.trim()} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-xl active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest">{isSaving ? 'Guardando...' : 'Guardar Cambios'}</button>
       </div>
     </Modal>
   );
 };
 
-const AdminLoginModal = ({ onClose, onSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const handleLogin = () => { if (username === 'zod117' && password === 'famcab117') onSuccess(); else setError('Acceso denegado.'); };
+const NewAppointmentModal = ({ onClose, onSave, initial }) => {
+  const [form, setForm] = useState(initial ? { date: initial.date || new Date().toISOString().split('T')[0], time: initial.time || '10:00' } : { date: new Date().toISOString().split('T')[0], time: '10:00' });
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSaveClick = () => { if (isSaving || !form.date || !form.time) return; setIsSaving(true); onSave(form); };
   return (
-    <Modal title="Acceso Clasificado" onClose={onClose}>
-      <div className="space-y-4 text-left pb-4">
-        <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30"><ShieldAlert className="w-10 h-10 text-rose-500" /></div></div>
-        {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded-2xl text-[10px] font-black uppercase text-center animate-pulse">{String(error)}</div>}
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Usuario</label><input type="text" placeholder="Ingresar usuario" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={username} onChange={e => setUsername(e.target.value)} /></div>
-        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-1 block">Contraseña</label><input type="password" placeholder="••••••••" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-rose-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} /></div>
-        <button onClick={handleLogin} className="w-full bg-rose-500 text-white py-5 rounded-3xl font-black uppercase text-xs border-b-8 border-rose-800 shadow-xl active:scale-95 flex justify-center items-center gap-2 mt-6"><Lock className="w-4 h-4" /> Autorizar Acceso</button>
+    <Modal title={initial ? "Editar Cita" : "Agendar Cita"} onClose={onClose}>
+      <div className="space-y-6 text-left">
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+        <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 flex items-center gap-1 tracking-widest">Hora</label><input type="time" className="w-full bg-slate-900 p-5 rounded-[20px] border border-white/10 text-white outline-none focus:border-cyan-500 shadow-inner" value={form.time} onChange={e => setForm({...form, time: e.target.value})} /></div>
+        <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-cyan-400 text-black py-5 rounded-3xl font-black uppercase italic border-b-8 border-cyan-700 shadow-[0_10px_20px_rgba(34,211,238,0.2)] active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 tracking-widest mt-6">{isSaving ? 'Guardando...' : (initial ? 'Guardar Cambios' : 'Confirmar Cita')}</button>
       </div>
     </Modal>
   );
@@ -1001,7 +1052,7 @@ const UpsellModal = ({ onClose, onUpgrade }) => (
   </Modal>
 );
 
-const CalendarModal = ({ appointments, patients, onClose }) => {
+const CalendarModal = ({ appointments, patients, onClose, onEditAppointment, onDeleteAppointment }) => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const dayAppointments = appointments.filter(a => String(a.date) === selectedDate).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
   return (
@@ -1009,7 +1060,7 @@ const CalendarModal = ({ appointments, patients, onClose }) => {
       <div className="space-y-6 text-left">
         <div><label className="text-[10px] font-black uppercase text-indigo-400 ml-4 mb-2 block tracking-widest">Seleccionar Fecha</label><input type="date" className="w-full bg-slate-900 p-5 rounded-3xl border border-white/10 text-white outline-none focus:border-cyan-500 font-bold" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
         <div className="bg-slate-900/50 p-6 rounded-[30px] border border-white/5 min-h-[300px]">
-          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div></div>)))}
+          {dayAppointments.length === 0 ? (<div className="py-12 text-center opacity-40"><CalendarIcon className="w-12 h-12 mx-auto mb-3 text-indigo-400" /><p className="text-indigo-400 font-bold text-[10px] uppercase tracking-[0.2em]">Libre</p></div>) : (dayAppointments.map(app => (<div key={app.id} className="bg-slate-950 p-4 rounded-3xl border border-white/5 mb-3 flex items-center justify-between shadow-lg"><div><p className="text-white font-black uppercase italic text-sm">{String(patients.find(p => p.id === app.patientId)?.name || 'Desconocido')}</p><p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1"><Clock className="w-3 h-3" /> {String(app.time)}</p></div><div className="flex gap-2 shrink-0"><button onClick={() => onEditAppointment(app)} className="p-2.5 text-cyan-400 bg-cyan-500/10 rounded-xl active:scale-90 border border-cyan-500/20"><Pencil className="w-4 h-4" /></button><button onClick={() => onDeleteAppointment(app)} className="p-2.5 text-rose-500 bg-rose-500/10 rounded-xl active:scale-90 border border-rose-500/20"><Trash2 className="w-4 h-4" /></button></div></div>)))}
         </div>
       </div>
     </Modal>
@@ -1072,6 +1123,8 @@ export default function App() {
   const [appointments, setAppointments] = useState([]);
   const [doctorInfo, setDoctorInfo] = useState({ title: '', name: '', clinic: '', theme: 'azul', trialStartedAt: null, isPremium: false, isAdmin: false });
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [patientSearch, setPatientSearch] = useState('');
+  const [editingAppointment, setEditingAppointment] = useState(null);
   const [trialTimeLeft, setTrialTimeLeft] = useState({ days: 0, hours: 0, expired: false });
   const [adminCodes, setAdminCodes] = useState([]);
   const [modals, setModals] = useState({});
@@ -1129,35 +1182,57 @@ export default function App() {
     }
   }, [user, doctorInfo?.isAdmin]);
 
-  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user') setAuthError("Error de Google."); setAuthInProcess(false); } };
-  const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError("Error de conexión."); setAuthInProcess(false); } };
-  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError("Error de credenciales."); setAuthInProcess(false); } };
-  const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
-  const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert("Error al vincular."); } };
+  const handleGoogleLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
+  const handleTrialLogin = async () => { setAuthInProcess(true); setAuthError(""); try { await signInAnonymously(auth); } catch (e) { setAuthError(authErrorMessage(e)); setAuthInProcess(false); } };
+  const handleEmailAuth = async (e, p, login) => { if (!e || !p) return setAuthError("Rellena todos los campos."); setAuthInProcess(true); setAuthError(""); try { if (login) await signInWithEmailAndPassword(auth, e, p); else await createUserWithEmailAndPassword(auth, e, p); } catch (err) { setAuthError(authErrorMessage(err)); setAuthInProcess(false); } };
+  const handleLinkGoogle = async () => { try { await linkWithPopup(auth.currentUser, new GoogleAuthProvider()); alert("¡Cuenta vinculada!"); } catch (err) { alert(authErrorMessage(err)); } };
+  const handleLinkEmail = async (e, p) => { if(!e || !p) return alert("Completa los datos."); try { await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(e, p)); alert("¡Cuenta vinculada!"); } catch (err) { alert(authErrorMessage(err)); } };
 
   const handleActivateCode = async (codeStr) => {
-    if (!codeStr) return alert("Ingresa un código.");
+    if (!codeStr || !codeStr.trim()) return alert("Ingresa un código.");
+    const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr.trim().toUpperCase());
+    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile');
     try {
-      const codeRef = doc(db, 'artifacts', appId, 'public', 'data', 'codes', codeStr.trim().toUpperCase());
-      const codeSnap = await getDoc(codeRef); 
-      if (codeSnap.exists() && !codeSnap.data().used) {
-         const codeData = codeSnap.data();
-         const newExpiresAt = (doctorInfo.premiumExpiresAt || Date.now()) + ((codeData.durationDays || 30) * 86400000);
-         await updateDoc(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
-         await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
-         setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: newExpiresAt}));
-         alert(`¡PRO activado por ${codeData.durationDays} días!`);
-         setActiveTab('settings');
-      } else alert("Código inválido o usado.");
-    } catch (e) { alert("Error de servidor."); }
+      // Transacción: leer el código y marcarlo usado es UNA sola operación.
+      // Si dos canjes llegan al mismo tiempo, el segundo rebota: no hay doble canje.
+      const result = await runTransaction(db, async (tx) => {
+        const codeSnap = await tx.get(codeRef);
+        if (!codeSnap.exists()) throw new Error('CODIGO_NO_EXISTE');
+        const codeData = codeSnap.data();
+        if (codeData.used) throw new Error('CODIGO_USADO');
+        const profileSnap = await tx.get(profileRef);
+        const currentExpiry = profileSnap.exists() ? (profileSnap.data().premiumExpiresAt || 0) : 0;
+        const base = Math.max(currentExpiry, Date.now());
+        const newExpiresAt = base + ((codeData.durationDays || 30) * 86400000);
+        tx.update(codeRef, { used: true, usedBy: user.uid, usedAt: new Date().toISOString() });
+        tx.update(profileRef, { isPremium: true, premiumActivatedAt: Date.now(), premiumExpiresAt: newExpiresAt });
+        return { days: codeData.durationDays || 30, newExpiresAt };
+      });
+      setDoctorInfo(p => ({...p, isPremium: true, premiumExpiresAt: result.newExpiresAt}));
+      alert(`¡PRO activado por ${result.days} días!`);
+      setActiveTab('settings');
+    } catch (e) {
+      if (e.message === 'CODIGO_NO_EXISTE') alert("Ese código no existe. Revisa que esté bien escrito.");
+      else if (e.message === 'CODIGO_USADO') alert("Ese código ya fue usado.");
+      else if (e.code === 'permission-denied') alert("Permiso denegado por el servidor. Inténtalo de nuevo.");
+      else alert("No se pudo activar el código. Revisa tu conexión e inténtalo de nuevo.");
+    }
   };
 
   const handleGenerateAdminCode = async (type, durationDays) => {
     try {
-      const newCode = (type === 'Mensual' ? 'MES-' : 'ANU-') + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const prefix = type === 'Mensual' ? 'MES-' : 'ANU-';
+      let newCode = null;
+      // Si el código ya existiera (casi imposible), se genera otro: jamás se sobrescribe uno.
+      for (let intento = 0; intento < 5 && !newCode; intento++) {
+        const candidato = generateSecureCode(prefix);
+        const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', candidato));
+        if (!snap.exists()) newCode = candidato;
+      }
+      if (!newCode) return alert("No se pudo generar un código único. Inténtalo de nuevo.");
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'codes', newCode), { used: false, type, durationDays, createdAt: new Date().toISOString(), createdBy: user?.uid });
       alert(`Código generado: ${newCode}`);
-    } catch (e) { alert("Error."); }
+    } catch (e) { alert("No se pudo generar el código. Revisa tu conexión e inténtalo de nuevo."); }
   };
 
   const handleUpgradeRequest = () => { openWhatsApp("529996180031", "Hola, me interesa adquirir la versión PRO."); setActiveTab('premium'); };
@@ -1166,8 +1241,33 @@ export default function App() {
   const handleAddHistory = (history) => { if (!selectedPatientId) return; const pat = patients.find(p => p.id === selectedPatientId); setModals(prev => ({ ...prev, history: false })); if(pat) updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), { histories: [history, ...(pat.histories || [])] }); };
   const handleAddAppointment = (appData) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, appointment: false })); addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'appointments'), { ...appData, patientId: selectedPatientId, createdAt: new Date().toISOString() }); };
   const handleDeletePatient = (id) => { if (window.confirm("¿Eliminar expediente?")) { setSelectedPatientId(null); deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', id)); } };
+  const handleEditPatient = (data) => { if (!selectedPatientId) return; setModals(prev => ({ ...prev, editPatient: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'patients', selectedPatientId), data); };
+  const handleEditAppointment = (form) => { if (!editingAppointment) return; const id = editingAppointment.id; setEditingAppointment(null); setModals(prev => ({ ...prev, calendar: false })); updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', id), { date: form.date, time: form.time }); };
+  const handleDeleteAppointment = (app) => { if (window.confirm("¿Eliminar esta cita?")) deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'appointments', app.id)); };
+  const handleBackup = () => {
+    const respaldo = { app: 'QuiroApp', version: 1, exportedAt: new Date().toISOString(), cuenta: user?.email || user?.uid || '', perfil: doctorInfo, pacientes: patients, citas: appointments, ...(doctorInfo.isAdmin ? { codigos: adminCodes } : {}) };
+    const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `respaldo-quiroapp-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert("Respaldo descargado. Guárdalo en un lugar seguro: contiene tus pacientes, citas y códigos.");
+  };
 
   const handleOpenNewPatient = () => { if (!doctorInfo.isPremium && patients.length >= MAX_TRIAL_PATIENTS) setModals(m => ({ ...m, upsell: true })); else setModals(m => ({ ...m, patient: true })); };
+
+  const filteredPatients = patients.filter(p => {
+    const q = patientSearch.trim().toLowerCase();
+    if (!q) return true;
+    const qDigits = q.replace(/\D/g, '');
+    return String(p.name || '').toLowerCase().includes(q)
+      || (qDigits && String(p.phone || '').replace(/\D/g, '').includes(qDigits))
+      || String(p.consultationReason || '').toLowerCase().includes(q);
+  });
 
   if (loading) return <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[1em] italic text-center"><Loader2 className="w-12 h-12 mb-4 animate-spin mx-auto"/>Iniciando Nube...</div>;
   if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} onEmailAuth={handleEmailAuth} onStartTrial={handleTrialLogin} inProcess={authInProcess} error={authError} step={authStep} setStep={setAuthStep} />;
@@ -1188,14 +1288,14 @@ export default function App() {
 
       <main className="flex-1 overflow-y-auto p-6 z-10 pb-36">
         {selectedPatientId ? (
-          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} />
+          <PatientProfile patient={patients.find(p => p.id === selectedPatientId)} doctorInfo={doctorInfo} onBack={() => setSelectedPatientId(null)} onAddHistory={() => setModals(m => ({...m, history: true}))} onSchedule={() => setModals(m => ({...m, appointment: true}))} onDelete={() => handleDeletePatient(selectedPatientId)} onEdit={() => setModals(m => ({...m, editPatient: true}))} />
         ) : (
           <>
             {activeTab === 'home' && <HomeTab appointments={appointments} patients={patients} doctorInfo={doctorInfo} onAddAppointment={() => setActiveTab('patients')} onOpenCalendar={() => setModals(m => ({...m, calendar: true}))} onUpgrade={handleUpgradeRequest} />}
             {activeTab === 'patients' && (
               <div className="animate-fade-in space-y-4"><h2 className="text-3xl font-black uppercase italic mb-6 underline decoration-cyan-500 decoration-4 underline-offset-8">Pacientes</h2>
-                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
-                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : patients.map(p => (
+                <div className="relative mb-6"><Search className="absolute left-4 top-4 text-indigo-500 w-5 h-5" /><input type="text" placeholder="Buscar expediente..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} className="w-full bg-slate-900 p-4 pl-12 rounded-3xl border border-white/10 text-white font-bold outline-none focus:border-cyan-500 transition-all" /></div>
+                {patients.length === 0 ? <div className="py-20 text-center opacity-30"><ClipboardList className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin registros</p></div> : filteredPatients.length === 0 ? <div className="py-20 text-center opacity-30"><Search className="w-12 h-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin resultados para tu búsqueda</p></div> : filteredPatients.map(p => (
                   <div key={p.id} onClick={() => setSelectedPatientId(p.id)} className="bg-slate-900/50 p-5 rounded-[30px] border border-white/5 flex items-center justify-between active:scale-95 transition cursor-pointer hover:bg-slate-900">
                     <div><p className="font-black text-white uppercase italic text-lg">{String(p.name)}</p><p className="text-[10px] text-indigo-400 font-bold uppercase">{String(p.phone)}</p></div><ChevronRight className="w-6 h-6 text-cyan-400" />
                   </div>
@@ -1220,7 +1320,7 @@ export default function App() {
                 </div>
               </div>
             )}
-            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onOpenAdminLogin={() => setModals(m => ({...m, adminLogin: true}))} visualMode={visualMode} setVisualMode={setVisualMode} />}
+            {activeTab === 'settings' && <ProfileTab user={user} doctorInfo={doctorInfo} patients={patients} onUpdateInfo={handleUpdateProfile} onLogout={() => signOut(auth)} onLinkGoogle={handleLinkGoogle} onLinkEmail={handleLinkEmail} onUpgrade={handleUpgradeRequest} onBackup={handleBackup} visualMode={visualMode} setVisualMode={setVisualMode} />}
             {activeTab === 'premium' && <PremiumTab onActivateCode={handleActivateCode} />}
             {activeTab === 'admin' && doctorInfo.isAdmin && <AdminTab codes={adminCodes} onGenerateCode={handleGenerateAdminCode} />}
           </>
@@ -1240,9 +1340,10 @@ export default function App() {
       {modals.patient && <NewPatientModal onClose={() => setModals(m => ({...m, patient: false}))} onSave={handleAddPatient} />}
       {modals.history && <NewHistoryModal onClose={() => setModals(m => ({...m, history: false}))} onSave={handleAddHistory} />}
       {modals.appointment && <NewAppointmentModal onClose={() => setModals(m => ({...m, appointment: false}))} onSave={handleAddAppointment} />}
-      {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} />}
+      {modals.calendar && <CalendarModal appointments={appointments} patients={patients} onClose={() => setModals(m => ({...m, calendar: false}))} onEditAppointment={(app) => setEditingAppointment(app)} onDeleteAppointment={handleDeleteAppointment} />}
       {modals.upsell && <UpsellModal onClose={() => setModals(m => ({...m, upsell: false}))} onUpgrade={() => { setModals(m => ({...m, upsell: false})); handleUpgradeRequest(); }} />}
-      {modals.adminLogin && <AdminLoginModal onClose={() => setModals(m => ({...m, adminLogin: false}))} onSuccess={() => { handleUpdateProfile({ isAdmin: true, isPremium: true }); setModals(m => ({...m, adminLogin: false})); alert("¡ADMIN ACTIVADO!"); setActiveTab('admin'); }} />}
+      {modals.editPatient && selectedPatientId && <EditPatientModal patient={patients.find(p => p.id === selectedPatientId)} onClose={() => setModals(m => ({...m, editPatient: false}))} onSave={handleEditPatient} />}
+      {editingAppointment && <NewAppointmentModal initial={editingAppointment} onClose={() => setEditingAppointment(null)} onSave={handleEditAppointment} />}
       
       <style dangerouslySetInnerHTML={{__html: `@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-up { animation: slideUp 0.4s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; } .scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}} />
     </div>
